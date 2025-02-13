@@ -1,7 +1,7 @@
 {
   "name": "Bandcamp+",
   "short_name": "bandcamp-plus",
-  "description": "Add multiple features to bandcamp.com",
+  "description": "Add multiple features to bandcamp.com (NPP hotkeys)",
   "version": "3.3.1",
   "manifest_version": 3,
   "icons": {

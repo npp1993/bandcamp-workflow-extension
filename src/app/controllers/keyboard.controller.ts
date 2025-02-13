@@ -5,14 +5,14 @@ import {Controllers} from './page.controller';
 enum Keys {
   Space = ' ',
   C = 'C',
-  P = 'P',
+  J = 'J',
+  H = 'H',
+  K = 'K',
+  L = 'L',
   N = 'N',
-  W = 'W',
+  P = 'P',
   R = 'R',
-  ArrowUp = 'ARROWUP',
-  ArrowDown = 'ARROWDOWN',
-  ArrowLeft = 'ARROWLEFT',
-  ArrowRight = 'ARROWRIGHT',
+  W = 'W',
 }
 
 export class KeyboardController {
@@ -41,10 +41,10 @@ export class KeyboardController {
   private static setEventsPreventing() {
     this.eventsPreventing = {
       [Keys.Space]: true,
-      [Keys.ArrowLeft]: true,
-      [Keys.ArrowRight]: true,
-      [Keys.ArrowDown]: true,
-      [Keys.ArrowUp]: true,
+      [Keys.H]: true,
+      [Keys.L]: true,
+      [Keys.J]: true,
+      [Keys.K]: true,
     };
   }
 
@@ -53,9 +53,9 @@ export class KeyboardController {
       [Keys.P]: () => BandcampFacade.playFirstTrack(),
       [Keys.W]: () => this.toggleWishlistRelease(),
       [Keys.R]: () => this.controllers.speed.reset(),
-      [Keys.ArrowLeft]: () => BandcampFacade.seekReset(),
-      [Keys.ArrowUp]: () => this.controllers.speed.increase(),
-      [Keys.ArrowDown]: () => this.controllers.speed.decrease(),
+      [Keys.H]: () => BandcampFacade.seekReset(),
+      [Keys.K]: () => this.controllers.speed.increase(),
+      [Keys.J]: () => this.controllers.speed.decrease(),
     };
   }
 
@@ -67,10 +67,10 @@ export class KeyboardController {
       [Keys.N]: () => BandcampFacade.getNext().click(),
       [Keys.R]: () => this.controllers.volume.reset(),
       [Keys.W]: () => this.toggleWishlistTrack(),
-      [Keys.ArrowRight]: () => BandcampFacade.seekForward(),
-      [Keys.ArrowLeft]: () => BandcampFacade.seekBackward(),
-      [Keys.ArrowUp]: () => this.controllers.volume.increase(),
-      [Keys.ArrowDown]: () => this.controllers.volume.decrease(),
+      [Keys.L]: () => BandcampFacade.seekForward(),
+      [Keys.H]: () => BandcampFacade.seekBackward(),
+      [Keys.K]: () => this.controllers.volume.increase(),
+      [Keys.J]: () => this.controllers.volume.decrease(),
     };
   }
 
