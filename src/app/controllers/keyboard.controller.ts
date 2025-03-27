@@ -13,6 +13,8 @@ enum Keys {
   P = 'P',
   R = 'R',
   W = 'W',
+  ArrowLeft = 'ARROWLEFT',
+  ArrowRight = 'ARROWRIGHT',
 }
 
 export class KeyboardController {
@@ -45,6 +47,8 @@ export class KeyboardController {
       [Keys.L]: true,
       [Keys.J]: true,
       [Keys.K]: true,
+      [Keys.ArrowLeft]: true,
+      [Keys.ArrowRight]: true,
     };
   }
 
@@ -63,14 +67,16 @@ export class KeyboardController {
     this.events = {
       [Keys.C]: () => this.controllers.copyInfo.handleClick(),
       [Keys.Space]: () => BandcampFacade.getPlay().click(),
-      [Keys.P]: () => BandcampFacade.getPrevious().click(),
-      [Keys.N]: () => BandcampFacade.getNext().click(),
+      [Keys.P]: () => this.handlePreviousTrack(),
+      [Keys.N]: () => this.handleNextTrack(),
       [Keys.R]: () => this.controllers.volume.reset(),
       [Keys.W]: () => this.toggleWishlistTrack(),
       [Keys.L]: () => BandcampFacade.seekForward(),
       [Keys.H]: () => BandcampFacade.seekBackward(),
       [Keys.K]: () => this.controllers.volume.increase(),
       [Keys.J]: () => this.controllers.volume.decrease(),
+      [Keys.ArrowLeft]: () => this.handlePreviousTrack(),
+      [Keys.ArrowRight]: () => this.handleNextTrack(),
     };
   }
 
@@ -123,5 +129,21 @@ export class KeyboardController {
         this.events[key]();
       }
     });
+  }
+
+  private static handlePreviousTrack() {
+    if (BandcampFacade.isWishlistPage) {
+      BandcampFacade.playPreviousWishlistTrack();
+    } else {
+      BandcampFacade.getPrevious().click();
+    }
+  }
+
+  private static handleNextTrack() {
+    if (BandcampFacade.isWishlistPage) {
+      BandcampFacade.playNextWishlistTrack();
+    } else {
+      BandcampFacade.getNext().click();
+    }
   }
 }

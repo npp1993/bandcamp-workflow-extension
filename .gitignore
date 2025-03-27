@@ -4,3 +4,4 @@ packages/
 .eslintcache
 coverage
 /.idea/sonarlint/issuestore/
+.DS_Store

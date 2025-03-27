@@ -5,32 +5,51 @@ import {VolumeController} from './volume.controller';
 import {CopyInfoController} from './copy-info.controller';
 import {AlbumController} from './album.controller';
 import {KeyboardController} from './keyboard.controller';
+import {WishlistController} from './wishlist.controller';
 
 export interface Controllers {
   speed: SpeedController;
   volume: VolumeController;
   copyInfo: CopyInfoController;
   album: AlbumController;
+  wishlist?: WishlistController;
 }
 
 export class PageController {
   private readonly controllers: Controllers;
 
   private constructor() {
-    if (!BandcampFacade.isPageSupported) {
+    // Initialize the controllers with required properties
+    this.controllers = {
+      speed: null,
+      volume: null,
+      copyInfo: null,
+      album: null,
+      wishlist: null
+    };
+
+    // Initialize wishlist controller for wishlist pages
+    if (BandcampFacade.isWishlistPage) {
+      this.controllers.wishlist = new WishlistController();
+    }
+
+    // If not on a supported page or wishlist page, return early
+    if (!BandcampFacade.isPageSupported && !BandcampFacade.isWishlistPage) {
       return;
     }
 
-    this.controllers = {
-      speed: new SpeedController(),
-      volume: new VolumeController(),
-      copyInfo: new CopyInfoController(),
-      album: new AlbumController(),
-    };
+    // Initialize other controllers only for supported pages
+    if (BandcampFacade.isPageSupported) {
+      this.controllers.speed = new SpeedController();
+      this.controllers.volume = new VolumeController();
+      this.controllers.copyInfo = new CopyInfoController();
+      this.controllers.album = new AlbumController();
 
-    BandcampFacade.arrange();
-    this.createRows();
+      BandcampFacade.arrange();
+      this.createRows();
+    }
 
+    // Initialize keyboard controller for both supported pages and wishlist page
     KeyboardController.start(this.controllers);
   }
 

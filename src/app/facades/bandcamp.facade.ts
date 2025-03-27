@@ -29,42 +29,65 @@ export enum BandcampWishlistState {
 export class BandcampFacade {
   private static _data: BandcampData;
 
+  private static _isTrack: boolean;
+
+  private static _isAlbum: boolean;
+
+  private static _isWishlistPage: boolean;
+
+  private static _colors: BandcampColors;
+
+  private static _audio: HTMLAudioElement;
+
+  private static _wishlistItems: HTMLElement[] = [];
+
+  private static _currentWishlistIndex = -1;
+
   public static get data(): BandcampData {
     if (this._data) {
       return this._data;
     }
 
-    const container = document.getElementById('pagedata');
-    this._data = JSON.parse(container.dataset.blob);
+    const pageData = document.getElementById('pagedata');
+    if (!pageData) {
+      return null;
+    }
+
+    const dataBlob = pageData.getAttribute('data-blob');
+    this._data = JSON.parse(dataBlob);
 
     return this._data;
   }
 
-  private static _isTrack: boolean;
-
   public static get isTrack(): boolean {
-    if (this._isTrack) {
+    if (typeof this._isTrack !== 'undefined') {
       return this._isTrack;
     }
 
-    this._isTrack = /bandcamp.com\/track\//.exec(window.location.href) !== null;
+    this._isTrack = window.location.href.includes('/track/');
 
     return this._isTrack;
   }
 
-  private static _isAlbum: boolean;
-
   public static get isAlbum(): boolean {
-    if (this._isAlbum) {
+    if (typeof this._isAlbum !== 'undefined') {
       return this._isAlbum;
     }
 
-    this._isAlbum = /bandcamp.com\/album\//.exec(window.location.href) !== null;
+    this._isAlbum = !this.isTrack && document.getElementById('trackInfo') !== null;
 
     return this._isAlbum;
   }
 
-  private static _colors: BandcampColors;
+  public static get isWishlistPage(): boolean {
+    if (typeof this._isWishlistPage !== 'undefined') {
+      return this._isWishlistPage;
+    }
+
+    this._isWishlistPage = window.location.href.includes('/wishlist');
+
+    return this._isWishlistPage;
+  }
 
   public static get colors(): BandcampColors {
     if (this._colors) {
@@ -82,8 +105,6 @@ export class BandcampFacade {
 
     return this._colors;
   }
-
-  private static _audio: HTMLAudioElement;
 
   public static get audio(): HTMLAudioElement {
     if (this._audio) {
@@ -276,5 +297,197 @@ export class BandcampFacade {
 
     prevCell.style.transform = 'translate(4px)';
     nextCell.style.transform = 'translate(4px)';
+  }
+
+  /**
+   * Load all wishlist items on the current page
+   */
+  public static loadWishlistItems(): HTMLElement[] {
+    if (!this.isWishlistPage) {
+      return [];
+    }
+
+    try {
+      // Try different selectors for collection items
+      const selectors = [
+        '.collection-item-container',
+        '.collection-item-gallery',
+        '.collection-item',
+        '.collection-items .item'
+      ];
+      
+      let items: NodeListOf<HTMLElement> = null;
+      
+      // Try each selector until we find one that works
+      for (const selector of selectors) {
+        items = document.querySelectorAll(selector);
+        if (items && items.length > 0) {
+          break;
+        }
+      }
+      
+      if (!items || items.length === 0) {
+        console.warn('No wishlist items found with any selector');
+        return [];
+      }
+      
+      // Find all items with play buttons
+      this._wishlistItems = Array.from(items).filter(item => {
+        const playButton = item.querySelector('.play-button, .play-col .playbutton, [class*="play"]');
+        return playButton !== null;
+      });
+      
+      console.log(`Found ${this._wishlistItems.length} playable wishlist items`);
+      return this._wishlistItems;
+    } catch (error) {
+      console.error('Error loading wishlist items:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Play a specific track from the wishlist
+   * @param index Index of the track to play
+   */
+  public static playWishlistTrack(index: number): void {
+    if (!this.isWishlistPage || this._wishlistItems.length === 0) {
+      return;
+    }
+
+    try {
+      // Check if index is within bounds
+      if (index < 0 || index >= this._wishlistItems.length) {
+        return;
+      }
+
+      const item = this._wishlistItems[index];
+      
+      // Try different play button selectors
+      const playButtonSelectors = [
+        '.play-button',
+        '.play-col .playbutton',
+        '[class*="play"]',
+        'button[title*="Play"], a[title*="Play"]'
+      ];
+      
+      let playButton: HTMLElement = null;
+      
+      // Try each selector until we find a play button
+      for (const selector of playButtonSelectors) {
+        playButton = item.querySelector(selector) as HTMLElement;
+        if (playButton) break;
+      }
+      
+      if (playButton) {
+        playButton.click();
+        this._currentWishlistIndex = index;
+        console.log(`Playing wishlist track ${index + 1} of ${this._wishlistItems.length}`);
+      } else {
+        console.warn(`No play button found for wishlist item at index ${index}`);
+      }
+    } catch (error) {
+      console.error('Error playing wishlist track:', error);
+    }
+  }
+
+  /**
+   * Play the next track in the wishlist
+   */
+  public static playNextWishlistTrack(): void {
+    if (!this.isWishlistPage || this._wishlistItems.length === 0) {
+      return;
+    }
+
+    let nextIndex = this._currentWishlistIndex + 1;
+    if (nextIndex >= this._wishlistItems.length) {
+      nextIndex = 0; // Loop back to the first track
+    }
+
+    this.playWishlistTrack(nextIndex);
+  }
+
+  /**
+   * Play the previous track in the wishlist
+   */
+  public static playPreviousWishlistTrack(): void {
+    if (!this.isWishlistPage || this._wishlistItems.length === 0) {
+      return;
+    }
+
+    let prevIndex = this._currentWishlistIndex - 1;
+    if (prevIndex < 0) {
+      prevIndex = this._wishlistItems.length - 1; // Loop back to the last track
+    }
+
+    this.playWishlistTrack(prevIndex);
+  }
+
+  /**
+   * Start playing the wishlist from the beginning
+   */
+  public static startWishlistPlayback(): void {
+    if (!this.isWishlistPage) {
+      return;
+    }
+
+    // Load all wishlist items if not already loaded
+    if (this._wishlistItems.length === 0) {
+      this.loadWishlistItems();
+    }
+
+    if (this._wishlistItems.length > 0) {
+      this.playWishlistTrack(0);
+    }
+  }
+
+  /**
+   * Check if currently playing a wishlist track
+   */
+  public static isPlayingWishlistTrack(): boolean {
+    return this.isWishlistPage && this._currentWishlistIndex >= 0;
+  }
+
+  /**
+   * Setup automatic playback of next track when current track ends
+   */
+  public static setupWishlistContinuousPlayback(): void {
+    if (!this.isWishlistPage) {
+      return;
+    }
+
+    try {
+      // First make sure we have the audio element
+      if (!this.audio) {
+        console.warn('No audio element found for continuous playback');
+        
+        // Wait a bit and check again later - the audio element might not be ready yet
+        setTimeout(() => {
+          if (this.audio) {
+            this.setupWishlistContinuousPlayback();
+          }
+        }, 2000);
+        
+        return;
+      }
+
+      // Remove any existing event listeners first to avoid duplicates
+      this.audio.removeEventListener('ended', this.handleTrackEnded);
+      
+      // Add event listener for the audio element to detect when a track ends
+      this.audio.addEventListener('ended', this.handleTrackEnded);
+      
+      console.log('Continuous playback setup complete');
+    } catch (error) {
+      console.error('Error setting up continuous playback:', error);
+    }
+  }
+  
+  /**
+   * Handler for when a track ends - plays the next track
+   */
+  private static handleTrackEnded = () => {
+    if (this.isWishlistPage && this._currentWishlistIndex >= 0) {
+      this.playNextWishlistTrack();
+    }
   }
 }
