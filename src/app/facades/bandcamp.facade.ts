@@ -240,11 +240,97 @@ export class BandcampFacade {
   }
 
   public static seekForward(): void {
-    this.audio.currentTime += SEEK_STEP;
+    try {
+      // Special handling for wishlist pages
+      if (this.isWishlistPage) {
+        const wishlistAudio = document.querySelector('.carousel-player-inner audio') || 
+                              document.querySelector('audio');
+        
+        if (wishlistAudio) {
+          (wishlistAudio as HTMLAudioElement).currentTime += SEEK_STEP;
+          
+          // Update the wishlist player UI if necessary
+          const wishlistProgressBar = document.querySelector('.carousel-player-inner .progress-bar') ||
+                                     document.querySelector('.carousel-player-inner .progress');
+          if (wishlistProgressBar) {
+            const event = new Event('timeupdate');
+            (wishlistAudio as HTMLAudioElement).dispatchEvent(event);
+          }
+          
+          console.log('Seeking forward on wishlist player');
+          return;
+        }
+      }
+      
+      // Standard handling for regular pages
+      const audioElement = this.audio || document.querySelector('audio');
+      
+      if (!audioElement) {
+        console.warn('No audio element found for seek forward operation');
+        return;
+      }
+      
+      // Advance the playback position
+      (audioElement as HTMLAudioElement).currentTime += SEEK_STEP;
+      
+      // For release pages, we may need to also update the UI
+      const progressBar = document.querySelector('.progress, .progbar_empty, .progbar_fill');
+      if (progressBar) {
+        // Force UI update if needed
+        const event = new Event('timeupdate');
+        (audioElement as HTMLAudioElement).dispatchEvent(event);
+      }
+      
+    } catch (error) {
+      console.error('Error in seekForward:', error);
+    }
   }
 
   public static seekBackward(): void {
-    this.audio.currentTime -= SEEK_STEP;
+    try {
+      // Special handling for wishlist pages
+      if (this.isWishlistPage) {
+        const wishlistAudio = document.querySelector('.carousel-player-inner audio') || 
+                              document.querySelector('audio');
+        
+        if (wishlistAudio) {
+          (wishlistAudio as HTMLAudioElement).currentTime -= SEEK_STEP;
+          
+          // Update the wishlist player UI if necessary
+          const wishlistProgressBar = document.querySelector('.carousel-player-inner .progress-bar') ||
+                                     document.querySelector('.carousel-player-inner .progress');
+          if (wishlistProgressBar) {
+            const event = new Event('timeupdate');
+            (wishlistAudio as HTMLAudioElement).dispatchEvent(event);
+          }
+          
+          console.log('Seeking backward on wishlist player');
+          return;
+        }
+      }
+      
+      // Standard handling for regular pages
+      const audioElement = this.audio || document.querySelector('audio');
+      
+      if (!audioElement) {
+        console.warn('No audio element found for seek backward operation');
+        return;
+      }
+      
+      // Decrease the playback position
+      (audioElement as HTMLAudioElement).currentTime -= SEEK_STEP;
+      
+      // For release pages, we may need to also update the UI
+      const progressBar = document.querySelector('.progress, .progbar_empty, .progbar_fill');
+      if (progressBar) {
+        // Force UI update if needed
+        const event = new Event('timeupdate');
+        (audioElement as HTMLAudioElement).dispatchEvent(event);
+      }
+      
+    } catch (error) {
+      console.error('Error in seekBackward:', error);
+    }
   }
 
   public static setSpeed(speed: number): void {

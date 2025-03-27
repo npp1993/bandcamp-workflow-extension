@@ -112,6 +112,46 @@ export class KeyboardController {
         this.handleNextTrack();
         break;
         
+      case 'h':
+        console.log('H key detected - seeking backward');
+        e.preventDefault();
+        BandcampFacade.seekBackward();
+        break;
+        
+      case 'l':
+        console.log('L key detected - seeking forward');
+        e.preventDefault();
+        BandcampFacade.seekForward();
+        break;
+        
+      case 'arrowleft':
+        console.log('ArrowLeft key detected - seeking backward');
+        e.preventDefault();
+        BandcampFacade.seekBackward();
+        break;
+        
+      case 'arrowright':
+        console.log('ArrowRight key detected - seeking forward');
+        e.preventDefault();
+        BandcampFacade.seekForward();
+        break;
+        
+      case 'arrowup':
+        console.log('ArrowUp key detected - increasing speed');
+        e.preventDefault();
+        if (this.controllers && this.controllers.speed) {
+          this.controllers.speed.increase();
+        }
+        break;
+        
+      case 'arrowdown':
+        console.log('ArrowDown key detected - decreasing speed');
+        e.preventDefault();
+        if (this.controllers && this.controllers.speed) {
+          this.controllers.speed.decrease();
+        }
+        break;
+        
       // Add other key handlers as needed
     }
   }
