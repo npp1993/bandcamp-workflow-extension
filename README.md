@@ -1,67 +1,41 @@
-![release](https://img.shields.io/github/v/release/bamdadsabbagh/bandcamp-plus--extension)
-![license](https://img.shields.io/github/license/bamdadsabbagh/bandcamp-plus--extension)
-![maintainability](https://img.shields.io/codeclimate/maintainability/bamdadsabbagh/bandcamp-plus--extension)
-![coverage](https://img.shields.io/codeclimate/coverage/bamdadsabbagh/bandcamp-plus--extension)
-![snyk](https://img.shields.io/snyk/vulnerabilities/github/bamdadsabbagh/bandcamp-plus--extension)
+# Bandcamp Workflow Enhancments
 
-![chrome version](https://img.shields.io/chrome-web-store/v/hggjmjobahhmbmnfndhdgidchhhhjkad?label=chrome)
-![chrome users](https://img.shields.io/chrome-web-store/users/hggjmjobahhmbmnfndhdgidchhhhjkad)
-![chrome rating](https://img.shields.io/chrome-web-store/stars/hggjmjobahhmbmnfndhdgidchhhhjkad)
+A browser extension for [Bandcamp](https://www.bandcamp.com/) that adds numerous features and keyboard shortcuts to improve your music browsing workflow.
 
-![firefox version](https://img.shields.io/amo/v/bandcamp?label=firefox)
-![firefox users](https://img.shields.io/amo/users/bandcamp)
-![firefox rating](https://img.shields.io/amo/stars/bandcamp?label=rating)
+## Acknowledgments
 
-<img alt="logo" width="80px" src="https://raw.githubusercontent.com/bamdadsabbagh/bandcamp-plus--extension/master/assets/icons/bandcamp-plus-icon.svg">
+This extension builds upon the work of three projects:
 
-Add multiple features to <a href="https://www.bandcamp.com/">bandcamp.com</a>
-
-![](assets/screenshots/screenshot.png)
-
-## 🚀 Download
-
-**<img height=30 src="https://icons.iconarchive.com/icons/cornmanthe3rd/plex/256/Internet-chrome-icon.png"> [Chrome](https://chrome.google.com/webstore/detail/bandcamp%2B/hggjmjobahhmbmnfndhdgidchhhhjkad)**
-
-**<img height=30 src="https://icons.iconarchive.com/icons/cornmanthe3rd/plex/256/Internet-firefox-icon.png"> [Firefox](https://addons.mozilla.org/firefox/addon/bandcamp)**
+- [bandcamp-plus--extension](https://github.com/bamdadfr/bandcamp-plus--extension) by Bamdad Sabbagh - The original foundation for this extension
+- [bandcamp-streamer](https://github.com/AFlowOfCode/bandcamp-streamer) by A Flow of Code and Lucas Heymès - Streaming functionality
+- [BandcampEnhancementSuite](https://github.com/sabjorn/BandcampEnhancementSuite) by S. A. Bjørn - Additional features and improvements
 
 ## 📖 Features
 
-- Arrange Bandcamp layout
-- Wishlist single tracks from release page
-- Add volume control
-- Add speed control with vinyl and stretched modes
-- Copy track info to clipboard
+- Wishlist individual tracks directly from release pages
+- Copy track info to clipboard with a single keystroke
+- Intuitive keyboard shortcuts for navigating within and between tracks
+- Streamlined wishlist management
+- Playback speed adjustment with vinyl and stretched modes
 
-### ⌨️ Keyboard Shortcuts
+## ⌨️ Keyboard Shortcuts
 
-`Space` play/pause
+| Shortcut | Function |
+|----------|----------|
+| `Space` | Play/pause current track |
+| `W` | Add current track to wishlist |
+| `Shift + W` | Add entire release to wishlist |
+| `n` | Play next track |
+| `p` | Play previous track |
+| `Shift + P` | Play first track in album |
+| `l` | Seek 10 seconds forward |
+| `h` | Seek 10 seconds backward |
+| `C` | Copy current track info to clipboard |
+| `Shift + h` | Seek to start of track |
+| `Shift + ↑` | Increase playback speed |
+| `Shift + ↓` | Decrease playback speed |
+| `Shift + R` | Reset playback speed to normal |
 
-`C` copy track info
+## 📝 License
 
-`W` wishlist current track
-
-`Shift + W` wishlist release
-
-`N` next track
-
-`P` previous track
-
-`Shift + P` play first track
-
-`→` seek 10 sec forward
-
-`←` seek 10 sec backward
-
-`Shift + ←` seek start
-
-`↑` increase volume
-
-`↓` decrease volume
-
-`R` reset volume
-
-`Shift + ↑` increase speed
-
-`Shift + ↓` decrease speed
-
-`Shift + R` reset speed
+MIT © 2021-2025 - See [LICENSE](LICENSE) file for details
