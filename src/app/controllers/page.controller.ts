@@ -13,6 +13,9 @@ export interface Controllers {
   wishlist?: WishlistController;
 }
 
+/**
+ * PageController handles the main page layout and UI components
+ */
 export class PageController {
   private readonly controllers: Controllers;
 
@@ -41,7 +44,7 @@ export class PageController {
       this.controllers.copyInfo = new CopyInfoController();
       this.controllers.album = new AlbumController();
       BandcampFacade.arrange();
-      this.createRows();
+      this.createSpeedRow();
     }
 
     // Initialize keyboard controller for both supported pages and wishlist page
@@ -61,32 +64,5 @@ export class PageController {
       rightButton: this.controllers.speed.stretchButton.node.getNode(),
     });
     BandcampFacade.insertBelowPlayer(grid.getNode());
-  }
-
-  private createCopyInfoRow() {
-    const container = new GridLayout();
-    
-    // Create empty span elements for the layout
-    const leftButton = document.createElement('span');
-    const topContent = document.createElement('span');
-    
-    // Create a hidden input element that won't be visible
-    const bottomContent = document.createElement('input');
-    bottomContent.style.display = 'none';
-    
-    container.populate({
-      leftButton,
-      topContent,
-      bottomContent,
-      rightButton: this.controllers.copyInfo.button.node.getNode(),
-    });
-    
-    BandcampFacade.insertBelowPlayer(container.getNode());
-  }
-
-  private createRows() {
-    this.createSpeedRow();
-    // We're no longer creating the copy info row to remove the button from the UI
-    // The functionality is still accessible via keyboard shortcut 'C'
   }
 }
