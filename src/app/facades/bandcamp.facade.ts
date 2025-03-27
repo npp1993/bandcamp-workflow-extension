@@ -486,8 +486,45 @@ export class BandcampFacade {
    * Handler for when a track ends - plays the next track
    */
   private static handleTrackEnded = () => {
-    if (this.isWishlistPage && this._currentWishlistIndex >= 0) {
-      this.playNextWishlistTrack();
+    // Use BandcampFacade instead of this to avoid reference issues
+    if (BandcampFacade.isWishlistPage && BandcampFacade._currentWishlistIndex >= 0) {
+      BandcampFacade.playNextWishlistTrack();
+    }
+  }
+
+  /**
+   * Toggle play/pause for the current track or start playing the first track
+   * Works for both regular player and wishlist pages
+   */
+  public static togglePlayPause(): void {
+    // Handle wishlist page specifically
+    if (this.isWishlistPage) {
+      try {
+        // If no track is currently playing, start playing the first track
+        if (this._currentWishlistIndex === -1) {
+          this.startWishlistPlayback();
+          return;
+        }
+        
+        // If a track is playing, find and click the play/pause button
+        const audioElement = this.audio;
+        if (audioElement) {
+          if (audioElement.paused) {
+            audioElement.play();
+          } else {
+            audioElement.pause();
+          }
+        }
+      } catch (error) {
+        console.error('Error toggling play/pause on wishlist page:', error);
+      }
+      return;
+    }
+    
+    // Handle regular player pages
+    const playButton = this.getPlay();
+    if (playButton) {
+      playButton.click();
     }
   }
 }

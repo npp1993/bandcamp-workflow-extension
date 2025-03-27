@@ -66,7 +66,7 @@ export class KeyboardController {
   private static setEvents() {
     this.events = {
       [Keys.C]: () => this.controllers.copyInfo.handleClick(),
-      [Keys.Space]: () => BandcampFacade.getPlay().click(),
+      [Keys.Space]: () => BandcampFacade.togglePlayPause(),
       [Keys.P]: () => this.handlePreviousTrack(),
       [Keys.N]: () => this.handleNextTrack(),
       [Keys.R]: () => this.controllers.volume.reset(),

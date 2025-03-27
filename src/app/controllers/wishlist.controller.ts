@@ -27,13 +27,22 @@ export class WishlistController {
     setTimeout(() => {
       try {
         // Load wishlist items
-        BandcampFacade.loadWishlistItems();
+        const items = BandcampFacade.loadWishlistItems();
         
-        // Setup continuous playback
-        BandcampFacade.setupWishlistContinuousPlayback();
-        
-        // Add controls to the page
-        this.addWishlistControls();
+        if (items.length > 0) {
+          // Setup continuous playback
+          BandcampFacade.setupWishlistContinuousPlayback();
+          
+          // Add controls to the page
+          this.addWishlistControls();
+          
+          // Add a note about spacebar functionality
+          this.addSpacebarNote();
+          
+          console.log('Wishlist controller initialized. Press spacebar to start playing.');
+        } else {
+          console.warn('No wishlist items found during initialization');
+        }
         
         this.hasInitialized = true;
       } catch (error) {
@@ -114,6 +123,29 @@ export class WishlistController {
       }
     } catch (error) {
       console.error('Error adding wishlist controls:', error);
+    }
+  }
+
+  /**
+   * Add a note about spacebar functionality
+   */
+  private addSpacebarNote(): void {
+    try {
+      const controlsContainer = document.querySelector('.bandcamp-plus__wishlist-controls');
+      if (!controlsContainer) return;
+      
+      // Check if note already exists
+      if (controlsContainer.querySelector('.spacebar-note')) return;
+      
+      // Create spacebar note
+      const spacebarNote = document.createElement('div');
+      spacebarNote.className = 'spacebar-note';
+      spacebarNote.textContent = 'Press spacebar to play/pause';
+      spacebarNote.style.cssText = 'margin-top: 8px; color: #666; font-style: italic;';
+      
+      controlsContainer.appendChild(spacebarNote);
+    } catch (error) {
+      console.error('Error adding spacebar note:', error);
     }
   }
 }
