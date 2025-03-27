@@ -8,9 +8,6 @@ Let's start by implementing the advanced mouse playbar functionality that allows
 2. Waveform Display
 Adds a wavform display similar to visualization of Soundcloud. A toggle below the "play button" on album pages will enable/disable the display. Note: The waveform is processed browserside.
 
-3. BPM Estimate
-Adds a BPM estimate for tracks played on Album or Track page. Note: The bpm estimation is processed browserside.
-
 3. Bundle Purchase Download Button
 Adds a button to help automate the process of download a cart after purchase. Once all music download links are ready this button, when clicked, generate a .txt file which can be pasted into terminal to automate the downloading process. This .txt file uses cURL.
 

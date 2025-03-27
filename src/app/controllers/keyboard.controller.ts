@@ -5,6 +5,7 @@ import {Controllers} from './page.controller';
 enum Keys {
   Space = ' ',
   C = 'C',
+  I = 'I',
   N = 'N',
   P = 'P',
   R = 'R',
@@ -44,6 +45,7 @@ export class KeyboardController {
     this.eventsPreventing = {
       [Keys.Space]: true,
       [Keys.H]: true,
+      [Keys.I]: true,
       [Keys.L]: true,
       [Keys.ArrowLeft]: true,
       [Keys.ArrowRight]: true,
@@ -57,7 +59,6 @@ export class KeyboardController {
       [Keys.P]: () => BandcampFacade.playFirstTrack(),
       [Keys.W]: () => this.toggleWishlistRelease(),
       [Keys.R]: () => this.controllers.speed.reset(),
-      [Keys.H]: () => BandcampFacade.seekReset(),
     };
   }
 
@@ -69,6 +70,7 @@ export class KeyboardController {
       [Keys.N]: () => this.handleNextTrack(),
       [Keys.R]: () => this.controllers.speed.reset(),
       [Keys.W]: () => this.toggleWishlistTrack(), // Restore the original wishlist handling
+      [Keys.I]: () => BandcampFacade.seekReset(),
       [Keys.L]: () => BandcampFacade.seekForward(),
       [Keys.H]: () => BandcampFacade.seekBackward(),
       [Keys.ArrowLeft]: () => BandcampFacade.seekBackward(),

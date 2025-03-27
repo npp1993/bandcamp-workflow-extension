@@ -190,7 +190,53 @@ export class BandcampFacade {
   }
 
   public static seekReset(): void {
-    this.audio.currentTime = 0;
+    try {
+      // Special handling for wishlist pages
+      if (this.isWishlistPage) {
+        // Find the audio element in the wishlist player
+        const wishlistAudio = document.querySelector('.carousel-player-inner audio') || 
+                              document.querySelector('audio');
+        
+        if (wishlistAudio) {
+          // Reset the playback position to the beginning - use proper type casting
+          (wishlistAudio as HTMLAudioElement).currentTime = 0;
+          
+          // Update the wishlist player UI if necessary
+          const wishlistProgressBar = document.querySelector('.carousel-player-inner .progress-bar') ||
+                                     document.querySelector('.carousel-player-inner .progress');
+          if (wishlistProgressBar) {
+            // Force UI update
+            const event = new Event('timeupdate');
+            (wishlistAudio as HTMLAudioElement).dispatchEvent(event);
+          }
+          
+          console.log('Seeking to start of track on wishlist player');
+          return;
+        }
+      }
+      
+      // Standard handling for regular pages
+      const audioElement = this.audio || document.querySelector('audio');
+      
+      if (!audioElement) {
+        console.warn('No audio element found for seek reset operation');
+        return;
+      }
+      
+      // Reset the playback position to the beginning
+      (audioElement as HTMLAudioElement).currentTime = 0;
+      
+      // For release pages, we may need to also update the UI
+      const progressBar = document.querySelector('.progress, .progbar_empty, .progbar_fill');
+      if (progressBar) {
+        // Force UI update if needed
+        const event = new Event('timeupdate');
+        (audioElement as HTMLAudioElement).dispatchEvent(event);
+      }
+      
+    } catch (error) {
+      console.error('Error in seekReset:', error);
+    }
   }
 
   public static seekForward(): void {

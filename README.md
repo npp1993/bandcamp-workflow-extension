@@ -29,9 +29,9 @@ This extension builds upon the work of three projects:
 | `n` | Play next track |
 | `p` | Play previous track |
 | `Shift + p` | Play first track in album |
-| `→` | Seek 10 seconds forward |
-| `←` | Seek 10 seconds backward |
-| `Shift + ←` | Seek to start of track |
+| `l` or `→` | Seek 10 seconds forward |
+| `h` or `←` | Seek 10 seconds backward |
+| `i` | Seek to start of track |
 | `↑` | Increase playback speed |
 | `↓` | Decrease playback speed |
 | `r` | Reset playback speed to normal |
