@@ -1,7 +1,5 @@
 TODO:
 
-remove code duplication
-
 implement from bandcamp extension suite:
 
 1. Advanced Mouse Playbar

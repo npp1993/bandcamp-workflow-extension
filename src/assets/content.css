@@ -27,6 +27,16 @@
 
 /**
  * ------------------------------------------------------------
+ * Advanced Mouse Playbar
+ * ------------------------------------------------------------
+ */
+/* Make playbar elements have a pointer cursor to indicate they're clickable */
+.progbar, .progbar_empty, .progress {
+  cursor: pointer !important;
+}
+
+/**
+ * ------------------------------------------------------------
  * Track
  * ------------------------------------------------------------
  */

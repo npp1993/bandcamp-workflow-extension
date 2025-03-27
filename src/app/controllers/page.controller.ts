@@ -5,6 +5,7 @@ import {CopyInfoController} from './copy-info.controller';
 import {AlbumController} from './album.controller';
 import {KeyboardController} from './keyboard.controller';
 import {WishlistController} from './wishlist.controller';
+import {PlaybarController} from './playbar.controller';
 
 export interface Controllers {
   speed: SpeedController;
@@ -49,6 +50,10 @@ export class PageController {
 
     // Initialize keyboard controller for both supported pages and wishlist page
     KeyboardController.start(this.controllers);
+
+    // Initialize the advanced mouse playbar controller
+    // This works on both regular pages and wishlist pages
+    PlaybarController.start();
   }
 
   public static init(): PageController {
