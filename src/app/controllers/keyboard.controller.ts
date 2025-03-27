@@ -8,6 +8,7 @@ enum Keys {
   I = 'I',
   N = 'N',
   P = 'P',
+  Q = 'Q',
   R = 'R',
   W = 'W',
   H = 'H',
@@ -38,7 +39,81 @@ export class KeyboardController {
     this.setEvents();
     this.setEventsWithShift();
     this.setEventsPreventing();
-    this.handleKeyboard();
+    
+    // Clear any existing event listeners (in case there are duplicates)
+    document.removeEventListener('keydown', this.handleKeyboardEvent);
+    
+    // Attach our new, simpler keyboard handler directly to the document
+    document.addEventListener('keydown', this.handleKeyboardEvent);
+    
+    console.log('Keyboard controller started with new direct event handling');
+  }
+  
+  // New direct event handler as a static property for easy binding/unbinding
+  private static handleKeyboardEvent = (e: KeyboardEvent): void => {
+    console.log(`Key pressed: "${e.key}" (code: ${e.code})`);
+    
+    // First, check if we're in an input field or similar
+    const target = e.target as Element;
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || 
+        (target as HTMLElement).isContentEditable) {
+      console.log('Ignoring key press in input element');
+      return;
+    }
+    
+    // Handle our specific shortcut keys
+    switch (e.key.toLowerCase()) {
+      case 'q':
+        console.log('Q key detected - toggling wishlist for entire release');
+        e.preventDefault();
+        BandcampFacade.toggleWishlist();
+        break;
+        
+      case 'w':
+        console.log('W key detected - toggling wishlist for current track');
+        e.preventDefault();
+        this.toggleWishlistTrack();
+        break;
+        
+      case 'i':
+        console.log('I key detected - seeking to start of track');
+        e.preventDefault();
+        BandcampFacade.seekReset();
+        break;
+        
+      case ' ':
+        console.log('Space key detected - toggling play/pause');
+        e.preventDefault();
+        BandcampFacade.togglePlayPause();
+        break;
+        
+      case 'c':
+        console.log('C key detected - copying track info');
+        if (this.controllers && this.controllers.copyInfo) {
+          this.controllers.copyInfo.handleClick();
+        }
+        break;
+        
+      case 'p':
+        // Check for shift modifier for first track functionality
+        if (e.shiftKey) {
+          console.log('Shift+P detected - playing first track');
+          BandcampFacade.playFirstTrack();
+        } else {
+          console.log('P key detected - playing previous track');
+          this.handlePreviousTrack();
+        }
+        e.preventDefault();
+        break;
+        
+      case 'n':
+        console.log('N key detected - playing next track');
+        e.preventDefault();
+        this.handleNextTrack();
+        break;
+        
+      // Add other key handlers as needed
+    }
   }
 
   private static setEventsPreventing() {
@@ -47,6 +122,7 @@ export class KeyboardController {
       [Keys.H]: true,
       [Keys.I]: true,
       [Keys.L]: true,
+      [Keys.Q]: true,
       [Keys.ArrowLeft]: true,
       [Keys.ArrowRight]: true,
       [Keys.ArrowUp]: true,
@@ -57,7 +133,6 @@ export class KeyboardController {
   private static setEventsWithShift() {
     this.eventsWithShift = {
       [Keys.P]: () => BandcampFacade.playFirstTrack(),
-      [Keys.W]: () => this.toggleWishlistRelease(),
       [Keys.R]: () => this.controllers.speed.reset(),
     };
   }
@@ -68,8 +143,9 @@ export class KeyboardController {
       [Keys.Space]: () => BandcampFacade.togglePlayPause(),
       [Keys.P]: () => this.handlePreviousTrack(),
       [Keys.N]: () => this.handleNextTrack(),
+      [Keys.Q]: () => this.toggleWishlistRelease(), // Add entire release to wishlist
       [Keys.R]: () => this.controllers.speed.reset(),
-      [Keys.W]: () => this.toggleWishlistTrack(), // Restore the original wishlist handling
+      [Keys.W]: () => this.toggleWishlistTrack(), // Toggle wishlist for current track
       [Keys.I]: () => BandcampFacade.seekReset(),
       [Keys.L]: () => BandcampFacade.seekForward(),
       [Keys.H]: () => BandcampFacade.seekBackward(),
@@ -113,16 +189,22 @@ export class KeyboardController {
         return;
       }
 
+      // Get the key and normalize it to uppercase for consistency
       const key = e.key.toUpperCase() as Keys;
       const {shiftKey, ctrlKey, metaKey, altKey} = e;
 
-      // ignore if key is not in events
+      // Add debug logging to help diagnose issues
+      console.log(`Key pressed: ${key}, keyCode: ${e.keyCode}`);
+
+      // Check if this key is in our events map
       if (Object.keys(this.events).indexOf(key) === -1) {
+        console.log(`Key ${key} not found in events map`);
         return;
       }
 
       // handle events with shift
       if (shiftKey && this.eventsWithShift[key]) {
+        console.log(`Executing shift + ${key} action`);
         this.eventsWithShift[key]();
         return;
       }
@@ -133,6 +215,7 @@ export class KeyboardController {
           e.preventDefault();
         }
 
+        console.log(`Executing ${key} action`);
         this.events[key]();
       }
     });

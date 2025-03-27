@@ -25,7 +25,7 @@ This extension builds upon the work of three projects:
 | `Space` | Play/pause current track |
 | `c` | Copy current track info to clipboard |
 | `w` | Add current track to wishlist |
-| `Shift + w` | Add entire release to wishlist |
+| `q` | Add entire release to wishlist |
 | `n` | Play next track |
 | `p` | Play previous track |
 | `Shift + p` | Play first track in album |

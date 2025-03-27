@@ -305,14 +305,96 @@ export class BandcampFacade {
   }
 
   public static toggleWishlist(): void {
-    const {className} = this.wishlistButton;
-
-    if (className === BandcampWishlistState.Liked) {
-      const el = this.wishlistButton.children[1] as HTMLSpanElement;
-      el.click();
-    } else if (className === BandcampWishlistState.NotLiked) {
-      const el = this.wishlistButton.firstElementChild as HTMLSpanElement;
-      el.click();
+    try {
+      console.log('Attempting to toggle wishlist for entire release');
+      
+      // Get the collect-item element which is the main container for wishlist functionality
+      const collectItem = document.getElementById('collect-item');
+      if (!collectItem) {
+        console.warn('Could not find collect-item element');
+        return;
+      }
+      
+      console.log('Found collect-item with class:', collectItem.className);
+      
+      // Check if the item is already wishlisted (based on className)
+      if (collectItem.classList.contains('wishlisted')) {
+        console.log('Item is in wishlist - attempting to remove');
+        
+        // Try to find the action element within wishlisted-msg that has the remove function
+        const removeAction = document.querySelector('#wishlisted-msg .action[title*="Remove"]');
+        if (removeAction) {
+          console.log('Found remove action element, clicking it directly');
+          (removeAction as HTMLElement).click();
+          return;
+        }
+        
+        // Try to use the direct link that might be labeled as "In Wishlist"
+        const inWishlistLink = document.querySelector('#wishlisted-msg .collect-msg a');
+        if (inWishlistLink) {
+          console.log('Found In Wishlist link, clicking it');
+          (inWishlistLink as HTMLElement).click();
+          return;
+        }
+        
+        // Try alternative method to find any element with "Remove" in its title
+        const removeElements = Array.from(document.querySelectorAll('[title*="Remove"]'));
+        if (removeElements.length > 0) {
+          console.log('Found element with Remove in title, clicking it');
+          (removeElements[0] as HTMLElement).click();
+          return;
+        }
+        
+        // Last resort: try to simulate a proper DOM event on the element
+        console.log('Attempting to dispatch custom click event on wishlisted-msg');
+        const wishlistedMsg = document.getElementById('wishlisted-msg');
+        if (wishlistedMsg) {
+          // Create and dispatch a more natural mousedown/mouseup/click sequence
+          ['mousedown', 'mouseup', 'click'].forEach(eventType => {
+            const event = new MouseEvent(eventType, {
+              view: window,
+              bubbles: true,
+              cancelable: true
+            });
+            wishlistedMsg.dispatchEvent(event);
+          });
+          return;
+        }
+      } else {
+        console.log('Item is not in wishlist - attempting to add');
+        
+        // Find the "Wishlist" button to add to wishlist
+        const addButton = document.querySelector('#wishlist-msg a');
+        
+        if (addButton) {
+          console.log('Found add button, clicking it');
+          (addButton as HTMLElement).click();
+          return;
+        }
+        
+        // Try alternative method to find the add button by container
+        const wishlistMsg = document.getElementById('wishlist-msg');
+        if (wishlistMsg) {
+          console.log('Found wishlist-msg container, clicking it');
+          (wishlistMsg as HTMLElement).click();
+          return;
+        }
+        
+        // Last resort: find by text content
+        const wishlistText = Array.from(document.querySelectorAll('a')).filter(
+          a => a.textContent?.trim().toLowerCase() === 'wishlist'
+        );
+        
+        if (wishlistText.length > 0) {
+          console.log('Found "Wishlist" text, clicking it');
+          (wishlistText[0] as HTMLElement).click();
+          return;
+        }
+      }
+      
+      console.warn('Could not find appropriate wishlist button to click');
+    } catch (error) {
+      console.error('Error in toggleWishlist:', error);
     }
   }
 
