@@ -1,7 +1,6 @@
 import {BandcampFacade} from '../facades/bandcamp.facade';
 import {GridLayout} from '../layouts/grid.layout';
 import {SpeedController} from './speed.controller';
-import {VolumeController} from './volume.controller';
 import {CopyInfoController} from './copy-info.controller';
 import {AlbumController} from './album.controller';
 import {KeyboardController} from './keyboard.controller';
@@ -9,7 +8,6 @@ import {WishlistController} from './wishlist.controller';
 
 export interface Controllers {
   speed: SpeedController;
-  volume: VolumeController;
   copyInfo: CopyInfoController;
   album: AlbumController;
   wishlist?: WishlistController;
@@ -22,7 +20,6 @@ export class PageController {
     // Initialize the controllers with required properties
     this.controllers = {
       speed: null,
-      volume: null,
       copyInfo: null,
       album: null,
       wishlist: null
@@ -41,10 +38,8 @@ export class PageController {
     // Initialize other controllers only for supported pages
     if (BandcampFacade.isPageSupported) {
       this.controllers.speed = new SpeedController();
-      this.controllers.volume = new VolumeController();
       this.controllers.copyInfo = new CopyInfoController();
       this.controllers.album = new AlbumController();
-
       BandcampFacade.arrange();
       this.createRows();
     }
@@ -59,32 +54,39 @@ export class PageController {
 
   private createSpeedRow() {
     const grid = new GridLayout();
-
     grid.populate({
       leftButton: this.controllers.speed.resetButton.node.getNode(),
       topContent: this.controllers.speed.labels.node,
       bottomContent: this.controllers.speed.slider.node.getNode(),
       rightButton: this.controllers.speed.stretchButton.node.getNode(),
     });
-
     BandcampFacade.insertBelowPlayer(grid.getNode());
   }
 
-  private createVolumeRow() {
+  private createCopyInfoRow() {
     const container = new GridLayout();
-
+    
+    // Create empty span elements for the layout
+    const leftButton = document.createElement('span');
+    const topContent = document.createElement('span');
+    
+    // Create a hidden input element that won't be visible
+    const bottomContent = document.createElement('input');
+    bottomContent.style.display = 'none';
+    
     container.populate({
-      leftButton: this.controllers.volume.button.node.getNode(),
-      topContent: this.controllers.volume.label.node.getNode(),
-      bottomContent: this.controllers.volume.slider.node.getNode(),
+      leftButton,
+      topContent,
+      bottomContent,
       rightButton: this.controllers.copyInfo.button.node.getNode(),
     });
-
+    
     BandcampFacade.insertBelowPlayer(container.getNode());
   }
 
   private createRows() {
     this.createSpeedRow();
-    this.createVolumeRow();
+    // We're no longer creating the copy info row to remove the button from the UI
+    // The functionality is still accessible via keyboard shortcut 'C'
   }
 }

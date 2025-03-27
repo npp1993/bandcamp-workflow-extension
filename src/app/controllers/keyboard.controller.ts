@@ -5,16 +5,16 @@ import {Controllers} from './page.controller';
 enum Keys {
   Space = ' ',
   C = 'C',
-  J = 'J',
-  H = 'H',
-  K = 'K',
-  L = 'L',
   N = 'N',
   P = 'P',
   R = 'R',
   W = 'W',
+  H = 'H',
+  L = 'L',
   ArrowLeft = 'ARROWLEFT',
   ArrowRight = 'ARROWRIGHT',
+  ArrowUp = 'ARROWUP',
+  ArrowDown = 'ARROWDOWN',
 }
 
 export class KeyboardController {
@@ -45,10 +45,10 @@ export class KeyboardController {
       [Keys.Space]: true,
       [Keys.H]: true,
       [Keys.L]: true,
-      [Keys.J]: true,
-      [Keys.K]: true,
       [Keys.ArrowLeft]: true,
       [Keys.ArrowRight]: true,
+      [Keys.ArrowUp]: true,
+      [Keys.ArrowDown]: true,
     };
   }
 
@@ -58,8 +58,6 @@ export class KeyboardController {
       [Keys.W]: () => this.toggleWishlistRelease(),
       [Keys.R]: () => this.controllers.speed.reset(),
       [Keys.H]: () => BandcampFacade.seekReset(),
-      [Keys.K]: () => this.controllers.speed.increase(),
-      [Keys.J]: () => this.controllers.speed.decrease(),
     };
   }
 
@@ -69,14 +67,14 @@ export class KeyboardController {
       [Keys.Space]: () => BandcampFacade.togglePlayPause(),
       [Keys.P]: () => this.handlePreviousTrack(),
       [Keys.N]: () => this.handleNextTrack(),
-      [Keys.R]: () => this.controllers.volume.reset(),
+      [Keys.R]: () => this.controllers.speed.reset(),
       [Keys.W]: () => this.toggleWishlistTrack(), // Restore the original wishlist handling
       [Keys.L]: () => BandcampFacade.seekForward(),
       [Keys.H]: () => BandcampFacade.seekBackward(),
-      [Keys.K]: () => this.controllers.volume.increase(),
-      [Keys.J]: () => this.controllers.volume.decrease(),
-      [Keys.ArrowLeft]: () => this.handlePreviousTrack(),
-      [Keys.ArrowRight]: () => this.handleNextTrack(),
+      [Keys.ArrowLeft]: () => BandcampFacade.seekBackward(),
+      [Keys.ArrowRight]: () => BandcampFacade.seekForward(),
+      [Keys.ArrowUp]: () => this.controllers.speed.increase(),
+      [Keys.ArrowDown]: () => this.controllers.speed.decrease(),
     };
   }
 

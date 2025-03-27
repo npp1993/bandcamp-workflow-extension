@@ -216,12 +216,6 @@ export class BandcampFacade {
     this.audio.preservesPitch = isStretch;
   }
 
-  public static setVolume(volume: number): void {
-    if (this.audio.volume !== volume) {
-      this.audio.volume = volume;
-    }
-  }
-
   public static insertBelowPlayer(element: HTMLElement): void {
     const player = BandcampFacade.player;
     player.insertAdjacentElement('afterend', element);

@@ -10,7 +10,7 @@ This extension builds upon the work of three projects:
 - [bandcamp-streamer](https://github.com/AFlowOfCode/bandcamp-streamer) by A Flow of Code and Lucas Heymès - Streaming functionality
 - [BandcampEnhancementSuite](https://github.com/sabjorn/BandcampEnhancementSuite) by S. A. Bjørn - Additional features and improvements
 
-## 📖 Features
+## Features
 
 - Wishlist individual tracks directly from release pages
 - Copy track info to clipboard with a single keystroke
@@ -18,24 +18,24 @@ This extension builds upon the work of three projects:
 - Streamlined wishlist management
 - Playback speed adjustment with vinyl and stretched modes
 
-## ⌨️ Keyboard Shortcuts
+## Keyboard Shortcuts
 
 | Shortcut | Function |
 |----------|----------|
 | `Space` | Play/pause current track |
+| `C` | Copy current track info to clipboard |
 | `W` | Add current track to wishlist |
 | `Shift + W` | Add entire release to wishlist |
-| `n` | Play next track |
-| `p` | Play previous track |
+| `N` | Play next track |
+| `P` | Play previous track |
 | `Shift + P` | Play first track in album |
-| `l` | Seek 10 seconds forward |
-| `h` | Seek 10 seconds backward |
-| `C` | Copy current track info to clipboard |
-| `Shift + h` | Seek to start of track |
-| `Shift + ↑` | Increase playback speed |
-| `Shift + ↓` | Decrease playback speed |
-| `Shift + R` | Reset playback speed to normal |
+| `→` | Seek 10 seconds forward |
+| `←` | Seek 10 seconds backward |
+| `Shift + ←` | Seek to start of track |
+| `↑` | Increase playback speed |
+| `↓` | Decrease playback speed |
+| `R` | Reset playback speed to normal |
 
-## 📝 License
+## License
 
 MIT © 2021-2025 - See [LICENSE](LICENSE) file for details
