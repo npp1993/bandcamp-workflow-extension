@@ -70,7 +70,7 @@ export class KeyboardController {
       [Keys.P]: () => this.handlePreviousTrack(),
       [Keys.N]: () => this.handleNextTrack(),
       [Keys.R]: () => this.controllers.volume.reset(),
-      [Keys.W]: () => this.toggleWishlistTrack(),
+      [Keys.W]: () => this.toggleWishlistTrack(), // Restore the original wishlist handling
       [Keys.L]: () => BandcampFacade.seekForward(),
       [Keys.H]: () => BandcampFacade.seekBackward(),
       [Keys.K]: () => this.controllers.volume.increase(),
@@ -85,12 +85,19 @@ export class KeyboardController {
   }
 
   private static toggleWishlistTrack() {
-    // fallback if current page is a track
+    // If we're on the wishlist page, toggle the current track in the player
+    if (BandcampFacade.isWishlistPage) {
+      BandcampFacade.toggleCurrentTrackWishlist();
+      return;
+    }
+    
+    // If we're on a track page, toggle the entire track
     if (BandcampFacade.isTrack) {
       this.toggleWishlistRelease();
       return;
     }
 
+    // If we're on an album page with a specific track selected
     if (BandcampFacade.isAlbum && this.currentTrack) {
       this.currentTrack.click();
     }

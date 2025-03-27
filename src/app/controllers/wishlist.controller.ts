@@ -33,11 +33,8 @@ export class WishlistController {
           // Setup continuous playback
           BandcampFacade.setupWishlistContinuousPlayback();
           
-          // Add controls to the page
+          // Add controls to the player
           this.addWishlistControls();
-          
-          // Add a note about spacebar functionality
-          this.addSpacebarNote();
           
           console.log('Wishlist controller initialized. Press spacebar to start playing.');
         } else {
@@ -52,100 +49,62 @@ export class WishlistController {
   }
 
   /**
-   * Add wishlist controls to the page
+   * Add wishlist controls to the player area
    */
   private addWishlistControls(): void {
     try {
-      // Try different possible containers
-      let container = null;
-      const possibleContainers = [
-        '.collection-header',
-        '.fan-collection-header',
-        '.collection-title-details',
-        '.collection-items',
-        '#collection-items',
-        '.collection-grid',
-        '.fan-collection',
-        '#fan-collection'
+      // Look for the player controls
+      const playerSelectors = [
+        '.carousel-player-inner .controls-extra',
+        '.carousel-player-inner .col-4-15.controls-extra',
+        '.col.controls-extra',
+        '.col.col-4-15.controls-extra'
       ];
-
-      // Find the first container that exists
-      for (const selector of possibleContainers) {
-        const element = document.querySelector(selector);
+      
+      let controlsContainer: HTMLElement = null;
+      
+      // Try to find the player controls
+      for (const selector of playerSelectors) {
+        const element = document.querySelector(selector) as HTMLElement;
         if (element) {
-          container = element;
+          controlsContainer = element;
           break;
         }
       }
-
-      // If we still don't have a container, create one at the top of the body
-      if (!container) {
-        console.warn('Could not find suitable container for wishlist controls, creating one');
-        container = document.createElement('div');
-        container.className = 'bandcamp-plus-created-container';
-        container.style.cssText = 'padding: 20px; margin: 0 auto; max-width: 1140px;';
-        
-        const mainContent = document.querySelector('#pagedata')?.parentElement;
-        if (mainContent) {
-          mainContent.insertBefore(container, mainContent.firstChild);
+      
+      // If we couldn't find the player controls, try to find the player itself
+      if (!controlsContainer) {
+        const playerElement = document.querySelector('.carousel-player-inner') as HTMLElement;
+        if (playerElement) {
+          // Create a new div to add to the player
+          controlsContainer = document.createElement('div');
+          controlsContainer.className = 'col col-4-15 bandcamp-plus-controls';
+          controlsContainer.style.cssText = 'display: flex; align-items: center; justify-content: center;';
+          
+          // Add it to the player
+          playerElement.appendChild(controlsContainer);
         } else {
-          document.body.insertBefore(container, document.body.firstChild);
+          console.warn('Could not find player element to add controls');
+          return;
         }
       }
 
-      // Create control container
-      const controlsContainer = document.createElement('div');
-      controlsContainer.className = 'bandcamp-plus__wishlist-controls';
-      controlsContainer.style.cssText = 'padding: 10px; margin: 10px 0; background-color: rgba(0,0,0,0.05); border-radius: 4px;';
-
-      // Create play all button
-      const playAllButton = document.createElement('button');
-      playAllButton.textContent = 'Stream Wishlist';
-      playAllButton.style.cssText = 'padding: 5px 15px; margin-right: 10px; cursor: pointer; background-color: #1da0c3; color: white; border: none; border-radius: 4px;';
-      playAllButton.addEventListener('click', () => {
+      // Create our stream button
+      const streamButton = document.createElement('button');
+      streamButton.className = 'bandcamp-plus-stream-button';
+      streamButton.textContent = 'Stream Wishlist';
+      streamButton.style.cssText = 'padding: 8px 15px; margin: 0 10px; cursor: pointer; background-color: #1da0c3; color: white; border: none; border-radius: 4px; font-size: 13px; font-weight: bold;';
+      streamButton.title = 'Stream your wishlist - Press spacebar to play/pause, left/right arrows to navigate';
+      
+      streamButton.addEventListener('click', () => {
         BandcampFacade.startWishlistPlayback();
       });
 
-      // Create info text
-      const infoText = document.createElement('span');
-      infoText.textContent = 'Use left/right arrow keys or P/N to navigate tracks';
-      infoText.style.cssText = 'margin-left: 10px; color: #666;';
-
-      // Add elements to container
-      controlsContainer.appendChild(playAllButton);
-      controlsContainer.appendChild(infoText);
-
-      // Add container to page - append as the first child if possible
-      if (container.firstChild) {
-        container.insertBefore(controlsContainer, container.firstChild);
-      } else {
-        container.appendChild(controlsContainer);
-      }
+      // Add the button to the controls container
+      controlsContainer.appendChild(streamButton);
+      
     } catch (error) {
       console.error('Error adding wishlist controls:', error);
-    }
-  }
-
-  /**
-   * Add a note about spacebar functionality
-   */
-  private addSpacebarNote(): void {
-    try {
-      const controlsContainer = document.querySelector('.bandcamp-plus__wishlist-controls');
-      if (!controlsContainer) return;
-      
-      // Check if note already exists
-      if (controlsContainer.querySelector('.spacebar-note')) return;
-      
-      // Create spacebar note
-      const spacebarNote = document.createElement('div');
-      spacebarNote.className = 'spacebar-note';
-      spacebarNote.textContent = 'Press spacebar to play/pause';
-      spacebarNote.style.cssText = 'margin-top: 8px; color: #666; font-style: italic;';
-      
-      controlsContainer.appendChild(spacebarNote);
-    } catch (error) {
-      console.error('Error adding spacebar note:', error);
     }
   }
 }

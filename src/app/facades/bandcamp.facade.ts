@@ -527,4 +527,46 @@ export class BandcampFacade {
       playButton.click();
     }
   }
+
+  /**
+   * Toggle the current track in the wishlist
+   */
+  public static toggleCurrentTrackWishlist(): void {
+    try {
+      if (!this.isLoggedIn) {
+        console.warn('User is not logged in, cannot toggle wishlist');
+        return;
+      }
+      
+      // Find the currently playing track's wishlist controls
+      const currentPlayer = document.querySelector('.carousel-player-inner');
+      if (!currentPlayer) return;
+      
+      // Look for wishlist controls in the player
+      const wishlistControls = currentPlayer.querySelector('.item-collection-controls');
+      if (!wishlistControls) return;
+      
+      // Check if it's already wishlisted
+      const isWishlisted = wishlistControls.classList.contains('wishlisted');
+      
+      // Find the appropriate button to click
+      if (isWishlisted) {
+        // Find the "in wishlist" button (to remove from wishlist)
+        const removeButton = wishlistControls.querySelector('.wishlisted-msg a');
+        if (removeButton) {
+          console.log('Removing current track from wishlist');
+          (removeButton as HTMLElement).click();
+        }
+      } else {
+        // Find the "wishlist" button (to add to wishlist)
+        const addButton = wishlistControls.querySelector('.wishlist-msg a');
+        if (addButton) {
+          console.log('Adding current track to wishlist');
+          (addButton as HTMLElement).click();
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling current track wishlist:', error);
+    }
+  }
 }
