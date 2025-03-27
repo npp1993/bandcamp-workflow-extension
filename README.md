@@ -1,4 +1,4 @@
-# Bandcamp Workflow Enhancments
+# Bandcamp Workflow Extension
 
 A browser extension for [Bandcamp](https://www.bandcamp.com/) that adds numerous features and keyboard shortcuts to improve your music browsing workflow.
 
@@ -23,18 +23,18 @@ This extension builds upon the work of three projects:
 | Shortcut | Function |
 |----------|----------|
 | `Space` | Play/pause current track |
-| `C` | Copy current track info to clipboard |
-| `W` | Add current track to wishlist |
-| `Shift + W` | Add entire release to wishlist |
-| `N` | Play next track |
-| `P` | Play previous track |
-| `Shift + P` | Play first track in album |
+| `c` | Copy current track info to clipboard |
+| `w` | Add current track to wishlist |
+| `Shift + w` | Add entire release to wishlist |
+| `n` | Play next track |
+| `p` | Play previous track |
+| `Shift + p` | Play first track in album |
 | `→` | Seek 10 seconds forward |
 | `←` | Seek 10 seconds backward |
 | `Shift + ←` | Seek to start of track |
 | `↑` | Increase playback speed |
 | `↓` | Decrease playback speed |
-| `R` | Reset playback speed to normal |
+| `r` | Reset playback speed to normal |
 
 ## License
 

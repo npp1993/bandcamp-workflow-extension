@@ -1,16 +1,14 @@
 {
-  "name": "Bandcamp+",
-  "short_name": "bandcamp-plus",
-  "description": "Add multiple features to bandcamp.com (NPP hotkeys)",
-  "version": "3.3.1",
+  "name": "Bandcamp Workflow Extension",
+  "short_name": "bandcamp-workflow-Extension",
+  "description": "Enhance Bandcamp browsing workflow",
+  "version": "1.0.0",
   "manifest_version": 3,
   "icons": {
-    "512": "assets/bandcamp-plus-icon.png"
   },
   "action": {
-    "default_title": "Bandcamp+",
+    "default_title": "Bandcamp Workflow Extension",
     "default_icon": {
-      "512": "assets/bandcamp-plus-icon.png"
     }
   },
   "content_scripts": [
