@@ -183,36 +183,55 @@ export class DownloadHelperService {
    */
   private getDownloadPostamble(): string {
     return `
-DEFAULT_BATCH_SIZE=5
+# Configuration
+DEFAULT_BATCH_SIZE=3
 
+# Function to download a file silently, with minimal output
 download_file() {
     local url="$1"
+    local file_id="$2"
+    local filename=$(basename "$url" | sed 's/\?.*//')
     
-    if curl -L --fail -OJ "$url" 2>/dev/null; then
-        echo -n "."
+    # Use curl with silent mode, only showing errors
+    # -L: follow redirects
+    # -O: save with remote filename
+    # -J: use content-disposition header filename if available
+    # -s: silent mode
+    if curl -L -O -J -s "$url"; then
         return 0
     else
-        echo -n "x"
         return 1
     fi
 }
 
+# Variables
 TOTAL_URLS=\${#URLS[@]}
 COMPLETED=0
 FAILED=0
 BATCH_SIZE=\${1:-$DEFAULT_BATCH_SIZE}
+
+# Instructions
 if [ "$BATCH_SIZE" -eq "$DEFAULT_BATCH_SIZE" ] && [ -z "$1" ]; then
-    echo "note: the BATCH_SIZE can be set with a numerical argument after the command. e.g. bash this_script.txt 10"
+    echo "Note: You can set the number of concurrent downloads with: $0 <number>"
+    echo "      For example: $0 5"
 fi
 
-echo "Beginning parallel download of $TOTAL_URLS files (batch size: $BATCH_SIZE)"
+echo ""
+echo "=== Starting download of $TOTAL_URLS files (concurrent downloads: $BATCH_SIZE) ==="
+echo ""
+
+# Main download loop
 for ((i=0; i<TOTAL_URLS; i+=BATCH_SIZE)); do
     pids=()
+    
+    # Start a batch of downloads
     for ((j=i; j<i+BATCH_SIZE && j<TOTAL_URLS; j++)); do
-        download_file "\${URLS[j]}" &
+        file_id=$((j+1))
+        download_file "\${URLS[j]}" "$file_id" &
         pids+=($!)
     done
     
+    # Wait for all downloads in this batch to complete
     for pid in "\${pids[@]}"; do
         wait $pid
         status=$?
@@ -221,18 +240,27 @@ for ((i=0; i<TOTAL_URLS; i+=BATCH_SIZE)); do
         else
             ((FAILED++))
         fi
+        
+        # Print progress after each file completes
+        percent=$((COMPLETED * 100 / TOTAL_URLS))
+        echo "Progress: $COMPLETED/$TOTAL_URLS files ($percent%)"
     done
 done
 
 echo ""
 if [ $FAILED -eq 0 ]; then
-    echo "Successfully downloaded $TOTAL_URLS files"
+    echo "SUCCESS: Downloaded all $TOTAL_URLS files"
 else
-    echo "$FAILED files failed to download"
+    echo "WARNING: $FAILED of $TOTAL_URLS files failed to download"
 fi
+
 echo ""
-echo "Press any key to exit..."
+# Use stty -echo to suppress input display, then read the key, then restore with stty echo
+echo -n "Press any key to exit..."
+stty -echo
 read -n 1
+stty echo
+echo # Add a newline after the keypress
 
 exit $FAILED
 `;

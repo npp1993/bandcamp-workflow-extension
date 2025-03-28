@@ -10,6 +10,8 @@ This extension builds upon the work of three projects:
 - [bandcamp-streamer](https://github.com/AFlowOfCode/bandcamp-streamer) by A Flow of Code and Lucas Heymès - Streaming functionality
 - [BandcampEnhancementSuite](https://github.com/sabjorn/BandcampEnhancementSuite) by S. A. Bjørn - Additional features and improvements
 
+Beyond that, it was completely built with VS Code Copilot's Agent Mode.
+
 ## Features
 
 - Wishlist individual tracks directly from release pages
