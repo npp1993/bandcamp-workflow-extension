@@ -109,3 +109,49 @@
   margin-top: -2px;
   cursor: pointer;
 }
+
+/**
+ * ------------------------------------------------------------
+ * Download Helper Button
+ * ------------------------------------------------------------
+ */
+.bandcamp-workflow-download-all {
+  display: inline-block;
+  padding: 8px 15px;
+  background-color: #619aa9;
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  margin: 10px 0;
+  transition: background-color 0.2s ease;
+}
+
+.bandcamp-workflow-download-all:hover {
+  background-color: #4c7c89;
+  text-decoration: none;
+}
+
+.bandcamp-workflow-download-all[disabled] {
+  opacity: 0.6;
+  cursor: default;
+  background-color: #888;
+}
+
+/* Animation for "preparing download..." */
+@keyframes loadingDots {
+  0% { content: ""; }
+  25% { content: "."; }
+  50% { content: ".."; }
+  75% { content: "..."; }
+  100% { content: ""; }
+}
+
+.bandcamp-workflow-download-all[disabled]::after {
+  content: "";
+  display: inline-block;
+  animation: loadingDots 1.5s infinite;
+  width: 1.1em;
+  text-align: left;
+}

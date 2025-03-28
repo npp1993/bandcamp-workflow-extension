@@ -6,12 +6,14 @@ import {AlbumController} from './album.controller';
 import {KeyboardController} from './keyboard.controller';
 import {WishlistController} from './wishlist.controller';
 import {PlaybarController} from './playbar.controller';
+import {DownloadHelperController} from './download-helper.controller';
 
 export interface Controllers {
   speed: SpeedController;
   copyInfo: CopyInfoController;
   album: AlbumController;
   wishlist?: WishlistController;
+  downloadHelper?: DownloadHelperController;
 }
 
 /**
@@ -26,8 +28,14 @@ export class PageController {
       speed: null,
       copyInfo: null,
       album: null,
-      wishlist: null
+      wishlist: null,
+      downloadHelper: null
     };
+
+    // Initialize download helper controller for download pages
+    if (DownloadHelperController.isDownloadPage()) {
+      this.controllers.downloadHelper = new DownloadHelperController();
+    }
 
     // Initialize wishlist controller for wishlist pages
     if (BandcampFacade.isWishlistPage) {
