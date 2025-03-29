@@ -65,13 +65,6 @@ export class KeyboardController {
         BandcampFacade.togglePlayPause();
         break;
         
-      case 'c':
-        console.log('C key detected - copying track info');
-        if (this.controllers && this.controllers.copyInfo) {
-          this.controllers.copyInfo.handleClick();
-        }
-        break;
-        
       case 'p':
         // Check for shift modifier for first track functionality
         if (e.shiftKey) {

@@ -15,7 +15,6 @@ Beyond that, it was completely built with VS Code Copilot's Agent Mode.
 ## Features
 
 - Wishlist individual tracks directly from release pages
-- Copy track info to clipboard with a single keystroke
 - Intuitive keyboard shortcuts for navigating within and between tracks
 - Streamlined wishlist management
 - Playback speed adjustment with vinyl and stretched modes
@@ -25,7 +24,6 @@ Beyond that, it was completely built with VS Code Copilot's Agent Mode.
 | Shortcut | Function |
 |----------|----------|
 | `Space` | Play/pause current track |
-| `c` | Copy current track info to clipboard |
 | `w` | Add current track to wishlist |
 | `q` | Add entire release to wishlist |
 | `n` | Play next track |
