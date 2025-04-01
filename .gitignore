@@ -1,6 +1,7 @@
 node_modules/
 dist/
 packages/
+example_webpages/
 .eslintcache
 coverage
 /.idea/sonarlint/issuestore/
