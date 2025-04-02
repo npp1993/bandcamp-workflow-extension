@@ -6,3 +6,4 @@ example_webpages/
 coverage
 /.idea/sonarlint/issuestore/
 .DS_Store
+PROMPT.md

@@ -1987,16 +1987,204 @@ export class BandcampFacade {
         return;
       }
       
-      // Look for wishlist toggle elements within the current item
-      const wishlistButton = currentItem.querySelector('.wishlist-button, .collect-item, [title*="wishlist"], [title*="Wishlist"]');
+      // Try to find the track ID for this item to use in the API call
+      const trackId = currentItem.getAttribute('data-track-id') || 
+                      currentItem.getAttribute('data-item-id') || 
+                      currentItem.getAttribute('data-tralbum-id');
       
-      if (wishlistButton) {
-        console.log('Found wishlist button in current track, clicking it');
-        (wishlistButton as HTMLElement).click();
+      if (trackId) {
+        console.log(`Found track ID ${trackId} for wishlist toggle`);
+        
+        // Get the item_type (track or album) from URL if possible
+        let itemType = 'track'; // Default to track
+        const itemLinks = currentItem.querySelectorAll('a[href*="/album/"], a[href*="/track/"]');
+        if (itemLinks.length > 0) {
+          const href = itemLinks[0].getAttribute('href');
+          if (href && href.includes('/album/')) {
+            itemType = 'album';
+          }
+        }
+        
+        // First try to use direct XHR to toggle wishlist status
+        // We need fan_id which might be in the page data
+        const pageData = document.getElementById('pagedata');
+        if (pageData) {
+          const dataBlob = pageData.getAttribute('data-blob');
+          if (dataBlob) {
+            try {
+              const data = JSON.parse(dataBlob);
+              const fanId = data.fan_id || (data.fan_tralbum_data && data.fan_tralbum_data.fan_id);
+              
+              if (fanId) {
+                console.log(`Found fan ID: ${fanId}, attempting to toggle wishlist via API`);
+                
+                // Get the appropriate endpoint
+                // Since we're on the wishlist page, we want to remove (uncollect) the item
+                const endpoint = 'uncollect_item_cb';
+                
+                // Create the request payload
+                const payload = new URLSearchParams();
+                payload.append('fan_id', fanId.toString());
+                payload.append('item_id', trackId);
+                payload.append('item_type', itemType);
+                payload.append('platform', 'desktop');
+                
+                // Get a CSRF token if available
+                const csrfTokenElement = document.querySelector('meta[name="csrf-token"]');
+                if (csrfTokenElement) {
+                  const csrfToken = csrfTokenElement.getAttribute('content');
+                  if (csrfToken) {
+                    payload.append('csrf_token', csrfToken);
+                  }
+                }
+                
+                // Make the request
+                fetch(`https://${window.location.host}/${endpoint}`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                  },
+                  body: payload.toString(),
+                  credentials: 'same-origin'
+                })
+                .then(response => response.json())
+                .then(data => {
+                  console.log('Wishlist toggle response:', data);
+                  if (data.ok) {
+                    console.log('Successfully toggled wishlist status via API!');
+                    
+                    // Update UI - hide or remove the item since we're on the wishlist page
+                    currentItem.style.opacity = '0.5';
+                    currentItem.style.transition = 'opacity 0.3s';
+                    setTimeout(() => {
+                      // Either remove from DOM or hide
+                      if (currentItem.parentElement) {
+                        currentItem.parentElement.removeChild(currentItem);
+                        // Update the wishlist items array
+                        this._wishlistItems = this._wishlistItems.filter(item => item !== currentItem);
+                      } else {
+                        currentItem.style.display = 'none';
+                      }
+                    }, 300);
+                    
+                    return;
+                  }
+                })
+                .catch(error => {
+                  console.error('Error toggling wishlist via API:', error);
+                  // Fall back to clicking UI elements
+                  this.fallbackToWishlistButtonClick(currentItem);
+                });
+                
+                return;
+              }
+            } catch (parseError) {
+              console.error('Error parsing page data:', parseError);
+            }
+          }
+        }
+      }
+      
+      // If we couldn't use the API approach, fall back to clicking UI elements
+      this.fallbackToWishlistButtonClick(currentItem);
+      
+    } catch (error) {
+      console.error('Error toggling current track wishlist:', error);
+    }
+  }
+  
+  /**
+   * Fallback method to find and click wishlist button in the UI
+   * @param currentItem The current wishlist item element
+   */
+  private static fallbackToWishlistButtonClick(currentItem: HTMLElement): void {
+    console.log('Falling back to wishlist button click method');
+    
+    try {
+      // First, try to find the specifically styledin-wishlist element in the player
+      const inWishlistButton = document.querySelector('.wishlisted-msg a, .wishlisted-msg.collection-btn a');
+      if (inWishlistButton) {
+        console.log('Found in-wishlist button in player, clicking it');
+        (inWishlistButton as HTMLElement).click();
+        
+        // Wait for the XHR to complete and update the wishlist icon
+        setTimeout(() => {
+          // Update any heart/wishlist icons, but don't remove the item from the UI
+          this.updateWishlistIcons(currentItem, false);
+        }, 500);
+        
         return;
       }
       
-      // Try to find a link to the track/album page
+      // Look for wishlist toggle elements within the current item
+      const wishlistButton = currentItem.querySelector(
+        '.wishlisted-msg a, .wishlisted-msg.collection-btn a, ' +
+        '.item-collection-controls.wishlisted a, ' + 
+        '[title*="Remove this album from your wishlist"], [title*="Remove this track from your wishlist"]'
+      );
+      
+      if (wishlistButton) {
+        console.log('Found wishlist removal button in current track, clicking it');
+        (wishlistButton as HTMLElement).click();
+        
+        // Update UI after a short delay
+        setTimeout(() => {
+          // Just update the wishlist icons, don't remove the item
+          this.updateWishlistIcons(currentItem, false);
+        }, 500);
+        
+        return;
+      }
+      
+      // Try to find a button with "in wishlist" text specifically
+      const wishlistedElements = Array.from(document.querySelectorAll('a, span, .wishlisted-msg, [class*="wishlist"]'))
+        .filter(element => {
+          const text = element.textContent?.toLowerCase() || '';
+          const title = element.getAttribute('title')?.toLowerCase() || '';
+          return text.includes('in wishlist') || 
+                 text.includes('wishlisted') || 
+                 title.includes('remove') && title.includes('wishlist');
+        });
+      
+      if (wishlistedElements.length > 0) {
+        console.log('Found element with "in wishlist" text, clicking it');
+        
+        // Find the closest clickable parent or the element itself if it's clickable
+        let elementToClick = wishlistedElements[0] as HTMLElement;
+        if (elementToClick.tagName !== 'A' && elementToClick.tagName !== 'BUTTON') {
+          const clickableParent = elementToClick.closest('a, button, [role="button"]');
+          if (clickableParent) {
+            elementToClick = clickableParent as HTMLElement;
+          }
+        }
+        
+        elementToClick.click();
+        
+        // Update UI after a short delay
+        setTimeout(() => {
+          // Update wishlist icon state
+          this.updateWishlistIcons(currentItem, false);
+        }, 500);
+        
+        return;
+      }
+      
+      // If none of those specific approaches work, try finding elements in the control panel
+      const itemControls = document.querySelector('.item-collection-controls.wishlisted');
+      if (itemControls) {
+        console.log('Found item collection controls with wishlisted class');
+        const removalLink = itemControls.querySelector('.wishlisted-msg a') as HTMLElement;
+        if (removalLink) {
+          console.log('Found removal link in collection controls, clicking it');
+          removalLink.click();
+          
+          // Update UI after a short delay
+          setTimeout(() => this.updateWishlistIcons(currentItem, false), 500);
+          return;
+        }
+      }
+      
+      // Try to find a link to the track/album page as last resort
       const trackLink = currentItem.querySelector('a[href*="/track/"], a[href*="/album/"]');
       if (trackLink) {
         // Get the href and navigate to it
@@ -2018,8 +2206,93 @@ export class BandcampFacade {
       
       console.warn('Could not find any wishlist toggle or track link for the current track');
     } catch (error) {
-      console.error('Error toggling current track wishlist:', error);
+      console.error('Error in fallbackToWishlistButtonClick:', error);
     }
+  }
+  
+  /**
+   * Helper method to update wishlist icons without removing the item
+   * @param item The wishlist item to update
+   * @param isInWishlist Whether the item is in the wishlist or not
+   */
+  private static updateWishlistIcons(item: HTMLElement, isInWishlist: boolean): void {
+    console.log(`Updating wishlist icons (isInWishlist: ${isInWishlist})`);
+    
+    try {
+      // Find all wishlist-related UI elements
+      const heartIcons = item.querySelectorAll('.wishlist-icon, .fav-icon, [class*="heart"], .bc-ui2.icon.wishlist');
+      const itemControls = item.querySelector('.item-collection-controls') || 
+                          document.querySelector('.item-collection-controls');
+      
+      // Update heart icons if any
+      if (heartIcons.length > 0) {
+        heartIcons.forEach(icon => {
+          // Toggle filled/unfilled classes based on wishlist state
+          if (isInWishlist) {
+            icon.classList.remove('unfilled', 'empty');
+            icon.classList.add('filled');
+          } else {
+            icon.classList.remove('filled');
+            icon.classList.add('unfilled', 'empty');
+          }
+        });
+        console.log(`Updated ${heartIcons.length} heart icons`);
+      }
+      
+      // Update item controls classes if found
+      if (itemControls) {
+        if (isInWishlist) {
+          itemControls.classList.add('wishlisted');
+          itemControls.classList.remove('not-wishlisted');
+        } else {
+          itemControls.classList.remove('wishlisted');
+          itemControls.classList.add('not-wishlisted');
+        }
+        
+        // Toggle visibility of wishlist/wishlisted message elements
+        const wishlistMsg = itemControls.querySelector('.wishlist-msg');
+        const wishlistedMsg = itemControls.querySelector('.wishlisted-msg');
+        
+        if (wishlistMsg && wishlistedMsg) {
+          if (isInWishlist) {
+            wishlistMsg.classList.add('hidden');
+            wishlistedMsg.classList.remove('hidden');
+          } else {
+            wishlistMsg.classList.remove('hidden');
+            wishlistedMsg.classList.add('hidden');
+          }
+        }
+        
+        console.log('Updated item collection controls to reflect wishlist state');
+      }
+      
+      // Set a custom attribute to track state
+      item.setAttribute('data-bcwf-wishlisted', isInWishlist ? 'true' : 'false');
+      
+      // Add a subtle visual indication that the toggle worked
+      const originalBackground = item.style.backgroundColor;
+      item.style.transition = 'background-color 0.3s ease-out';
+      item.style.backgroundColor = isInWishlist ? 'rgba(0, 128, 0, 0.1)' : 'rgba(255, 0, 0, 0.1)';
+      
+      // Revert back after a moment
+      setTimeout(() => {
+        item.style.backgroundColor = originalBackground;
+      }, 300);
+      
+    } catch (error) {
+      console.error('Error updating wishlist icons:', error);
+    }
+  }
+  
+  /**
+   * Helper method to handle wishlist item removal UI updates
+   * @param item The wishlist item to update UI for
+   */
+  private static handleWishlistItemRemoval(item: HTMLElement): void {
+    console.log('Updating wishlist UI state (not removing item)');
+    
+    // Just update the wishlist icons instead of removing the item
+    this.updateWishlistIcons(item, false);
   }
 
   /**
@@ -2080,16 +2353,22 @@ export class BandcampFacade {
         '.item[data-item-id]'
       ];
       
+      let discoveryItems: HTMLElement[] = [];
+      
       for (const selector of selectors) {
         const items = document.querySelectorAll<HTMLElement>(selector);
         if (items && items.length > 0) {
           console.log(`Found ${items.length} discovery items with selector: ${selector}`);
-          return Array.from(items);
+          discoveryItems = Array.from(items);
+          break;
         }
       }
       
-      console.warn('No discovery items found');
-      return [];
+      if (discoveryItems.length === 0) {
+        console.warn('No discovery items found');
+      }
+      
+      return discoveryItems;
     } catch (error) {
       console.error('Error getting discovery items:', error);
       return [];
