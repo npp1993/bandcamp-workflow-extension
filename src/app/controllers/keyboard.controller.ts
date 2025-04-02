@@ -29,109 +29,101 @@ export class KeyboardController {
    * Main keyboard event handler
    */
   private static handleKeyboardEvent = (e: KeyboardEvent): void => {
-    console.log(`Key pressed: "${e.key}" (code: ${e.code})`);
-    
-    // Ignore keyboard shortcuts when typing in input fields
-    const target = e.target as Element;
-    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || 
-        (target as HTMLElement).isContentEditable) {
-      console.log('Ignoring key press in input element');
-      return;
-    }
-    
-    // Handle our specific shortcut keys
-    switch (e.key.toLowerCase()) {
-      case 'q':
-        console.log('Q key detected - toggling wishlist for entire release');
-        e.preventDefault();
-        BandcampFacade.toggleWishlist();
-        break;
-        
-      case 'w':
-        console.log('W key detected - toggling wishlist for current track');
-        e.preventDefault();
-        this.toggleWishlistTrack();
-        break;
-        
-      case 'i':
-        console.log('I key detected - seeking to start of track');
-        e.preventDefault();
-        BandcampFacade.seekReset();
-        break;
-        
-      case ' ':
-        console.log('Space key detected - toggling play/pause');
-        e.preventDefault();
-        BandcampFacade.togglePlayPause();
-        break;
-        
-      case 'p':
-        // Check for shift modifier for first track functionality
-        if (e.shiftKey) {
-          console.log('Shift+P detected - playing first track');
-          BandcampFacade.playFirstTrack();
-        } else {
-          console.log('P key detected - playing previous track');
-          this.handlePreviousTrack();
-        }
-        e.preventDefault();
-        break;
-        
-      case 'n':
-        console.log('N key detected - playing next track');
-        e.preventDefault();
-        this.handleNextTrack();
-        break;
-        
-      case 'h':
-        console.log('H key detected - seeking backward');
-        e.preventDefault();
-        BandcampFacade.seekBackward();
-        break;
-        
-      case 'l':
-        console.log('L key detected - seeking forward');
-        e.preventDefault();
-        BandcampFacade.seekForward();
-        break;
-        
-      case 'arrowleft':
-        console.log('ArrowLeft key detected - seeking backward');
-        e.preventDefault();
-        BandcampFacade.seekBackward();
-        break;
-        
-      case 'arrowright':
-        console.log('ArrowRight key detected - seeking forward');
-        e.preventDefault();
-        BandcampFacade.seekForward();
-        break;
-        
-      case 'arrowup':
-        console.log('ArrowUp key detected - increasing speed');
-        e.preventDefault();
-        if (this.controllers && this.controllers.speed) {
-          this.controllers.speed.increase();
-        }
-        break;
-        
-      case 'arrowdown':
-        console.log('ArrowDown key detected - decreasing speed');
-        e.preventDefault();
-        if (this.controllers && this.controllers.speed) {
-          this.controllers.speed.decrease();
-        }
-        break;
-        
-      case 'r':
-        // Check for shift modifier
-        if (e.shiftKey) {
-          console.log('Shift+R detected - resetting playback speed');
+    // Only log in debug mode - log once at the entry point
+    if (!["INPUT", "TEXTAREA", "SELECT"].includes((e.target as Element).tagName) && 
+        !(e.target as HTMLElement).isContentEditable) {
+      // Create a more condensed log format with key info
+      const modifiers = 
+        (e.shiftKey ? 'Shift+' : '') + 
+        (e.ctrlKey ? 'Ctrl+' : '') + 
+        (e.altKey ? 'Alt+' : '') + 
+        (e.metaKey ? 'Meta+' : '');
+      
+      console.log(`Key: ${modifiers}${e.key.toLowerCase()} (${e.code})`);
+      
+      // Handle our specific shortcut keys
+      switch (e.key.toLowerCase()) {
+        case 'q':
+          e.preventDefault();
+          BandcampFacade.toggleWishlist();
+          break;
+          
+        case 'w':
+          e.preventDefault();
+          this.toggleWishlistTrack();
+          break;
+          
+        case 'c':
+          e.preventDefault();
+          BandcampFacade.buyCurrentTrack();
+          break;
+          
+        case 'i':
+          e.preventDefault();
+          BandcampFacade.seekReset();
+          break;
+          
+        case ' ':
+          e.preventDefault();
+          BandcampFacade.togglePlayPause();
+          break;
+          
+        case 'p':
+          // Check for shift modifier for first track functionality
+          e.preventDefault();
+          if (e.shiftKey) {
+            BandcampFacade.playFirstTrack();
+          } else {
+            this.handlePreviousTrack();
+          }
+          break;
+          
+        case 'n':
+          e.preventDefault();
+          this.handleNextTrack();
+          break;
+          
+        case 'a':
+          // Load all items in wishlist page
+          e.preventDefault();
+          if (BandcampFacade.isWishlistPage) {
+            this.loadAllWishlistItems();
+          }
+          break;
+          
+        case 'h':
+        case 'arrowleft':
+          e.preventDefault();
+          BandcampFacade.seekBackward();
+          break;
+          
+        case 'l':
+        case 'arrowright':
+          e.preventDefault();
+          BandcampFacade.seekForward();
+          break;
+          
+        case 'arrowup':
+          e.preventDefault();
+          if (this.controllers && this.controllers.speed) {
+            this.controllers.speed.increase();
+          }
+          break;
+          
+        case 'arrowdown':
+          e.preventDefault();
+          if (this.controllers && this.controllers.speed) {
+            this.controllers.speed.decrease();
+          }
+          break;
+          
+        case 'r':
+          // e.preventDefault();
           if (this.controllers && this.controllers.speed) {
             this.controllers.speed.reset();
           }
-        }
-        break;
+          break;
+      }
     }
   }
 
@@ -177,5 +169,22 @@ export class KeyboardController {
     } else {
       BandcampFacade.getNext().click();
     }
+  }
+  
+  /**
+   * Load all wishlist items by clicking the "view all items" button
+   */
+  private static loadAllWishlistItems() {
+    BandcampFacade.loadAllWishlistItems()
+      .then(success => {
+        if (success) {
+          console.log('Successfully loaded all wishlist items');
+        } else {
+          console.warn('Failed to load all wishlist items');
+        }
+      })
+      .catch(error => {
+        console.error('Error loading all wishlist items:', error);
+      });
   }
 }

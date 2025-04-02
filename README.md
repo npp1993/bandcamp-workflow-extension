@@ -18,6 +18,8 @@ Beyond that, it was completely built with VS Code Copilot's Agent Mode.
 - Intuitive keyboard shortcuts for navigating within and between tracks
 - Streamlined wishlist management
 - Playback speed adjustment with vinyl and stretched modes
+- Add-to-Cart functionality for quickly adding tracks and albums from your wishlist to your cart
+- Automatic loading of all wishlist items
 
 ## Keyboard Shortcuts
 
@@ -35,6 +37,23 @@ Beyond that, it was completely built with VS Code Copilot's Agent Mode.
 | `↑` | Increase playback speed |
 | `↓` | Decrease playback speed |
 | `r` | Reset playback speed to normal |
+| `a` | Load all wishlist items (on wishlist page) |
+| `c` | Add current track to cart |
+
+## Add-to-Cart Feature
+
+The extension includes an Add-to-Cart feature that lets you quickly move tracks into your cart that are in your wishlist:
+
+1. When you click a buy link from your wishlist, the extension adds `?auto_buy=true` to the URL
+2. On track/album pages with this parameter, the extension will:
+   - Automatically find and click the buy button
+   - Set appropriate pricing:
+     - For items with a minimum price, it sets exactly that amount
+     - For "name your price" tracks, it sets $1.00
+     - For "name your price" albums, it sets $5.00. Consider increasing this for albums)
+   - Add the item to your cart
+
+This feature is only activated when the `auto_buy=true` parameter is explicitly included in the URL.
 
 ## License
 

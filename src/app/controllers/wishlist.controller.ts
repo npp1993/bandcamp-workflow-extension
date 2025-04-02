@@ -26,24 +26,47 @@ export class WishlistController {
     // Wait for the page to fully load
     setTimeout(() => {
       try {
-        // Load wishlist items
-        const items = BandcampFacade.loadWishlistItems();
-        
-        if (items.length > 0) {
-          // Setup continuous playback
-          BandcampFacade.setupWishlistContinuousPlayback();
+        // First, load all wishlist items by clicking the "view all" button
+        console.log('Attempting to load all wishlist items...');
+        BandcampFacade.loadAllWishlistItems().then(success => {
+          if (success) {
+            console.log('Successfully loaded all wishlist items');
+          } else {
+            console.log('Unable to load all wishlist items, proceeding with visible items');
+          }
           
-          // Add controls to the player
-          this.addWishlistControls();
+          // Now load the wishlist items that are visible
+          const items = BandcampFacade.loadWishlistItems();
           
-          console.log('Wishlist controller initialized. Press spacebar to start playing.');
-        } else {
-          console.warn('No wishlist items found during initialization');
-        }
-        
-        this.hasInitialized = true;
+          if (items.length > 0) {
+            // Setup continuous playback
+            BandcampFacade.setupWishlistContinuousPlayback();
+            
+            // Add controls to the player
+            this.addWishlistControls();
+            
+            console.log('Wishlist controller initialized. Press spacebar to start playing.');
+          } else {
+            console.warn('No wishlist items found during initialization');
+          }
+          
+          this.hasInitialized = true;
+        }).catch(error => {
+          console.error('Error loading all wishlist items:', error);
+          
+          // Fall back to just loading visible items
+          const items = BandcampFacade.loadWishlistItems();
+          
+          if (items.length > 0) {
+            BandcampFacade.setupWishlistContinuousPlayback();
+            this.addWishlistControls();
+          }
+          
+          this.hasInitialized = true;
+        });
       } catch (error) {
         console.error('Error initializing wishlist controller:', error);
+        this.hasInitialized = true;
       }
     }, 1000);
   }

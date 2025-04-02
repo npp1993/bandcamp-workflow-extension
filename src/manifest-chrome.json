@@ -11,6 +11,13 @@
     "default_icon": {
     }
   },
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "*://*.bandcamp.com/*"
+  ],
   "content_scripts": [
     {
       "matches": [
