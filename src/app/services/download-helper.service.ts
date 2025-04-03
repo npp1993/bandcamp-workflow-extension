@@ -190,7 +190,7 @@ DEFAULT_BATCH_SIZE=3
 download_file() {
     local url="$1"
     local file_id="$2"
-    local filename=$(basename "$url" | sed 's/\?.*//')
+    local filename=$(basename "$url" | sed 's/\\?.*//')
     
     # Use curl with silent mode, only showing errors
     # -L: follow redirects
@@ -201,6 +201,56 @@ download_file() {
         return 0
     else
         return 1
+    fi
+}
+
+# Function to extract zip files in the current directory
+extract_zip_files() {
+    echo ""
+    echo "=== Looking for zip files to extract ==="
+    
+    # Count the number of zip files
+    ZIP_COUNT=$(find . -maxdepth 1 -name "*.zip" | wc -l | tr -d ' ')
+    
+    if [ "$ZIP_COUNT" -eq 0 ]; then
+        echo "No zip files found to extract."
+        return 0
+    fi
+    
+    echo "Found $ZIP_COUNT zip files to extract."
+    
+    # Extract each zip file
+    EXTRACTED=0
+    EXTRACT_FAILED=0
+    
+    for zip_file in *.zip; do
+        # Skip if no zip files match the pattern
+        [ "$zip_file" = "*.zip" ] && break
+        
+        # Create directory name from zip filename (remove .zip extension)
+        dir_name="\${zip_file%.zip}"
+        
+        echo "Extracting: $zip_file to $dir_name/"
+        
+        # Create directory if it doesn't exist
+        mkdir -p "$dir_name"
+        
+        if unzip -q "$zip_file" -d "$dir_name"; then
+            echo "Successfully extracted $zip_file to $dir_name/"
+            ((EXTRACTED++))
+        else
+            echo "Failed to extract $zip_file"
+            ((EXTRACT_FAILED++))
+            # Remove directory if extraction failed
+            rmdir "$dir_name" 2>/dev/null
+        fi
+    done
+    
+    echo ""
+    echo "=== Extraction complete: $EXTRACTED successful, $EXTRACT_FAILED failed ==="
+    
+    if [ "$EXTRACTED" -gt 0 ]; then
+        echo "Files were extracted to the current directory"
     fi
 }
 
@@ -253,6 +303,9 @@ if [ $FAILED -eq 0 ]; then
 else
     echo "WARNING: $FAILED of $TOTAL_URLS files failed to download"
 fi
+
+# Extract any zip files that were downloaded
+extract_zip_files
 
 echo ""
 # Use stty -echo to suppress input display, then read the key, then restore with stty echo
