@@ -1779,67 +1779,156 @@ export class BandcampFacade {
    */
   public static buyCurrentTrack(): void {
     // Special handling for wishlist pages
-    if (this.isWishlistPage && this._currentWishlistIndex >= 0 && this._wishlistItems.length > 0) {
-      const currentItem = this._wishlistItems[this._currentWishlistIndex];
-      if (currentItem) {
-        console.log('C key detected - buying current track from wishlist');
-        
-        // Try to find a direct buy link in the current wishlist item
-        const buyLink = currentItem.querySelector('a.buy-link, a.buyLink, a[href*="/buy"], a[href*="?buy"]');
-        if (buyLink) {
-          console.log('Found buy link, clicking it');
-          (buyLink as HTMLElement).click();
-          return;
-        }
-        
-        // If no direct buy link in the item, try to find the track/album URL
-        const trackLink = currentItem.querySelector('a[href*="/track/"], a[href*="/album/"]');
-        if (trackLink) {
-          // Get the href and add auto_buy parameter
-          let href = (trackLink as HTMLAnchorElement).href;
-          if (href.includes('?')) {
-            href += '&auto_buy=true';
-          } else {
-            href += '?auto_buy=true';
+    if (this.isWishlistPage) {
+      // If we have wishlist items but no track is currently playing (index is -1)
+      // Simply do nothing as requested
+      if (this._currentWishlistIndex < 0) {
+        console.log('C key detected - no track selected, ignoring press');
+        return;
+      }
+      
+      // Handle case where a track is currently playing (_currentWishlistIndex >= 0)
+      if (this._wishlistItems.length > 0) {
+        const currentItem = this._wishlistItems[this._currentWishlistIndex];
+        if (currentItem) {
+          console.log('C key detected - buying current track from wishlist');
+          
+          // First priority: Check the now-playing section which has accurate links for the current track
+          const nowPlaying = document.querySelector('.now-playing');
+          if (nowPlaying) {
+            console.log('Found now-playing section, checking for direct buy links');
+            
+            // Look for the buy-now link in the now-playing section which should point to the individual track
+            const nowPlayingBuyLink = nowPlaying.querySelector('.buy-now a');
+            if (nowPlayingBuyLink) {
+              console.log('Found buy now link in now-playing section, using this');
+              let href = (nowPlayingBuyLink as HTMLAnchorElement).href;
+              
+              // Add add_to_cart parameter to the URL
+              if (href.includes('?')) {
+                href += '&add_to_cart=true';
+              } else {
+                href += '?add_to_cart=true';
+              }
+              
+              console.log('Opening buy link with add_to_cart parameter in new tab:', href);
+              window.open(href, '_blank');
+              return;
+            }
+            
+            // If no buy link, try the track URL from the title
+            const nowPlayingTrackLink = nowPlaying.querySelector('.title');
+            if (nowPlayingTrackLink) {
+              const trackLinkParent = nowPlayingTrackLink.closest('a');
+              if (trackLinkParent) {
+                console.log('Found track link in now-playing section, using this instead');
+                let href = (trackLinkParent as HTMLAnchorElement).href;
+                if (href.includes('?')) {
+                  href += '&add_to_cart=true';
+                } else {
+                  href += '?add_to_cart=true';
+                }
+                window.open(href, '_blank');
+                return;
+              }
+            }
           }
-          console.log('Navigating to track page with auto_buy parameter:', href);
-          window.location.href = href;
-          return;
-        }
-        
-        // If we can't find a track/album link, try to extract it from data attributes
-        const trackUrl = currentItem.getAttribute('data-track-url') || 
-                         currentItem.getAttribute('data-album-url') || 
-                         currentItem.getAttribute('data-track-href');
-        if (trackUrl) {
-          // Get the URL and add auto_buy parameter
-          let href = trackUrl;
-          if (href.includes('?')) {
-            href += '&auto_buy=true';
-          } else {
-            href += '?auto_buy=true';
+          
+          // Look for buy links in the current item
+          const buyNowLink = currentItem.querySelector('.buy-now a, a[href*="/track/"]');
+          
+          // Look for elements with the text "buy now" 
+          const allSpans = currentItem.querySelectorAll('span.txt');
+          let buyNowText = null;
+          for (let i = 0; i < allSpans.length; i++) {
+            const span = allSpans[i];
+            if (span.textContent && span.textContent.trim().toLowerCase() === 'buy now') {
+              buyNowText = span;
+              break;
+            }
           }
-          console.log('Navigating to track URL from data attribute with auto_buy parameter:', href);
-          window.location.href = href;
-          return;
-        }
-        
-        // Last attempt - look for any link that might lead to the track page
-        const anyLink = currentItem.querySelector('a:not([href*="javascript"])');
-        if (anyLink) {
-          const href = (anyLink as HTMLAnchorElement).href;
-          if (href && (href.includes('bandcamp.com') || href.startsWith('/'))) {
-            // Add auto_buy parameter
-            const autoBuyHref = href.includes('?') ? href + '&auto_buy=true' : href + '?auto_buy=true';
-            console.log('Navigating to potentially related page with auto_buy parameter:', autoBuyHref);
-            window.location.href = autoBuyHref;
+          
+          let buyLink = buyNowLink;
+          if (!buyLink && buyNowText) {
+            buyLink = buyNowText.closest('a');
+          }
+          
+          // Try to find a direct buy link
+          if (!buyLink) {
+            buyLink = currentItem.querySelector('a.buy-link, a.buyLink, a[href*="/buy"], a[href*="?buy"]');
+          }
+          
+          if (buyLink) {
+            console.log('Found buy link, opening it in new tab');
+            // Add add_to_cart parameter to the URL
+            let href = (buyLink as HTMLAnchorElement).href;
+            if (href.includes('?')) {
+              href += '&add_to_cart=true';
+            } else {
+              href += '?add_to_cart=true';
+            }
+            console.log('Opening buy link with add_to_cart parameter in new tab:', href);
+            window.open(href, '_blank');
             return;
           }
+          
+          // If no direct buy link in the item, try to find the track/album URL
+          // Prioritize track links over album links
+          const trackLink = currentItem.querySelector('a[href*="/track/"]') || 
+                           currentItem.querySelector('a[href*="/album/"]');
+          
+          if (trackLink) {
+            // Get the href and add add_to_cart parameter
+            let href = (trackLink as HTMLAnchorElement).href;
+            if (href.includes('?')) {
+              href += '&add_to_cart=true';
+            } else {
+              href += '?add_to_cart=true';
+            }
+            console.log('Opening track page with add_to_cart parameter in new tab:', href);
+            // Open in new tab instead of current tab
+            window.open(href, '_blank');
+            return;
+          }
+          
+          // If we can't find a track/album link, try to extract it from data attributes
+          const trackUrl = currentItem.getAttribute('data-track-url') || 
+                          currentItem.getAttribute('data-album-url') || 
+                          currentItem.getAttribute('data-track-href');
+          if (trackUrl) {
+            // Get the URL and add add_to_cart parameter
+            let href = trackUrl;
+            if (href.includes('?')) {
+              href += '&add_to_cart=true';
+            } else {
+              href += '?add_to_cart=true';
+            }
+            console.log('Opening track URL from data attribute with add_to_cart parameter in new tab:', href);
+            // Open in new tab instead of current tab
+            window.open(href, '_blank');
+            return;
+          }
+          
+          // Last attempt - look for any link that might lead to the track page
+          const anyLink = currentItem.querySelector('a:not([href*="javascript"])');
+          if (anyLink) {
+            const href = (anyLink as HTMLAnchorElement).href;
+            if (href && (href.includes('bandcamp.com') || href.startsWith('/'))) {
+              // Add add_to_cart parameter
+              const addToCartHref = href.includes('?') ? href + '&add_to_cart=true' : href + '?add_to_cart=true';
+              console.log('Opening potentially related page with add_to_cart parameter in new tab:', addToCartHref);
+              // Open in new tab instead of current tab
+              window.open(addToCartHref, '_blank');
+              return;
+            }
+          }
+          
+          console.warn('Could not find any suitable link to the track page in the current wishlist item');
+        } else {
+          console.warn('Current wishlist item not found');
         }
-        
-        console.warn('Could not find any suitable link to the track page in the current wishlist item');
       } else {
-        console.warn('Current wishlist item not found');
+        console.warn('No wishlist items loaded');
       }
     } else {
       // Default behavior for non-wishlist pages

@@ -44,7 +44,7 @@ Beyond that, it was completely built with VS Code Copilot's Agent Mode.
 
 The extension includes an Add-to-Cart feature that lets you quickly move tracks into your cart that are in your wishlist:
 
-1. When you click a buy link from your wishlist, the extension adds `?auto_buy=true` to the URL
+1. When you click a buy link from your wishlist, the extension adds `?add_to_cart=true` to the URL
 2. On track/album pages with this parameter, the extension will:
    - Automatically find and click the buy button
    - Set appropriate pricing:
@@ -53,7 +53,7 @@ The extension includes an Add-to-Cart feature that lets you quickly move tracks 
      - For "name your price" albums, it sets $5.00. Consider increasing this for albums)
    - Add the item to your cart
 
-This feature is only activated when the `auto_buy=true` parameter is explicitly included in the URL.
+This feature is only activated when the `add_to_cart=true` parameter is explicitly included in the URL.
 
 ## License
 

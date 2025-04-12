@@ -2,27 +2,27 @@ import {PageController} from './controllers/page.controller';
 import {BandcampFacade} from './facades/bandcamp.facade';
 
 /**
- * Checks if the current URL contains the auto_buy parameter
- * @returns boolean True if auto_buy parameter is present and set to 'true'
+ * Checks if the current URL contains the add_to_cart parameter
+ * @returns boolean True if add_to_cart parameter is present and set to 'true'
  */
-function hasAutoBuyParameter(): boolean {
+function hasAddToCartParameter(): boolean {
   const urlParams = new URLSearchParams(window.location.search);
-  return urlParams.get('auto_buy') === 'true';
+  return urlParams.get('add_to_cart') === 'true';
 }
 
 /**
- * Handle auto-buy functionality when navigating to a release page
+ * Handle add-to-cart functionality when navigating to a release page
  */
-function handleAutoBuy() {
-  console.log('Checking for auto-buy parameter in URL');
+function handleAddToCart() {
+  console.log('Checking for add_to_cart parameter in URL');
   
-  // Check for auto_buy parameter in URL
+  // Check for add_to_cart parameter in URL
   const urlParams = new URLSearchParams(window.location.search);
-  const autoBuy = urlParams.get('auto_buy');
-  console.log('Auto-buy parameter value:', autoBuy);
+  const addToCart = urlParams.get('add_to_cart');
+  console.log('Add-to-cart parameter value:', addToCart);
   
-  if (autoBuy === 'true') {
-    console.log('Auto-buy parameter detected, will attempt to purchase track/album');
+  if (addToCart === 'true') {
+    console.log('Add-to-cart parameter detected, will attempt to purchase track/album');
     
     // Wait for the page to fully load before attempting to buy
     console.log('Waiting for page to fully load before attempting to buy...');
@@ -41,7 +41,7 @@ function handleAutoBuy() {
       }
     }, 2000); // Wait 2 seconds for the page to fully load
   } else {
-    console.log('No auto-buy parameter detected, skipping purchase process');
+    console.log('No add-to-cart parameter detected, skipping purchase process');
   }
 }
 
@@ -49,12 +49,12 @@ window.addEventListener('load', () => {
   console.log('Page loaded, initializing extension');
   PageController.init();
   
-  // Only call auto-buy handler if the parameter is detected in the URL
-  if (hasAutoBuyParameter()) {
-    console.log('Auto-buy parameter found in URL, activating purchase flow');
-    handleAutoBuy();
+  // Only call add-to-cart handler if the parameter is detected in the URL
+  if (hasAddToCartParameter()) {
+    console.log('Add-to-cart parameter found in URL, activating purchase flow');
+    handleAddToCart();
   } else {
-    console.log('No auto-buy parameter in URL, skipping purchase flow');
+    console.log('No add-to-cart parameter in URL, skipping purchase flow');
   }
   
   console.log('Extension initialization completed');
