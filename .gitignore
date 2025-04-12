@@ -2,9 +2,11 @@ node_modules/
 dist/
 packages/
 example_webpages/
+chrome_user_data/
+chrome_user_data_persistent/
+
 .eslintcache
-coverage
-/.idea/sonarlint/issuestore/
 .DS_Store
+
 PROMPT.md
 login.json
