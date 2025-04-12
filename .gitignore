@@ -4,9 +4,9 @@ packages/
 example_webpages/
 chrome_user_data/
 chrome_user_data_persistent/
+.github/
 
 .eslintcache
 .DS_Store
 
-PROMPT.md
 login.json
