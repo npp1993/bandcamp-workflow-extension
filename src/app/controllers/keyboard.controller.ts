@@ -1,6 +1,7 @@
 import {BandcampFacade} from '../facades/bandcamp.facade';
 import {TrackController} from './track.controller';
 import {Controllers} from './page.controller';
+import {Logger} from '../utils/logger';
 
 /**
  * KeyboardController class handles keyboard shortcuts for the extension
@@ -22,7 +23,7 @@ export class KeyboardController {
     // Attach our keyboard handler directly to the document
     document.addEventListener('keydown', this.handleKeyboardEvent);
     
-    console.log('Keyboard controller started with direct event handling');
+    Logger.info('Keyboard controller started with direct event handling');
   }
   
   /**
@@ -39,7 +40,7 @@ export class KeyboardController {
         (e.altKey ? 'Alt+' : '') + 
         (e.metaKey ? 'Meta+' : '');
       
-      console.log(`Key: ${modifiers}${e.key.toLowerCase()} (${e.code})`);
+      Logger.debug(`Key: ${modifiers}${e.key.toLowerCase()} (${e.code})`);
       
       // Handle our specific shortcut keys
       switch (e.key.toLowerCase()) {
@@ -178,13 +179,13 @@ export class KeyboardController {
     BandcampFacade.loadAllWishlistItems()
       .then(success => {
         if (success) {
-          console.log('Successfully loaded all wishlist items');
+          Logger.info('Successfully loaded all wishlist items');
         } else {
-          console.warn('Failed to load all wishlist items');
+          Logger.warn('Failed to load all wishlist items');
         }
       })
       .catch(error => {
-        console.error('Error loading all wishlist items:', error);
+        Logger.error('Error loading all wishlist items:', error);
       });
   }
 }

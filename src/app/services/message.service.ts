@@ -1,5 +1,7 @@
 /// <reference types="chrome" />
 
+import { Logger } from '../utils/logger';
+
 /**
  * Service for handling messages between content scripts and background scripts
  */
@@ -72,7 +74,7 @@ export class MessageService {
             sendResponse({ success: true, data: response });
           })
           .catch(error => {
-            console.error(`Error handling message ${type}:`, error);
+            Logger.error(`Error handling message ${type}:`, error);
             sendResponse({ success: false, error: error.message });
           });
         
@@ -84,7 +86,7 @@ export class MessageService {
         return false;
       }
     } catch (error) {
-      console.error(`Error handling message ${type}:`, error);
+      Logger.error(`Error handling message ${type}:`, error);
       sendResponse({ success: false, error: error.message });
       return false;
     }

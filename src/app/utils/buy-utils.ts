@@ -1,5 +1,6 @@
 import { DOMSelectors } from './dom-selectors';
 import { ErrorHandler } from './error-handler';
+import { Logger } from './logger';
 
 /**
  * Utility for buy button functionality
@@ -15,7 +16,7 @@ export class BuyUtils {
       const buyButton = DOMSelectors.findOneWithSelectors<HTMLElement>(DOMSelectors.BUY_BUTTONS);
       
       if (buyButton) {
-        console.log('Found buy button, clicking it');
+        Logger.info('Found buy button, clicking it');
         buyButton.click();
         return true;
       }
@@ -24,12 +25,12 @@ export class BuyUtils {
       const buyLink = DOMSelectors.findOneWithSelectors<HTMLElement>(DOMSelectors.BUY_LINKS);
       
       if (buyLink) {
-        console.log('Found buy link, clicking it');
+        Logger.info('Found buy link, clicking it');
         buyLink.click();
         return true;
       }
 
-      console.warn('No buy button found on the current page');
+      Logger.warn('No buy button found on the current page');
       return false;
     } catch (error) {
       ErrorHandler.withErrorHandling(() => { throw error; }, 'Error clicking buy button');
@@ -84,7 +85,7 @@ export class BuyUtils {
    */
   public static openBuyLinkWithCart(href: string): void {
     const cartUrl = this.addCartParameterToUrl(href);
-    console.log('Opening buy link with add_to_cart parameter in new tab:', cartUrl);
+    Logger.info('Opening buy link with add_to_cart parameter in new tab:', cartUrl);
     window.open(cartUrl, '_blank');
   }
 }

@@ -1,3 +1,5 @@
+import { Logger } from '../utils/logger';
+
 /**
  * Service for helping download Bandcamp purchased tracks
  * Adds a button to generate a cURL script for batch downloading
@@ -14,7 +16,7 @@ export class DownloadHelperService {
    * Initialize the download helper
    */
   public init(): void {
-    console.log('Initiating Download Helper');
+    Logger.info('Initiating Download Helper');
     
     this.createButton();
     this.checkDownloadLinks();
@@ -51,7 +53,7 @@ export class DownloadHelperService {
    * Enable the download button when all links are ready
    */
   private enableButton(): void {
-    console.log('Enabling download button');
+    Logger.info('Enabling download button');
     
     this.button.disabled = false;
     this.button.textContent = 'Download cURL File';
@@ -71,7 +73,7 @@ export class DownloadHelperService {
    * Disable the download button when links are not ready
    */
   private disableButton(): void {
-    console.log('Disabling download button');
+    Logger.info('Disabling download button');
     
     // Clone the button to remove event listeners
     if (this.button && this.button.parentNode) {
@@ -103,7 +105,7 @@ export class DownloadHelperService {
       element => (element as HTMLElement).style.display !== 'none'
     );
     
-    console.log(`Download links ready: ${linksReady}`);
+    Logger.info(`Download links ready: ${linksReady}`);
     
     if (linksReady) {
       this.enableButton();

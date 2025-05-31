@@ -1,8 +1,8 @@
 /**
- * Centralized logging utility for Bandcamp+ extension
+ * Centralized logging utility for Bandcamp Workflow Extension
  */
 export class Logger {
-  private static readonly PREFIX = '[Bandcamp+]';
+  private static readonly PREFIX = '[Bandcamp Workflow Extension]';
 
   /**
    * Log an info message

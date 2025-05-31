@@ -52,11 +52,11 @@ window.addEventListener('load', () => {
   
   // Only call add-to-cart handler if the parameter is detected in the URL
   if (hasAddToCartParameter()) {
-    console.log('Add-to-cart parameter found in URL, activating purchase flow');
+    Logger.info('Add-to-cart parameter found in URL, activating purchase flow');
     handleAddToCart();
   } else {
-    console.log('No add-to-cart parameter in URL, skipping purchase flow');
+    Logger.info('No add-to-cart parameter in URL, skipping purchase flow');
   }
   
-  console.log('Extension initialization completed');
+  Logger.info('Extension initialization completed');
 });
