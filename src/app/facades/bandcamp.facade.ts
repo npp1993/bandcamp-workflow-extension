@@ -1,4 +1,11 @@
 import {SEEK_STEP, TIMEOUT} from '../constants';
+import {Logger} from '../utils/logger';
+import {AudioUtils} from '../utils/audio-utils';
+import {SeekUtils} from '../utils/seek-utils';
+import {ErrorHandler} from '../utils/error-handler';
+import {DOMSelectors} from '../utils/dom-selectors';
+import {BuyUtils} from '../utils/buy-utils';
+import {WishlistService} from '../services/wishlist.service';
 
 // Add type definition for window.TralbumData
 declare global {
@@ -70,7 +77,7 @@ export class BandcampFacade {
       if (currentItem) {
         const trackId = currentItem.getAttribute('data-track-id');
         if (trackId && BandcampFacade._problemTrackIds.has(trackId)) {
-          console.log(`Track ID ${trackId} is in our problem list, skipping it`);
+        Logger.info(`Track ID ${trackId} is in our problem list, skipping it`);
           return true;
         }
       }
@@ -86,7 +93,7 @@ export class BandcampFacade {
     if (!BandcampFacade._problemTrackIds.has(trackId)) {
       // Check if this is track ID 3302866485 or has already caused 404 errors
       if (trackId === '3302866485' || document.documentElement.innerHTML.includes('404 (Not Found)')) {
-        console.log(`Adding track ID ${trackId} to problem list`);
+        Logger.info(`Adding track ID ${trackId} to problem list`);
         BandcampFacade._problemTrackIds.add(trackId);
         return true;
       }
@@ -241,145 +248,15 @@ export class BandcampFacade {
   }
 
   public static seekReset(): void {
-    try {
-      // Special handling for wishlist pages
-      if (this.isWishlistPage) {
-        // Find the audio element in the wishlist player
-        const wishlistAudio = document.querySelector('.carousel-player-inner audio') || 
-                              document.querySelector('audio');
-        
-        if (wishlistAudio) {
-          // Reset the playback position to the beginning - use proper type casting
-          (wishlistAudio as HTMLAudioElement).currentTime = 0;
-          
-          // Update the wishlist player UI if necessary
-          const wishlistProgressBar = document.querySelector('.carousel-player-inner .progress-bar') ||
-                                     document.querySelector('.carousel-player-inner .progress');
-          if (wishlistProgressBar) {
-            // Force UI update
-            const event = new Event('timeupdate');
-            (wishlistAudio as HTMLAudioElement).dispatchEvent(event);
-          }
-          
-          console.log('Seeking to start of track on wishlist player');
-          return;
-        }
-      }
-      
-      // Standard handling for regular pages
-      const audioElement = this.audio || document.querySelector('audio');
-      
-      if (!audioElement) {
-        console.warn('No audio element found for seek reset operation');
-        return;
-      }
-      
-      // Reset the playback position to the beginning
-      (audioElement as HTMLAudioElement).currentTime = 0;
-      
-      // For release pages, we may need to also update the UI
-      const progressBar = document.querySelector('.progress, .progbar_empty, .progbar_fill');
-      if (progressBar) {
-        // Force UI update if needed
-        const event = new Event('timeupdate');
-        (audioElement as HTMLAudioElement).dispatchEvent(event);
-      }
-      
-    } catch (error) {
-      console.error('Error in seekReset:', error);
-    }
+    SeekUtils.seekReset(this.isWishlistPage);
   }
 
   public static seekForward(): void {
-    try {
-      // Special handling for wishlist pages
-      if (this.isWishlistPage) {
-        const wishlistAudio = document.querySelector('.carousel-player-inner audio') || 
-                              document.querySelector('audio');
-        
-        if (wishlistAudio) {
-          (wishlistAudio as HTMLAudioElement).currentTime += SEEK_STEP;
-          
-          // Update the wishlist player UI if necessary
-          const wishlistProgressBar = document.querySelector('.carousel-player-inner .progress-bar') ||
-                                     document.querySelector('.carousel-player-inner .progress');
-          if (wishlistProgressBar) {
-            const event = new Event('timeupdate');
-            (wishlistAudio as HTMLAudioElement).dispatchEvent(event);
-          }
-          
-          return;
-        }
-      }
-      
-      // Standard handling for regular pages
-      const audioElement = this.audio || document.querySelector('audio');
-      
-      if (!audioElement) {
-        console.warn('No audio element found for seek forward operation');
-        return;
-      }
-      
-      // Advance the playback position
-      (audioElement as HTMLAudioElement).currentTime += SEEK_STEP;
-      
-      // For release pages, we may need to also update the UI
-      const progressBar = document.querySelector('.progress, .progbar_empty, .progbar_fill');
-      if (progressBar) {
-        // Force UI update if needed
-        const event = new Event('timeupdate');
-        (audioElement as HTMLAudioElement).dispatchEvent(event);
-      }
-      
-    } catch (error) {
-      console.error('Error in seekForward:', error);
-    }
+    SeekUtils.seekForward(this.isWishlistPage);
   }
 
   public static seekBackward(): void {
-    try {
-      // Special handling for wishlist pages
-      if (this.isWishlistPage) {
-        const wishlistAudio = document.querySelector('.carousel-player-inner audio') || 
-                              document.querySelector('audio');
-        
-        if (wishlistAudio) {
-          (wishlistAudio as HTMLAudioElement).currentTime -= SEEK_STEP;
-          
-          // Update the wishlist player UI if necessary
-          const wishlistProgressBar = document.querySelector('.carousel-player-inner .progress-bar') ||
-                                     document.querySelector('.carousel-player-inner .progress');
-          if (wishlistProgressBar) {
-            const event = new Event('timeupdate');
-            (wishlistAudio as HTMLAudioElement).dispatchEvent(event);
-          }
-          
-          return;
-        }
-      }
-      
-      // Standard handling for regular pages
-      const audioElement = this.audio || document.querySelector('audio');
-      
-      if (!audioElement) {
-        console.warn('No audio element found for seek backward operation');
-        return;
-      }
-      
-      // Decrease the playback position
-      (audioElement as HTMLAudioElement).currentTime -= SEEK_STEP;
-      
-      // For release pages, we may need to also update the UI
-      const progressBar = document.querySelector('.progress, .progbar_empty, .progbar_fill');
-      if (progressBar) {
-        // Force UI update if needed
-        const event = new Event('timeupdate');
-        (audioElement as HTMLAudioElement).dispatchEvent(event);
-      }
-      
-    } catch (error) {
-      console.error('Error in seekBackward:', error);
-    }
+    SeekUtils.seekBackward(this.isWishlistPage);
   }
 
   public static setSpeed(speed: number): void {
@@ -441,95 +318,16 @@ export class BandcampFacade {
 
   public static toggleWishlist(): void {
     try {
-      console.log('Attempting to toggle wishlist for entire release');
+      Logger.info('Attempting to toggle wishlist for entire release');
       
-      // Get the collect-item element which is the main container for wishlist functionality
-      const collectItem = document.getElementById('collect-item');
-      if (!collectItem) {
-        console.warn('Could not find collect-item element');
-        return;
+      // Use centralized wishlist service
+      const success = WishlistService.clickWishlistToggleInUI();
+      
+      if (!success) {
+        Logger.warn('Could not find appropriate wishlist button to click');
       }
-      
-      console.log('Found collect-item with class:', collectItem.className);
-      
-      // Check if the item is already wishlisted (based on className)
-      if (collectItem.classList.contains('wishlisted')) {
-        console.log('Item is in wishlist - attempting to remove');
-        
-        // Try to find the action element within wishlisted-msg that has the remove function
-        const removeAction = document.querySelector('#wishlisted-msg .action[title*="Remove"]');
-        if (removeAction) {
-          console.log('Found remove action element, clicking it directly');
-          (removeAction as HTMLElement).click();
-          return;
-        }
-        
-        // Try to use the direct link that might be labeled as "In Wishlist"
-        const inWishlistLink = document.querySelector('#wishlisted-msg .collect-msg a');
-        if (inWishlistLink) {
-          console.log('Found In Wishlist link, clicking it');
-          (inWishlistLink as HTMLElement).click();
-          return;
-        }
-        
-        // Try alternative method to find any element with "Remove" in its title
-        const removeElements = Array.from(document.querySelectorAll('[title*="Remove"]'));
-        if (removeElements.length > 0) {
-          console.log('Found element with Remove in title, clicking it');
-          (removeElements[0] as HTMLElement).click();
-          return;
-        }
-        
-        // Last resort: try to simulate a proper DOM event on the element
-        console.log('Attempting to dispatch custom click event on wishlisted-msg');
-        const wishlistedMsg = document.getElementById('wishlisted-msg');
-        if (wishlistedMsg) {
-          // Create and dispatch a more natural mousedown/mouseup/click sequence
-          ['mousedown', 'mouseup', 'click'].forEach(eventType => {
-            const event = new MouseEvent(eventType, {
-              view: window,
-              bubbles: true,
-              cancelable: true
-            });
-            wishlistedMsg.dispatchEvent(event);
-          });
-          return;
-        }
-      } else {
-        console.log('Item is not in wishlist - attempting to add');
-        
-        // Find the "Wishlist" button to add to wishlist
-        const addButton = document.querySelector('#wishlist-msg a');
-        
-        if (addButton) {
-          console.log('Found add button, clicking it');
-          (addButton as HTMLElement).click();
-          return;
-        }
-        
-        // Try alternative method to find the add button by container
-        const wishlistMsg = document.getElementById('wishlist-msg');
-        if (wishlistMsg) {
-          console.log('Found wishlist-msg container, clicking it');
-          (wishlistMsg as HTMLElement).click();
-          return;
-        }
-        
-        // Last resort: find by text content
-        const wishlistText = Array.from(document.querySelectorAll('a')).filter(
-          a => a.textContent?.trim().toLowerCase() === 'wishlist'
-        );
-        
-        if (wishlistText.length > 0) {
-          console.log('Found "Wishlist" text, clicking it');
-          (wishlistText[0] as HTMLElement).click();
-          return;
-        }
-      }
-      
-      console.warn('Could not find appropriate wishlist button to click');
     } catch (error) {
-      console.error('Error in toggleWishlist:', error);
+      ErrorHandler.withErrorHandling(() => { throw error; }, 'Error in toggleWishlist');
     }
   }
 
@@ -565,54 +363,27 @@ export class BandcampFacade {
     }
 
     try {
-      console.log('Loading wishlist items...');
+      Logger.info('Loading wishlist items...');
       
       // Try different selectors for collection items - in most recent Bandcamp design
-      const selectors = [
-        '.collection-item-container',
-        '.collection-item-gallery',
-        '.collection-item',
-        '.collection-items .item',
-        '.collection-items > li', // Sometimes items are in list items
-        '[data-item-id]', // Items with data-item-id attributes
-        '.collection-title-details' // Container with title and details
-      ];
+      let items: HTMLElement[] = DOMSelectors.findWithSelectors<HTMLElement>(DOMSelectors.WISHLIST_ITEMS);
       
-      let items: HTMLElement[] = null;
-      
-      // Try each selector until we find one that works
-      for (const selector of selectors) {
-        const elements = document.querySelectorAll<HTMLElement>(selector);
-        if (elements && elements.length > 0) {
-          console.log(`Found ${elements.length} items with selector: ${selector}`);
-          items = Array.from(elements);
-          break;
-        }
+      if (items.length > 0) {
+        Logger.info(`Found ${items.length} wishlist items`);
       }
       
       if (!items || items.length === 0) {
-        console.warn('No wishlist items found with any selector, trying more general selectors');
+        Logger.warn('No wishlist items found with any selector, trying more general selectors');
         
         // Try more general selectors as a fallback
-        const fallbackSelectors = [
-          '.collection-grid-item',
-          '.música_grid li',
-          '.music-grid li',
-          '.collection-item-container',
-          '.music_grid li'
-        ];
+        items = DOMSelectors.findWithSelectors<HTMLElement>(DOMSelectors.WISHLIST_ITEMS_FALLBACK);
         
-        for (const selector of fallbackSelectors) {
-          const elements = document.querySelectorAll<HTMLElement>(selector);
-          if (elements && elements.length > 0) {
-            console.log(`Found ${elements.length} items with fallback selector: ${selector}`);
-            items = Array.from(elements);
-            break;
-          }
+        if (items.length > 0) {
+          Logger.info(`Found ${items.length} items with fallback selectors`);
         }
         
         if (!items || items.length === 0) {
-          console.warn('No wishlist items found with any selector');
+          Logger.warn('No wishlist items found with any selector');
           return [];
         }
       }
@@ -620,7 +391,7 @@ export class BandcampFacade {
       // Find all items with play buttons or other interactive elements
       this._wishlistItems = items.filter(item => {
         // Check if the item has a play button or other meaningful data
-        const playButton = item.querySelector('.play-button, .play-col .playbutton, [class*="play"], button[title*="Play"]');
+        const playButton = DOMSelectors.findOneWithSelectors<HTMLElement>(DOMSelectors.PLAY_BUTTONS, item);
         const hasPlayButton = playButton !== null;
         
         // Check if the item has a data-tralbum-id or data-item-id attribute
@@ -649,7 +420,7 @@ export class BandcampFacade {
               // This helps avoid unintended index updates from clicks elsewhere in the item
               const target = event.target as HTMLElement;
               if (playButton.contains(target)) {
-                 console.log(`Manual play detected on wishlist item index: ${index}`);
+                 Logger.info(`Manual play detected on wishlist item index: ${index}`);
                  BandcampFacade._currentWishlistIndex = index;
                  // Ensure continuous playback listeners are (re)attached after a short delay
                  // in case Bandcamp swaps the audio element on play.
@@ -663,10 +434,10 @@ export class BandcampFacade {
         }
       });
       
-      console.log(`Found ${this._wishlistItems.length} playable wishlist items`);
+      Logger.info(`Found ${this._wishlistItems.length} playable wishlist items`);
       return this._wishlistItems;
     } catch (error) {
-      console.error('Error loading wishlist items:', error);
+      ErrorHandler.withErrorHandling(() => { throw error; }, 'Error loading wishlist items');
       return [];
     }
   }
@@ -727,7 +498,7 @@ export class BandcampFacade {
       // 5. Extract track ID from URLs
       if (!trackId) {
         // Look for album links
-        const albumLinks = Array.from(item.querySelectorAll('a[href*="/album/"]'));
+        const albumLinks = DOMSelectors.findWithSelectors<HTMLAnchorElement>(['a[href*="/album/"]'], item);
         if (albumLinks.length > 0) {
           const url = albumLinks[0].getAttribute('href');
           // Store the album URL as a fallback
@@ -753,7 +524,7 @@ export class BandcampFacade {
 
         // Look for track links
         if (!trackId) {
-          const trackLinks = Array.from(item.querySelectorAll('a[href*="/track/"]'));
+          const trackLinks = DOMSelectors.findWithSelectors<HTMLAnchorElement>(['a[href*="/track/"]'], item);
           if (trackLinks.length > 0) {
             const url = trackLinks[0].getAttribute('href');
             // Store the track URL as a fallback
@@ -781,7 +552,7 @@ export class BandcampFacade {
       
       // 6. Look for ID in URL of any image with a specific src pattern
       if (!trackId) {
-        const images = Array.from(item.querySelectorAll('img[src*="bcbits.com/img"]'));
+        const images = DOMSelectors.findWithSelectors<HTMLImageElement>(DOMSelectors.BANDCAMP_IMAGES, item);
         for (const img of images) {
           const src = img.getAttribute('src');
           if (src) {
@@ -826,7 +597,7 @@ export class BandcampFacade {
       
       // 8. Check for inline script data (JSON-LD)
       if (!trackId) {
-        const scriptElements = Array.from(item.querySelectorAll('script[type="application/ld+json"]'));
+        const scriptElements = DOMSelectors.findWithSelectors<HTMLScriptElement>(DOMSelectors.JSON_LD_SCRIPTS, item);
         for (const script of scriptElements) {
           try {
             const jsonData = JSON.parse(script.textContent);
@@ -873,7 +644,7 @@ export class BandcampFacade {
             (attrName.includes('id') || attrName.includes('item') || attrName.includes('track') || attrName.includes('album'))
           ) {
             trackId = attrValue;
-            console.log(`Found potential track ID in data attribute ${attrName}: ${attrValue}`);
+            Logger.info(`Found potential track ID in data attribute ${attrName}: ${attrValue}`);
             break;
           }
         }
@@ -882,12 +653,12 @@ export class BandcampFacade {
       // Store the track ID as a data attribute on the item element
       if (trackId) {
         item.setAttribute('data-track-id', trackId);
-        console.log(`Successfully extracted track ID for item ${index}: ${trackId}`);
+        Logger.info(`Successfully extracted track ID for item ${index}: ${trackId}`);
       } else {
         // Generate a fallback ID
         const uniqueId = `generated-${index}-${Date.now()}`;
         item.setAttribute('data-generated-id', uniqueId);
-        console.log(`Could not find track ID for item ${index}`);
+        Logger.info(`Could not find track ID for item ${index}`);
         
         // Store any URLs we found as data attributes for fallback
         if (!item.hasAttribute('data-track-href')) {
@@ -896,10 +667,9 @@ export class BandcampFacade {
             item.setAttribute('data-track-href', anyLink.getAttribute('href'));
           }
         }
+      }      } catch (error) {
+        ErrorHandler.withErrorHandling(() => { throw error; }, `Error extracting track ID for item ${index}`);
       }
-    } catch (error) {
-      console.error(`Error extracting track ID for item ${index}:`, error);
-    }
   }
 
   /**
@@ -908,14 +678,14 @@ export class BandcampFacade {
    */
   public static playWishlistTrack(index: number): void {
     if (!this.isWishlistPage || this._wishlistItems.length === 0) {
-      console.warn('Cannot play wishlist track - not on wishlist page or no items loaded');
+      Logger.warn('Cannot play wishlist track - not on wishlist page or no items loaded');
       return;
     }
 
     try {
       // Check if index is within bounds
       if (index < 0 || index >= this._wishlistItems.length) {
-        console.warn(`Track index ${index} is out of bounds (0-${this._wishlistItems.length - 1})`);
+        Logger.warn(`Track index ${index} is out of bounds (0-${this._wishlistItems.length - 1})`);
         return;
       }
 
@@ -924,25 +694,25 @@ export class BandcampFacade {
       // Store the current index
       this._currentWishlistIndex = index;
       
-      console.log(`Attempting to play wishlist track ${index + 1} of ${this._wishlistItems.length}`);
+      Logger.info(`Attempting to play wishlist track ${index + 1} of ${this._wishlistItems.length}`);
       
       // Try to find and click the play button directly
       let playButton = this.findPlayButton(item);
       
       if (playButton) {
-        console.log(`Found play button for wishlist track ${index + 1}, clicking it`);
+        Logger.info(`Found play button for wishlist track ${index + 1}, clicking it`);
         playButton.click();
         
         // Verify if playback started after a short delay
         setTimeout(() => {
-          const audio = document.querySelector('audio');
+          const audio = AudioUtils.getAudioElement();
           
           // If audio isn't playing within 1 second, move to next track
           if (!audio || audio.paused || !audio.src || audio.src.includes('track_id=&')) {
-            console.log(`Track ${index + 1} failed to play, moving to next track`);
+            Logger.info(`Track ${index + 1} failed to play, moving to next track`);
             this.playNextWishlistTrack();
           } else {
-            console.log(`Track ${index + 1} is playing successfully`);
+            Logger.info(`Track ${index + 1} is playing successfully`);
           }
         }, 1000);
         
@@ -950,10 +720,10 @@ export class BandcampFacade {
       }
       
       // No play button found, try to click an item to select it
-      console.log(`No play button found for track ${index + 1}, trying to click the item itself`);
+      Logger.info(`No play button found for track ${index + 1}, trying to click the item itself`);
       
       // Try to find any clickable element
-      const clickableElements = item.querySelectorAll('a, button, [role="button"]');
+      const clickableElements = DOMSelectors.findWithSelectors<HTMLElement>(DOMSelectors.CLICKABLE_ELEMENTS, item);
       
       if (clickableElements.length > 0) {
         // Try to click the first element that isn't an explicit "buy" or "share" button
@@ -964,7 +734,7 @@ export class BandcampFacade {
           const text = element.textContent?.toLowerCase() || '';
           
           if (!text.includes('buy') && !text.includes('share') && !text.includes('wishlist')) {
-            console.log(`Clicking element to select track`);
+            Logger.info(`Clicking element to select track`);
             element.click();
             clicked = true;
             
@@ -972,19 +742,19 @@ export class BandcampFacade {
             setTimeout(() => {
               const playButton = document.querySelector('.carousel-player-inner .playbutton, .play-button');
               if (playButton) {
-                console.log('Found play button in focused track, clicking it');
+                Logger.info('Found play button in focused track, clicking it');
                 (playButton as HTMLElement).click();
                 
                 // Check if playback started
                 setTimeout(() => {
-                  const audio = document.querySelector('audio');
+                  const audio = AudioUtils.getAudioElement();
                   if (!audio || audio.paused) {
-                    console.log(`Track ${index + 1} failed to play after selection, moving to next track`);
+                    Logger.info(`Track ${index + 1} failed to play after selection, moving to next track`);
                     this.playNextWishlistTrack();
                   }
                 }, 1000);
               } else {
-                console.log('No play button found after selection, moving to next track');
+                Logger.info('No play button found after selection, moving to next track');
                 this.playNextWishlistTrack();
               }
             }, 500);
@@ -994,15 +764,15 @@ export class BandcampFacade {
         }
         
         if (!clicked) {
-          console.log('No suitable clickable element found, moving to next track');
+          Logger.info('No suitable clickable element found, moving to next track');
           this.playNextWishlistTrack();
         }
       } else {
-        console.log('No clickable elements found, moving to next track');
+        Logger.info('No clickable elements found, moving to next track');
         this.playNextWishlistTrack();
       }
     } catch (error) {
-      console.error('Error playing wishlist track:', error);
+      ErrorHandler.withErrorHandling(() => { throw error; }, 'Error playing wishlist track');
       // On any error, move to the next track
       setTimeout(() => this.playNextWishlistTrack(), 500);
     }
@@ -1018,7 +788,7 @@ export class BandcampFacade {
 
     // Check if we already have a pending next track request
     if (this._pendingNextTrackRequest || this._skipInProgress) {
-      console.log('Already processing a track change request, ignoring additional request');
+      Logger.info('Already processing a track change request, ignoring additional request');
       return;
     }
 
@@ -1033,7 +803,7 @@ export class BandcampFacade {
         nextIndex = 0; // Loop back to the first track
       }
 
-      console.log(`Playing next wishlist track (${nextIndex + 1} of ${this._wishlistItems.length})`);
+      Logger.info(`Playing next wishlist track (${nextIndex + 1} of ${this._wishlistItems.length})`);
       this.playWishlistTrack(nextIndex);
       
       // Clear the pending flag after a delay to prevent rapid successive skips
@@ -1058,7 +828,7 @@ export class BandcampFacade {
 
     // Check if we already have a pending track request
     if (this._pendingNextTrackRequest || this._skipInProgress) {
-      console.log('Already processing a track change request, ignoring additional request');
+      Logger.info('Already processing a track change request, ignoring additional request');
       return;
     }
 
@@ -1078,7 +848,7 @@ export class BandcampFacade {
       const trackId = item?.getAttribute('data-track-id');
       
       if (trackId && this._problemTrackIds.has(trackId)) {
-        console.log(`Previous track (${prevIndex + 1}) has known issues, skipping it`);
+        Logger.info(`Previous track (${prevIndex + 1}) has known issues, skipping it`);
         
         // Calculate the next valid previous index
         let nextValidPrevIndex = prevIndex - 1;
@@ -1098,7 +868,7 @@ export class BandcampFacade {
             // Found a track that's not in our problem list
             prevIndex = nextValidPrevIndex;
             foundValidTrack = true;
-            console.log(`Found valid previous track at index ${prevIndex + 1}`);
+            Logger.info(`Found valid previous track at index ${prevIndex + 1}`);
           } else {
             // This track is also problematic, go to previous one
             nextValidPrevIndex--;
@@ -1110,14 +880,14 @@ export class BandcampFacade {
         }
         
         if (!foundValidTrack) {
-          console.warn('Could not find any valid previous tracks, staying on current track');
+          Logger.warn('Could not find any valid previous tracks, staying on current track');
           this._pendingNextTrackRequest = false;
           this._skipInProgress = false;
           return;
         }
       }
 
-      console.log(`Playing previous wishlist track (${prevIndex + 1} of ${this._wishlistItems.length})`);
+      Logger.info(`Playing previous wishlist track (${prevIndex + 1} of ${this._wishlistItems.length})`);
       this.playWishlistTrack(prevIndex);
       
       // Clear the pending flag after a delay to prevent rapid successive skips
@@ -1146,10 +916,10 @@ export class BandcampFacade {
     }
 
     if (this._wishlistItems.length > 0) {
-      console.log(`Starting wishlist playback with ${this._wishlistItems.length} items`);
+      Logger.info(`Starting wishlist playback with ${this._wishlistItems.length} items`);
       this.playWishlistTrack(0);
     } else {
-      console.warn('No wishlist items found to play');
+      Logger.warn('No wishlist items found to play');
     }
   }
 
@@ -1169,19 +939,19 @@ export class BandcampFacade {
     }
 
     try {
-      console.log('Setting up continuous playback for wishlist');
+      Logger.info('Setting up continuous playback for wishlist');
       
       // Wait for the audio element to be created (it might not exist immediately)
       const setupAudioListeners = () => {
         // Find the audio element
-        const audio = document.querySelector('audio');
+        const audio = AudioUtils.getAudioElement();
         if (!audio) {
-          console.log('No audio element found yet, will check again soon');
+          Logger.info('No audio element found yet, will check again soon');
           setTimeout(setupAudioListeners, 1000);
           return;
         }
         
-        console.log('Found audio element, setting up ended event listener');
+        Logger.info('Found audio element, setting up ended event listener');
         
         // Remove any existing event listeners first to avoid duplicates
         audio.removeEventListener('ended', this.handleTrackEnded);
@@ -1197,14 +967,14 @@ export class BandcampFacade {
         audio.removeEventListener('loadstart', this.handleAudioLoadStart);
         audio.addEventListener('loadstart', this.handleAudioLoadStart);
         
-        console.log('Continuous playback setup complete');
+        Logger.info('Continuous playback setup complete');
       };
       
       // Start setting up listeners
       setupAudioListeners();
       
     } catch (error) {
-      console.error('Error setting up continuous playback:', error);
+      ErrorHandler.withErrorHandling(() => { throw error; }, 'Error setting up continuous playback');
     }
   }
   
@@ -1212,7 +982,7 @@ export class BandcampFacade {
    * Handler for when a track ends - plays the next track
    */
   private static handleTrackEnded = () => {
-    console.log('Track ended, playing next track');
+    Logger.info('Track ended, playing next track');
     // Use BandcampFacade instead of this to avoid reference issues
     if (BandcampFacade.isWishlistPage && BandcampFacade._currentWishlistIndex >= 0) {
       BandcampFacade.playNextWishlistTrack();
@@ -1226,11 +996,11 @@ export class BandcampFacade {
     const audio = event.target as HTMLAudioElement;
     const error = audio.error;
     
-    console.log('Audio playback error:', error);
+    Logger.warn('Audio playback error:', error);
     
     // Stop if we're already processing an error
     if (BandcampFacade._errorRecoveryInProgress) {
-      console.log('Already recovering from an error, ignoring additional error events');
+      Logger.info('Already recovering from an error, ignoring additional error events');
       return;
     }
     
@@ -1238,7 +1008,7 @@ export class BandcampFacade {
     BandcampFacade._errorRecoveryInProgress = true;
     
     try {
-      console.log('Attempting to recover from audio error');
+      Logger.info('Attempting to recover from audio error');
       
       // Extract track ID from the current URL if possible
       let trackId = null;
@@ -1249,7 +1019,7 @@ export class BandcampFacade {
       
       // If we have a track ID, add it to the problem list
       if (trackId && trackId !== '') {
-        console.log(`[Bandcamp+] Adding track ID ${trackId} to problem list due to playback error`);
+        Logger.info(`[Bandcamp+] Adding track ID ${trackId} to problem list due to playback error`);
         BandcampFacade._problemTrackIds.add(trackId);
       }
       
@@ -1257,7 +1027,7 @@ export class BandcampFacade {
       if (error) {
         switch (error.code) {
           case MediaError.MEDIA_ERR_NETWORK:
-            console.log('Network error detected, attempting to reload audio');
+            Logger.info('Network error detected, attempting to reload audio');
             if (!BandcampFacade._skipInProgress) {
               BandcampFacade._skipInProgress = true;
               setTimeout(() => {
@@ -1272,7 +1042,7 @@ export class BandcampFacade {
             
           case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
           case MediaError.MEDIA_ERR_DECODE:
-            console.log('Media format error detected, skipping to next track immediately');
+            Logger.info('Media format error detected, skipping to next track immediately');
             if (!BandcampFacade._skipInProgress) {
               BandcampFacade._skipInProgress = true;
               setTimeout(() => {
@@ -1286,7 +1056,7 @@ export class BandcampFacade {
             break;
             
           default:
-            console.log('Unrecoverable audio error, skipping to next track');
+            Logger.info('Unrecoverable audio error, skipping to next track');
             if (!BandcampFacade._skipInProgress) {
               BandcampFacade._skipInProgress = true;
               setTimeout(() => {
@@ -1300,7 +1070,7 @@ export class BandcampFacade {
             break;
         }
       } else {
-        console.log('Unrecoverable audio error, skipping to next track');
+        Logger.info('Unrecoverable audio error, skipping to next track');
         if (!BandcampFacade._skipInProgress) {
           BandcampFacade._skipInProgress = true;
           setTimeout(() => {
@@ -1313,7 +1083,7 @@ export class BandcampFacade {
         }
       }
     } catch (e) {
-      console.error('Error in audio error handler:', e);
+      Logger.error('Error in audio error handler:', e);
       BandcampFacade._errorRecoveryInProgress = false;
       BandcampFacade._skipInProgress = false;
     }
@@ -1341,7 +1111,7 @@ export class BandcampFacade {
       
       // Create a new URL with corrected parameters
       const newUrl = `${baseUrl}?${params.toString()}`;
-      console.log(`Created fixed stream URL: ${newUrl}`);
+      Logger.info(`Created fixed stream URL: ${newUrl}`);
       
       // Set the new URL and attempt playback
       audio.src = newUrl;
@@ -1351,51 +1121,51 @@ export class BandcampFacade {
       const playPromise = audio.play();
       if (playPromise !== undefined) {
         playPromise.catch(e => {
-          console.error('Error playing with fixed URL:', e);
+          ErrorHandler.withErrorHandling(() => { throw e; }, 'Error playing with fixed URL');
           
           // Try a second approach - create a completely new URL
           const directStreamUrl = `https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=${trackId}&ts=${timestamp}`;
-          console.log(`Trying direct stream URL: ${directStreamUrl}`);
+          Logger.info(`Trying direct stream URL: ${directStreamUrl}`);
           
           audio.src = directStreamUrl;
           audio.load();
           audio.play().catch(innerError => {
-            console.error('Error playing with direct URL:', innerError);
+            ErrorHandler.withErrorHandling(() => { throw innerError; }, 'Error playing with direct URL');
             
             // Wait longer before giving up on this track
             setTimeout(() => {
               if (audio && !(audio as HTMLAudioElement).paused) {
-                console.log('Direct URL approach eventually succeeded');
+                Logger.info('Direct URL approach eventually succeeded');
                 BandcampFacade._errorRecoveryInProgress = false;
                 BandcampFacade._consecutiveErrors = 0;
               } else {
-                console.warn('All URL fixes failed, will attempt to skip track');
+                Logger.warn('All URL fixes failed, will attempt to skip track');
                 
                 // Try clicking the play button again as last resort
                 const playButton = BandcampFacade.findPlayButton(currentItem);
                 if (playButton) {
-                  console.log('Trying to recover by clicking play button');
+                  Logger.info('Trying to recover by clicking play button');
                   playButton.click();
                   
                   // Check after a longer delay if this approach worked
                   setTimeout(() => {
                     if (audio && !(audio as HTMLAudioElement).paused) {
-                      console.log('Play button click recovery was successful');
+                      Logger.info('Play button click recovery was successful');
                       BandcampFacade._errorRecoveryInProgress = false;
                       BandcampFacade._consecutiveErrors = 0;
                     } else {
-                      console.warn('Play button click failed to recover playback');
+                      Logger.warn('Play button click failed to recover playback');
                       // Skip to the next track after a longer delay to avoid race conditions
                       setTimeout(() => {
                         BandcampFacade._errorRecoveryInProgress = false;
-                        console.log('Skipping to next track after attempted recovery');
+                        Logger.info('Skipping to next track after attempted recovery');
                         BandcampFacade.playNextWishlistTrack();
                       }, 2000);
                     }
                   }, 2000);
                 } else {
                   // If all else fails, skip to the next track
-                  console.log('Could not recover current track, skipping to next');
+                  Logger.info('Could not recover current track, skipping to next');
                   // Add a delay before skipping to avoid race conditions
                   setTimeout(() => {
                     BandcampFacade._errorRecoveryInProgress = false;
@@ -1411,17 +1181,17 @@ export class BandcampFacade {
       // Check after a delay if the recovery was successful
       setTimeout(() => {
         if (audio && !(audio as HTMLAudioElement).paused) {
-          console.log('Fixed URL recovery was successful');
+          Logger.info('Fixed URL recovery was successful');
           BandcampFacade._errorRecoveryInProgress = false;
           BandcampFacade._consecutiveErrors = 0;
         } else {
           // The check in the error callback will handle this case
-          console.log('Waiting for recovery attempt result...');
+          Logger.info('Waiting for recovery attempt result...');
         }
       }, 1500);
       
     } catch (urlError) {
-      console.error('Error creating fixed URL:', urlError);
+      Logger.error('Error creating fixed URL:', urlError);
       
       // Release the error recovery flag after a suitable delay
       setTimeout(() => {
@@ -1439,22 +1209,9 @@ export class BandcampFacade {
   public static findPlayButton(item: HTMLElement): HTMLElement | null {
     try {
       // Try multiple selectors for play buttons that might exist in the item
-      const selectors = [
-        '.play-button',
-        '.play-col .playbutton',
-        '[class*="play"]',
-        'button[title*="Play"]',
-        'div[role="button"][title*="Play"]',
-        'svg[class*="play"]',
-        'a[class*="play"]'
-      ];
-      
-      // Try each selector
-      for (const selector of selectors) {
-        const button = item.querySelector(selector);
-        if (button) {
-          return button as HTMLElement;
-        }
+      const button = DOMSelectors.findOneWithSelectors<HTMLElement>(DOMSelectors.PLAY_BUTTONS, item);
+      if (button) {
+        return button;
       }
       
       // Check for any element with an onclick handler that might be a play button
@@ -1507,7 +1264,7 @@ export class BandcampFacade {
       // No play button found
       return null;
     } catch (error) {
-      console.error('Error finding play button:', error);
+      ErrorHandler.withErrorHandling(() => { throw error; }, 'Error finding play button');
       return null;
     }
   }
@@ -1518,34 +1275,34 @@ export class BandcampFacade {
    */
   private static verifyWishlistPlayback(index: number): void {
     // Verify that audio is actually playing
-    const audio = document.querySelector('audio');
+    const audio = AudioUtils.getAudioElement();
     
     if (!audio) {
-      console.warn('No audio element found during playback verification');
+      Logger.warn('No audio element found during playback verification');
       return;
     }
     
     // Check if the audio is playing and not paused
     if (!audio.paused) {
-      console.log(`Track ${index + 1} is playing successfully`);
+      Logger.info(`Track ${index + 1} is playing successfully`);
       // Reset consecutive errors since we have a successful playback
       this._consecutiveErrors = 0;
     } else {
       // Audio is paused - check if it has a valid source and is just loading
       if (audio.src && !audio.src.includes('blob:') && !audio.src.includes('track_id=&')) {
-        console.log(`Track ${index + 1} has valid source, waiting for playback to start`);
+        Logger.info(`Track ${index + 1} has valid source, waiting for playback to start`);
         // Check again after a short delay in case it's still loading
         setTimeout(() => {
           if (!audio.paused) {
-            console.log(`Track ${index + 1} started playing after delay`);
+            Logger.info(`Track ${index + 1} started playing after delay`);
             this._consecutiveErrors = 0;
           } else {
-            console.warn(`Track ${index + 1} failed to play automatically`);
+            Logger.warn(`Track ${index + 1} failed to play automatically`);
             this._consecutiveErrors++;
             
             // If we've tried a few times and it's still not playing, move to the next track
             if (this._consecutiveErrors >= this._maxConsecutiveErrors) {
-              console.warn(`Track ${index + 1} failed ${this._consecutiveErrors} times, skipping to next track`);
+              Logger.warn(`Track ${index + 1} failed ${this._consecutiveErrors} times, skipping to next track`);
               // Add a delay before skipping to avoid race conditions
               setTimeout(() => {
                 this.playNextWishlistTrack();
@@ -1555,7 +1312,7 @@ export class BandcampFacade {
         }, 2000);
       } else {
         // The source is invalid
-        console.warn(`Track ${index + 1} has invalid source: ${audio.src}`);
+        Logger.warn(`Track ${index + 1} has invalid source: ${audio.src}`);
         this._consecutiveErrors++;
         
         // Try to fix the URL if it's missing the track ID
@@ -1564,8 +1321,8 @@ export class BandcampFacade {
           if (currentItem) {
             const trackId = currentItem.getAttribute('data-track-id');
             if (trackId) {
-              console.log(`[Bandcamp+] Detected stream URL with missing track ID: ${audio.src}`);
-              console.log(`[Bandcamp+] Found track ID from collection item: ${trackId}`);
+              Logger.info(`[Bandcamp+] Detected stream URL with missing track ID: ${audio.src}`);
+              Logger.info(`[Bandcamp+] Found track ID from collection item: ${trackId}`);
               
               // Update the URL with the track ID
               try {
@@ -1580,33 +1337,33 @@ export class BandcampFacade {
                 
                 // Create the fixed URL
                 const fixedUrl = `${baseUrl}?${params.toString()}`;
-                console.log(`[Bandcamp+] Fixed stream URL: ${fixedUrl}`);
+                Logger.info(`[Bandcamp+] Fixed stream URL: ${fixedUrl}`);
                 
                 // Set the new URL and try to play
                 audio.src = fixedUrl;
                 audio.load();
                 audio.play().catch(e => {
-                  console.log(`[Bandcamp+] Error playing fixed audio: ${e.message}`);
+                  Logger.warn(`[Bandcamp+] Error playing fixed audio: ${e.message}`);
                   // If it still fails, skip to next track
                   setTimeout(() => {
                     this.playNextWishlistTrack();
                   }, 1000);
                 });
               } catch (error) {
-                console.error('Error fixing stream URL:', error);
+                Logger.error('Error fixing stream URL:', error);
                 // Move to the next track
                 setTimeout(() => {
                   this.playNextWishlistTrack();
                 }, 1000);
               }
             } else {
-              console.warn(`No track ID available for item ${index}, trying next track`);
+              Logger.warn(`No track ID available for item ${index}, trying next track`);
               setTimeout(() => {
                 this.playNextWishlistTrack();
               }, 1000);
             }
           } else {
-            console.warn(`No wishlist item found at index ${index}, trying next track`);
+            Logger.warn(`No wishlist item found at index ${index}, trying next track`);
             setTimeout(() => {
               this.playNextWishlistTrack();
             }, 1000);
@@ -1634,7 +1391,7 @@ export class BandcampFacade {
         audio.src && 
         (audio.src.includes('track_id=&') || !audio.src.includes('track_id='))) {
       
-      console.log('[Bandcamp+] Detected stream URL with missing track ID:', audio.src);
+      Logger.info('[Bandcamp+] Detected stream URL with missing track ID:', audio.src);
       
       // Get the current item
       const currentItem = BandcampFacade._wishlistItems[BandcampFacade._currentWishlistIndex];
@@ -1644,7 +1401,7 @@ export class BandcampFacade {
         if (trackId) {
           // Check if it's a known problematic track ID (like 3302866485)
           if (BandcampFacade._problemTrackIds.has(trackId) || trackId === '3302866485') {
-            console.log(`[Bandcamp+] Detected known problematic track ID: ${trackId}, skipping track`);
+            Logger.info(`[Bandcamp+] Detected known problematic track ID: ${trackId}, skipping track`);
             // Add to problem track IDs if not already there
             if (!BandcampFacade._problemTrackIds.has(trackId)) {
               BandcampFacade._problemTrackIds.add(trackId);
@@ -1667,7 +1424,7 @@ export class BandcampFacade {
             return;
           }
           
-          console.log('[Bandcamp+] Found track ID from collection item:', trackId);
+          Logger.info('[Bandcamp+] Found track ID from collection item:', trackId);
           
           // Update the URL with the track ID
           try {
@@ -1682,18 +1439,18 @@ export class BandcampFacade {
             
             // Create the fixed URL
             const fixedUrl = `${baseUrl}?${params.toString()}`;
-            console.log('[Bandcamp+] Fixed stream URL:', fixedUrl);
+            Logger.info('[Bandcamp+] Fixed stream URL:', fixedUrl);
             
             // Set the new URL and try to play
             audio.src = fixedUrl;
             audio.load();
             audio.play().catch(e => {
-              console.log('[Bandcamp+] Error playing fixed audio:', e);
+              Logger.warn('[Bandcamp+] Error playing fixed audio:', e);
               
               // Check if this is a 404 error or media format error
               if (e.name === 'NotSupportedError' || 
                  (typeof e === 'object' && e.message && e.message.includes('404'))) {
-                console.log('[Bandcamp+] Track may be unavailable (404/NotSupported), adding to problem list');
+                Logger.info('[Bandcamp+] Track may be unavailable (404/NotSupported), adding to problem list');
                 BandcampFacade._problemTrackIds.add(trackId);
                 
                 // Move to next track directly
@@ -1704,12 +1461,12 @@ export class BandcampFacade {
                 // For other errors, try a completely different URL format as last resort
                 try {
                   const directStreamUrl = `https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=${trackId}&ts=${timestamp}`;
-                  console.log('[Bandcamp+] Trying direct stream URL as last resort:', directStreamUrl);
+                  Logger.info('[Bandcamp+] Trying direct stream URL as last resort:', directStreamUrl);
                   
                   audio.src = directStreamUrl;
                   audio.load();
                   audio.play().catch(directError => {
-                    console.log('[Bandcamp+] Direct stream URL also failed:', directError);
+                    Logger.warn('[Bandcamp+] Direct stream URL also failed:', directError);
                     
                     // Give up and move to next track
                     setTimeout(() => {
@@ -1717,29 +1474,28 @@ export class BandcampFacade {
                     }, 500);
                   });
                 } catch (directUrlError) {
-                  console.error('[Bandcamp+] Error creating direct stream URL:', directUrlError);
+                  Logger.error('[Bandcamp+] Error creating direct stream URL:', directUrlError);
                   setTimeout(() => {
                     BandcampFacade.playNextWishlistTrack();
                   }, 500);
                 }
               }
-            });
-          } catch (error) {
-            console.error('Error fixing stream URL:', error);
-            
-            // Move to the next track if we encounter an error
+            });              } catch (error) {
+                ErrorHandler.withErrorHandling(() => { throw error; }, 'Error fixing stream URL');
+                
+                // Move to the next trackif we encounter an error
             setTimeout(() => {
               BandcampFacade.playNextWishlistTrack();
             }, 500);
           }
         } else {
-          console.warn('[Bandcamp+] No track ID available for current item, trying next track');
+          Logger.warn('[Bandcamp+] No track ID available for current item, trying next track');
           setTimeout(() => {
             BandcampFacade.playNextWishlistTrack();
           }, 500);
         }
       } else {
-        console.warn('[Bandcamp+] No current wishlist item found, trying next track');
+        Logger.warn('[Bandcamp+] No current wishlist item found, trying next track');
         setTimeout(() => {
           BandcampFacade.playNextWishlistTrack();
         }, 500);
@@ -1751,27 +1507,7 @@ export class BandcampFacade {
    * Click the buy button on the current page
    */
   public static clickBuyButtonOnCurrentPage(): void {
-    try {
-      // Try to find the buy button on the page
-      const buyButton = document.querySelector('button.buyItem, .buy-button, .buyItem, [data-tralbumdata] button');
-      
-      if (buyButton) {
-        console.log('Found buy button, clicking it');
-        (buyButton as HTMLElement).click();
-      } else {
-        // Try alternate selectors for buy links
-        const buyLink = document.querySelector('a.buyLink, a.buy-link, a[href*="buy"], .buyItem a');
-        
-        if (buyLink) {
-          console.log('Found buy link, clicking it');
-          (buyLink as HTMLElement).click();
-        } else {
-          console.warn('No buy button found on the current page');
-        }
-      }
-    } catch (error) {
-      console.error('Error clicking buy button:', error);
-    }
+    BuyUtils.clickBuyButtonOnCurrentPage();
   }
 
   /**
@@ -1783,7 +1519,7 @@ export class BandcampFacade {
       // If we have wishlist items but no track is currently playing (index is -1)
       // Simply do nothing as requested
       if (this._currentWishlistIndex < 0) {
-        console.log('C key detected - no track selected, ignoring press');
+        Logger.info('C key detected - no track selected, ignoring press');
         return;
       }
       
@@ -1791,28 +1527,19 @@ export class BandcampFacade {
       if (this._wishlistItems.length > 0) {
         const currentItem = this._wishlistItems[this._currentWishlistIndex];
         if (currentItem) {
-          console.log('C key detected - buying current track from wishlist');
+          Logger.info('C key detected - buying current track from wishlist');
           
           // First priority: Check the now-playing section which has accurate links for the current track
           const nowPlaying = document.querySelector('.now-playing');
           if (nowPlaying) {
-            console.log('Found now-playing section, checking for direct buy links');
+            Logger.info('Found now-playing section, checking for direct buy links');
             
             // Look for the buy-now link in the now-playing section which should point to the individual track
-            const nowPlayingBuyLink = nowPlaying.querySelector('.buy-now a');
+            const nowPlayingBuyLink = BuyUtils.findBuyLinkInContainer(nowPlaying as HTMLElement);
             if (nowPlayingBuyLink) {
-              console.log('Found buy now link in now-playing section, using this');
-              let href = (nowPlayingBuyLink as HTMLAnchorElement).href;
-              
-              // Add add_to_cart parameter to the URL
-              if (href.includes('?')) {
-                href += '&add_to_cart=true';
-              } else {
-                href += '?add_to_cart=true';
-              }
-              
-              console.log('Opening buy link with add_to_cart parameter in new tab:', href);
-              window.open(href, '_blank');
+              Logger.info('Found buy now link in now-playing section, using this');
+              const href = (nowPlayingBuyLink as HTMLAnchorElement).href;
+              BuyUtils.openBuyLinkWithCart(href);
               return;
             }
             
@@ -1821,73 +1548,33 @@ export class BandcampFacade {
             if (nowPlayingTrackLink) {
               const trackLinkParent = nowPlayingTrackLink.closest('a');
               if (trackLinkParent) {
-                console.log('Found track link in now-playing section, using this instead');
-                let href = (trackLinkParent as HTMLAnchorElement).href;
-                if (href.includes('?')) {
-                  href += '&add_to_cart=true';
-                } else {
-                  href += '?add_to_cart=true';
-                }
-                window.open(href, '_blank');
+                Logger.info('Found track link in now-playing section, using this instead');
+                const href = (trackLinkParent as HTMLAnchorElement).href;
+                BuyUtils.openBuyLinkWithCart(href);
                 return;
               }
             }
           }
           
           // Look for buy links in the current item
-          const buyNowLink = currentItem.querySelector('.buy-now a, a[href*="/track/"]');
-          
-          // Look for elements with the text "buy now" 
-          const allSpans = currentItem.querySelectorAll('span.txt');
-          let buyNowText = null;
-          for (let i = 0; i < allSpans.length; i++) {
-            const span = allSpans[i];
-            if (span.textContent && span.textContent.trim().toLowerCase() === 'buy now') {
-              buyNowText = span;
-              break;
-            }
-          }
-          
-          let buyLink = buyNowLink;
-          if (!buyLink && buyNowText) {
-            buyLink = buyNowText.closest('a');
-          }
-          
-          // Try to find a direct buy link
-          if (!buyLink) {
-            buyLink = currentItem.querySelector('a.buy-link, a.buyLink, a[href*="/buy"], a[href*="?buy"]');
-          }
+          const buyLink = BuyUtils.findBuyLinkInContainer(currentItem);
           
           if (buyLink) {
-            console.log('Found buy link, opening it in new tab');
-            // Add add_to_cart parameter to the URL
-            let href = (buyLink as HTMLAnchorElement).href;
-            if (href.includes('?')) {
-              href += '&add_to_cart=true';
-            } else {
-              href += '?add_to_cart=true';
-            }
-            console.log('Opening buy link with add_to_cart parameter in new tab:', href);
-            window.open(href, '_blank');
+            Logger.info('Found buy link, opening it in new tab');
+            const href = (buyLink as HTMLAnchorElement).href;
+            BuyUtils.openBuyLinkWithCart(href);
             return;
           }
           
           // If no direct buy link in the item, try to find the track/album URL
           // Prioritize track links over album links
-          const trackLink = currentItem.querySelector('a[href*="/track/"]') || 
-                           currentItem.querySelector('a[href*="/album/"]');
+          const trackLink = DOMSelectors.findOneWithSelectors<HTMLAnchorElement>(DOMSelectors.ALBUM_TRACK_LINKS, currentItem);
           
           if (trackLink) {
             // Get the href and add add_to_cart parameter
-            let href = (trackLink as HTMLAnchorElement).href;
-            if (href.includes('?')) {
-              href += '&add_to_cart=true';
-            } else {
-              href += '?add_to_cart=true';
-            }
-            console.log('Opening track page with add_to_cart parameter in new tab:', href);
-            // Open in new tab instead of current tab
-            window.open(href, '_blank');
+            const href = (trackLink as HTMLAnchorElement).href;
+            Logger.info('Opening track page with add_to_cart parameter in new tab:', href);
+            BuyUtils.openBuyLinkWithCart(href);
             return;
           }
           
@@ -1896,16 +1583,8 @@ export class BandcampFacade {
                           currentItem.getAttribute('data-album-url') || 
                           currentItem.getAttribute('data-track-href');
           if (trackUrl) {
-            // Get the URL and add add_to_cart parameter
-            let href = trackUrl;
-            if (href.includes('?')) {
-              href += '&add_to_cart=true';
-            } else {
-              href += '?add_to_cart=true';
-            }
-            console.log('Opening track URL from data attribute with add_to_cart parameter in new tab:', href);
-            // Open in new tab instead of current tab
-            window.open(href, '_blank');
+            Logger.info('Opening track URL from data attribute with add_to_cart parameter in new tab:', trackUrl);
+            BuyUtils.openBuyLinkWithCart(trackUrl);
             return;
           }
           
@@ -1914,21 +1593,18 @@ export class BandcampFacade {
           if (anyLink) {
             const href = (anyLink as HTMLAnchorElement).href;
             if (href && (href.includes('bandcamp.com') || href.startsWith('/'))) {
-              // Add add_to_cart parameter
-              const addToCartHref = href.includes('?') ? href + '&add_to_cart=true' : href + '?add_to_cart=true';
-              console.log('Opening potentially related page with add_to_cart parameter in new tab:', addToCartHref);
-              // Open in new tab instead of current tab
-              window.open(addToCartHref, '_blank');
+              Logger.info('Opening potentially related page with add_to_cart parameter in new tab:', href);
+              BuyUtils.openBuyLinkWithCart(href);
               return;
             }
           }
           
-          console.warn('Could not find any suitable link to the track page in the current wishlist item');
+          Logger.warn('Could not find any suitable link to the track page in the current wishlist item');
         } else {
-          console.warn('Current wishlist item not found');
+          Logger.warn('Current wishlist item not found');
         }
       } else {
-        console.warn('No wishlist items loaded');
+        Logger.warn('No wishlist items loaded');
       }
     } else {
       // Default behavior for non-wishlist pages
@@ -1946,7 +1622,7 @@ export class BandcampFacade {
     try {
       // Check if toggle is already in progress to prevent rapid toggling
       if (this._playPauseInProgress) {
-        console.log('Play/pause toggle already in progress, ignoring request');
+        Logger.info('Play/pause toggle already in progress, ignoring request');
         return;
       }
 
@@ -1957,25 +1633,24 @@ export class BandcampFacade {
       if (this.isWishlistPage) {
         // Check if we need to start playback for the first time (no track selected yet)
         if (this._currentWishlistIndex < 0 && this._wishlistItems.length === 0) {
-          console.log('Loading wishlist items for first-time playback');
+          Logger.info('Loading wishlist items for first-time playback');
           this.loadWishlistItems();
         }
         
         if (this._currentWishlistIndex < 0 && this._wishlistItems.length > 0) {
-          console.log('No track currently selected on wishlist page, starting from first track');
+          Logger.info('No track currently selected on wishlist page, starting from first track');
           // Clear the flag before starting a new track to avoid lockout
           this._playPauseInProgress = false;
           this.startWishlistPlayback();
           return;
         }
         
-        const wishlistAudio = document.querySelector('.carousel-player-inner audio') || 
-                              document.querySelector('audio');
+        const wishlistAudio = AudioUtils.getWishlistAudioElement();
         
         if (wishlistAudio) {
           // Toggle play/pause state
           if ((wishlistAudio as HTMLAudioElement).paused) {
-            console.log('Playing audio on wishlist page');
+            Logger.info('Playing audio on wishlist page');
             (wishlistAudio as HTMLAudioElement).play()
               .then(() => {
                 // Clear the flag after successful play
@@ -1984,12 +1659,12 @@ export class BandcampFacade {
                 }, 300);
               })
               .catch(e => {
-                console.error('Error playing audio:', e);
+                ErrorHandler.withErrorHandling(() => { throw e; }, 'Error playing audio');
                 // Clear the flag even if there's an error
                 this._playPauseInProgress = false;
               });
           } else {
-            console.log('Pausing audio on wishlist page');
+            Logger.info('Pausing audio on wishlist page');
             (wishlistAudio as HTMLAudioElement).pause();
             // Clear the flag after a short delay for pausing
             setTimeout(() => {
@@ -2014,7 +1689,7 @@ export class BandcampFacade {
       // Standard handling for regular Bandcamp pages
       const playButton = this.getPlay();
       if (playButton) {
-        console.log('Clicking play button to toggle play/pause');
+        Logger.info('Clicking play button to toggle play/pause');
         playButton.click();
         // Clear the flag after a short delay for button click
         setTimeout(() => {
@@ -2022,10 +1697,10 @@ export class BandcampFacade {
         }, 300);
       } else {
         // Try direct audio control as fallback
-        const audio = this.audio || document.querySelector('audio');
+        const audio = this.audio || AudioUtils.getAudioElement();
         if (audio) {
           if (audio.paused) {
-            console.log('Playing audio directly');
+            Logger.info('Playing audio directly');
             audio.play()
               .then(() => {
                 // Clear the flag after successful play
@@ -2034,12 +1709,12 @@ export class BandcampFacade {
                 }, 300);
               })
               .catch(e => {
-                console.error('Error playing audio:', e);
+                Logger.error('Error playing audio:', e);
                 // Clear the flag even if there's an error
                 this._playPauseInProgress = false;
               });
           } else {
-            console.log('Pausing audio directly');
+            Logger.info('Pausing audio directly');
             audio.pause();
             // Clear the flag after a short delay for pausing
             setTimeout(() => {
@@ -2047,13 +1722,13 @@ export class BandcampFacade {
             }, 300);
           }
         } else {
-          console.warn('No play button or audio element found for toggle play/pause');
+          Logger.warn('No play button or audio element found for toggle play/pause');
           // Clear the flag immediately if we couldn't find anything to toggle
           this._playPauseInProgress = false;
         }
       }
     } catch (error) {
-      console.error('Error in togglePlayPause:', error);
+      Logger.error('Error in togglePlayPause:', error);
       // Make sure to clear the flag even if there's an error
       this._playPauseInProgress = false;
     }
@@ -2064,7 +1739,7 @@ export class BandcampFacade {
    */
   public static toggleCurrentTrackWishlist(): void {
     if (!this.isWishlistPage || this._currentWishlistIndex < 0 || !this._wishlistItems.length) {
-      console.warn('Cannot toggle current track wishlist - not on wishlist page or no track selected');
+      Logger.warn('Cannot toggle current track wishlist - not on wishlist page or no track selected');
       return;
     }
 
@@ -2072,30 +1747,17 @@ export class BandcampFacade {
       // Get the current wishlist item
       const currentItem = this._wishlistItems[this._currentWishlistIndex];
       if (!currentItem) {
-        console.warn('Current wishlist item not found');
+        Logger.warn('Current wishlist item not found');
         return;
       }
       
-      // Try to find the track ID for this item to use in the API call
-      const trackId = currentItem.getAttribute('data-track-id') || 
-                      currentItem.getAttribute('data-item-id') || 
-                      currentItem.getAttribute('data-tralbum-id');
+      // Extract track information using centralized service
+      const trackInfo = WishlistService.extractTrackInfo(currentItem);
       
-      if (trackId) {
-        console.log(`Found track ID ${trackId} for wishlist toggle`);
+      if (trackInfo.trackId) {
+        Logger.info(`Found track ID ${trackInfo.trackId} for wishlist toggle`);
         
-        // Get the item_type (track or album) from URL if possible
-        let itemType = 'track'; // Default to track
-        const itemLinks = currentItem.querySelectorAll('a[href*="/album/"], a[href*="/track/"]');
-        if (itemLinks.length > 0) {
-          const href = itemLinks[0].getAttribute('href');
-          if (href && href.includes('/album/')) {
-            itemType = 'album';
-          }
-        }
-        
-        // First try to use direct XHR to toggle wishlist status
-        // We need fan_id which might be in the page data
+        // First try to use direct API to toggle wishlist status
         const pageData = document.getElementById('pagedata');
         if (pageData) {
           const dataBlob = pageData.getAttribute('data-blob');
@@ -2105,70 +1767,44 @@ export class BandcampFacade {
               const fanId = data.fan_id || (data.fan_tralbum_data && data.fan_tralbum_data.fan_id);
               
               if (fanId) {
-                console.log(`Found fan ID: ${fanId}, attempting to toggle wishlist via API`);
+                Logger.info(`Found fan ID: ${fanId}, attempting to toggle wishlist via API`);
                 
-                // Get the appropriate endpoint
-                // Since we're on the wishlist page, we want to remove (uncollect) the item
-                const endpoint = 'uncollect_item_cb';
-                
-                // Create the request payload
-                const payload = new URLSearchParams();
-                payload.append('fan_id', fanId.toString());
-                payload.append('item_id', trackId);
-                payload.append('item_type', itemType);
-                payload.append('platform', 'desktop');
-                
-                // Get a CSRF token if available
-                const csrfTokenElement = document.querySelector('meta[name="csrf-token"]');
-                if (csrfTokenElement) {
-                  const csrfToken = csrfTokenElement.getAttribute('content');
-                  if (csrfToken) {
-                    payload.append('csrf_token', csrfToken);
-                  }
-                }
-                
-                // Make the request
-                fetch(`https://${window.location.host}/${endpoint}`, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                  },
-                  body: payload.toString(),
-                  credentials: 'same-origin'
-                })
-                .then(response => response.json())
-                .then(data => {
-                  console.log('Wishlist toggle response:', data);
-                  if (data.ok) {
-                    console.log('Successfully toggled wishlist status via API!');
-                    
-                    // Update UI - hide or remove the item since we're on the wishlist page
-                    currentItem.style.opacity = '0.5';
-                    currentItem.style.transition = 'opacity 0.3s';
-                    setTimeout(() => {
-                      // Either remove from DOM or hide
-                      if (currentItem.parentElement) {
-                        currentItem.parentElement.removeChild(currentItem);
-                        // Update the wishlist items array
-                        this._wishlistItems = this._wishlistItems.filter(item => item !== currentItem);
-                      } else {
-                        currentItem.style.display = 'none';
-                      }
-                    }, 300);
-                    
-                    return;
-                  }
-                })
-                .catch(error => {
-                  console.error('Error toggling wishlist via API:', error);
-                  // Fall back to clicking UI elements
-                  this.fallbackToWishlistButtonClick(currentItem);
-                });
+                // Use centralized API method - since we're on wishlist page, we want to remove
+                WishlistService.toggleWishlistViaAPI(trackInfo.trackId, fanId.toString(), trackInfo.itemType, true)
+                  .then((success: boolean) => {
+                    if (success) {
+                      Logger.info('Successfully toggled wishlist status via API!');
+                      
+                      // Update UI - hide or remove the item since we're on the wishlist page
+                      currentItem.style.opacity = '0.5';
+                      currentItem.style.transition = 'opacity 0.3s';
+                      setTimeout(() => {
+                        // Either remove from DOM or hide
+                        if (currentItem.parentElement) {
+                          currentItem.parentElement.removeChild(currentItem);
+                          // Update the wishlist items array
+                          this._wishlistItems = this._wishlistItems.filter(item => item !== currentItem);
+                        } else {
+                          currentItem.style.display = 'none';
+                        }
+                      }, 300);
+                      
+                      return;
+                    } else {
+                      // Fall back to UI clicking
+                      this.fallbackToWishlistButtonClick(currentItem);
+                    }
+                  })
+                  .catch((error: any) => {
+                    Logger.error('Error toggling wishlist via API:', error);
+                    // Fall back to UI clicking
+                    this.fallbackToWishlistButtonClick(currentItem);
+                  });
                 
                 return;
               }
             } catch (parseError) {
-              console.error('Error parsing page data:', parseError);
+              Logger.error('Error parsing page data:', parseError);
             }
           }
         }
@@ -2178,7 +1814,7 @@ export class BandcampFacade {
       this.fallbackToWishlistButtonClick(currentItem);
       
     } catch (error) {
-      console.error('Error toggling current track wishlist:', error);
+      Logger.error('Error toggling current track wishlist:', error);
     }
   }
   
@@ -2187,115 +1823,29 @@ export class BandcampFacade {
    * @param currentItem The current wishlist item element
    */
   private static fallbackToWishlistButtonClick(currentItem: HTMLElement): void {
-    console.log('Falling back to wishlist button click method');
+    Logger.info('Falling back to wishlist button click method');
     
     try {
-      // First, try to find the specifically styledin-wishlist element in the player
-      const inWishlistButton = document.querySelector('.wishlisted-msg a, .wishlisted-msg.collection-btn a');
-      if (inWishlistButton) {
-        console.log('Found in-wishlist button in player, clicking it');
-        (inWishlistButton as HTMLElement).click();
-        
-        // Wait for the XHR to complete and update the wishlist icon
+      // Use centralized wishlist service to click UI buttons
+      const success = WishlistService.clickWishlistToggleInUI(currentItem);
+      
+      if (success) {
+        // Update UI after a short delay using centralized service
         setTimeout(() => {
-          // Update any heart/wishlist icons, but don't remove the item from the UI
-          this.updateWishlistIcons(currentItem, false);
+          WishlistService.updateWishlistIcons(currentItem, false);
         }, 500);
         
         return;
       }
       
-      // Look for wishlist toggle elements within the current item
-      const wishlistButton = currentItem.querySelector(
-        '.wishlisted-msg a, .wishlisted-msg.collection-btn a, ' +
-        '.item-collection-controls.wishlisted a, ' + 
-        '[title*="Remove this album from your wishlist"], [title*="Remove this track from your wishlist"]'
-      );
+      // If UI clicking failed, try navigation as last resort
+      const navigationSuccess = WishlistService.navigateToTrackForWishlistToggle(currentItem, this._currentWishlistIndex);
       
-      if (wishlistButton) {
-        console.log('Found wishlist removal button in current track, clicking it');
-        (wishlistButton as HTMLElement).click();
-        
-        // Update UI after a short delay
-        setTimeout(() => {
-          // Just update the wishlist icons, don't remove the item
-          this.updateWishlistIcons(currentItem, false);
-        }, 500);
-        
-        return;
+      if (!navigationSuccess) {
+        Logger.warn('Could not find any wishlist toggle or track link for the current track');
       }
-      
-      // Try to find a button with "in wishlist" text specifically
-      const wishlistedElements = Array.from(document.querySelectorAll('a, span, .wishlisted-msg, [class*="wishlist"]'))
-        .filter(element => {
-          const text = element.textContent?.toLowerCase() || '';
-          const title = element.getAttribute('title')?.toLowerCase() || '';
-          return text.includes('in wishlist') || 
-                 text.includes('wishlisted') || 
-                 title.includes('remove') && title.includes('wishlist');
-        });
-      
-      if (wishlistedElements.length > 0) {
-        console.log('Found element with "in wishlist" text, clicking it');
-        
-        // Find the closest clickable parent or the element itself if it's clickable
-        let elementToClick = wishlistedElements[0] as HTMLElement;
-        if (elementToClick.tagName !== 'A' && elementToClick.tagName !== 'BUTTON') {
-          const clickableParent = elementToClick.closest('a, button, [role="button"]');
-          if (clickableParent) {
-            elementToClick = clickableParent as HTMLElement;
-          }
-        }
-        
-        elementToClick.click();
-        
-        // Update UI after a short delay
-        setTimeout(() => {
-          // Update wishlist icon state
-          this.updateWishlistIcons(currentItem, false);
-        }, 500);
-        
-        return;
-      }
-      
-      // If none of those specific approaches work, try finding elements in the control panel
-      const itemControls = document.querySelector('.item-collection-controls.wishlisted');
-      if (itemControls) {
-        console.log('Found item collection controls with wishlisted class');
-        const removalLink = itemControls.querySelector('.wishlisted-msg a') as HTMLElement;
-        if (removalLink) {
-          console.log('Found removal link in collection controls, clicking it');
-          removalLink.click();
-          
-          // Update UI after a short delay
-          setTimeout(() => this.updateWishlistIcons(currentItem, false), 500);
-          return;
-        }
-      }
-      
-      // Try to find a link to the track/album page as last resort
-      const trackLink = currentItem.querySelector('a[href*="/track/"], a[href*="/album/"]');
-      if (trackLink) {
-        // Get the href and navigate to it
-        const href = (trackLink as HTMLAnchorElement).href;
-        console.log('No direct wishlist button found, navigating to track page:', href);
-        
-        // Save current position before navigating away
-        const audio = document.querySelector('audio');
-        const currentTime = audio ? audio.currentTime : 0;
-        
-        // Store the current track info in sessionStorage so we can return to it
-        sessionStorage.setItem('bandcampPlus_lastTrackIndex', this._currentWishlistIndex.toString());
-        sessionStorage.setItem('bandcampPlus_lastTrackTime', currentTime.toString());
-        
-        // Navigate to the track page where wishlist toggle will be available
-        window.location.href = href;
-        return;
-      }
-      
-      console.warn('Could not find any wishlist toggle or track link for the current track');
     } catch (error) {
-      console.error('Error in fallbackToWishlistButtonClick:', error);
+      Logger.error('Error in fallbackToWishlistButtonClick:', error);
     }
   }
   
@@ -2305,72 +1855,8 @@ export class BandcampFacade {
    * @param isInWishlist Whether the item is in the wishlist or not
    */
   private static updateWishlistIcons(item: HTMLElement, isInWishlist: boolean): void {
-    console.log(`Updating wishlist icons (isInWishlist: ${isInWishlist})`);
-    
-    try {
-      // Find all wishlist-related UI elements
-      const heartIcons = item.querySelectorAll('.wishlist-icon, .fav-icon, [class*="heart"], .bc-ui2.icon.wishlist');
-      const itemControls = item.querySelector('.item-collection-controls') || 
-                          document.querySelector('.item-collection-controls');
-      
-      // Update heart icons if any
-      if (heartIcons.length > 0) {
-        heartIcons.forEach(icon => {
-          // Toggle filled/unfilled classes based on wishlist state
-          if (isInWishlist) {
-            icon.classList.remove('unfilled', 'empty');
-            icon.classList.add('filled');
-          } else {
-            icon.classList.remove('filled');
-            icon.classList.add('unfilled', 'empty');
-          }
-        });
-        console.log(`Updated ${heartIcons.length} heart icons`);
-      }
-      
-      // Update item controls classes if found
-      if (itemControls) {
-        if (isInWishlist) {
-          itemControls.classList.add('wishlisted');
-          itemControls.classList.remove('not-wishlisted');
-        } else {
-          itemControls.classList.remove('wishlisted');
-          itemControls.classList.add('not-wishlisted');
-        }
-        
-        // Toggle visibility of wishlist/wishlisted message elements
-        const wishlistMsg = itemControls.querySelector('.wishlist-msg');
-        const wishlistedMsg = itemControls.querySelector('.wishlisted-msg');
-        
-        if (wishlistMsg && wishlistedMsg) {
-          if (isInWishlist) {
-            wishlistMsg.classList.add('hidden');
-            wishlistedMsg.classList.remove('hidden');
-          } else {
-            wishlistMsg.classList.remove('hidden');
-            wishlistedMsg.classList.add('hidden');
-          }
-        }
-        
-        console.log('Updated item collection controls to reflect wishlist state');
-      }
-      
-      // Set a custom attribute to track state
-      item.setAttribute('data-bcwf-wishlisted', isInWishlist ? 'true' : 'false');
-      
-      // Add a subtle visual indication that the toggle worked
-      const originalBackground = item.style.backgroundColor;
-      item.style.transition = 'background-color 0.3s ease-out';
-      item.style.backgroundColor = isInWishlist ? 'rgba(0, 128, 0, 0.1)' : 'rgba(255, 0, 0, 0.1)';
-      
-      // Revert back after a moment
-      setTimeout(() => {
-        item.style.backgroundColor = originalBackground;
-      }, 300);
-      
-    } catch (error) {
-      console.error('Error updating wishlist icons:', error);
-    }
+    // Use centralized wishlist service
+    WishlistService.updateWishlistIcons(item, isInWishlist);
   }
   
   /**
@@ -2378,7 +1864,7 @@ export class BandcampFacade {
    * @param item The wishlist item to update UI for
    */
   private static handleWishlistItemRemoval(item: HTMLElement): void {
-    console.log('Updating wishlist UI state (not removing item)');
+    Logger.info('Updating wishlist UI state (not removing item)');
     
     // Just update the wishlist icons instead of removing the item
     this.updateWishlistIcons(item, false);
@@ -2390,35 +1876,35 @@ export class BandcampFacade {
    */
   public static async loadMoreDiscoveryItems(): Promise<boolean> {
     if (!window.location.href.includes('/discover')) {
-      console.warn('Not on discovery page, cannot load more items');
+      Logger.warn('Not on discovery page, cannot load more items');
       return false;
     }
 
     try {
-      console.log('Loading more discovery items');
+      Logger.info('Loading more discovery items');
       
       // Look for the "load more" button on the discovery page
       const loadMoreButton = document.querySelector('.show-more button, button.show-more, [data-bind*="loadMore"]');
       
       if (loadMoreButton) {
-        console.log('Found load more button, clicking it');
+        Logger.info('Found load more button, clicking it');
         (loadMoreButton as HTMLElement).click();
         
         // Wait for items to load
         return new Promise<boolean>((resolve) => {
           // Check if new items have been added after a short delay
           setTimeout(() => {
-            const currentItems = document.querySelectorAll('.discover-item, .discovery-item, .item');
-            console.log(`Found ${currentItems.length} discovery items after loading more`);
+            const currentItems = DOMSelectors.findWithSelectors<HTMLElement>(DOMSelectors.DISCOVERY_ITEMS);
+            Logger.info(`Found ${currentItems.length} discovery items after loading more`);
             resolve(true);
           }, 2000);
         });
       } else {
-        console.warn('No load more button found on discovery page');
+        Logger.warn('No load more button found on discovery page');
         return false;
       }
     } catch (error) {
-      console.error('Error loading more discovery items:', error);
+      Logger.error('Error loading more discovery items:', error);
       return false;
     }
   }
@@ -2434,32 +1920,19 @@ export class BandcampFacade {
 
     try {
       // Try different selectors for discovery items
-      const selectors = [
-        '.discover-item', 
-        '.discovery-item', 
-        '.discover-results .item',
-        '.discover-results li',
-        '.item[data-item-id]'
-      ];
+      const discoveryItems = DOMSelectors.findWithSelectors<HTMLElement>(DOMSelectors.DISCOVERY_ITEMS);
       
-      let discoveryItems: HTMLElement[] = [];
-      
-      for (const selector of selectors) {
-        const items = document.querySelectorAll<HTMLElement>(selector);
-        if (items && items.length > 0) {
-          console.log(`Found ${items.length} discovery items with selector: ${selector}`);
-          discoveryItems = Array.from(items);
-          break;
-        }
+      if (discoveryItems.length > 0) {
+        Logger.info(`Found ${discoveryItems.length} discovery items`);
       }
       
       if (discoveryItems.length === 0) {
-        console.warn('No discovery items found');
+        Logger.warn('No discovery items found');
       }
       
       return discoveryItems;
     } catch (error) {
-      console.error('Error getting discovery items:', error);
+      Logger.error('Error getting discovery items:', error);
       return [];
     }
   }
@@ -2475,25 +1948,17 @@ export class BandcampFacade {
 
     try {
       // Try different selectors for featured discovery items
-      const selectors = [
-        '.featured-item', 
-        '.discover-featured .item',
-        '.featured-items .item',
-        '.featured'
-      ];
+      const items = DOMSelectors.findWithSelectors<HTMLElement>(DOMSelectors.FEATURED_DISCOVERY_ITEMS);
       
-      for (const selector of selectors) {
-        const items = document.querySelectorAll<HTMLElement>(selector);
-        if (items && items.length > 0) {
-          console.log(`Found ${items.length} featured discovery items with selector: ${selector}`);
-          return Array.from(items);
-        }
+      if (items.length > 0) {
+        Logger.info(`Found ${items.length} featured discovery items`);
+        return items;
       }
       
-      console.warn('No featured discovery items found');
+      Logger.warn('No featured discovery items found');
       return [];
     } catch (error) {
-      console.error('Error getting featured discovery items:', error);
+      Logger.error('Error getting featured discovery items:', error);
       return [];
     }
   }
@@ -2505,30 +1970,30 @@ export class BandcampFacade {
    */
   public static clickDiscoveryItem(index: number): boolean {
     if (!window.location.href.includes('/discover')) {
-      console.warn('Not on discovery page, cannot click discovery item');
+      Logger.warn('Not on discovery page, cannot click discovery item');
       return false;
     }
     
     try {
-      const discoveryItems = document.querySelectorAll('.discover-item, .discovery-item, [data-item-id]');
+      const discoveryItems = DOMSelectors.findWithSelectors<HTMLElement>(DOMSelectors.DISCOVERY_ITEMS);
       
       if (!discoveryItems || discoveryItems.length === 0) {
-        console.warn('No discovery items found on page');
+        Logger.warn('No discovery items found on page');
         return false;
       }
       
            if (index < 0 || index >= discoveryItems.length) {
-        console.warn(`Invalid discovery item index: ${index}. Available range: 0-${discoveryItems.length - 1}`);
+        Logger.warn(`Invalid discovery item index: ${index}. Available range: 0-${discoveryItems.length - 1}`);
         return false;
       }
       
       const item = discoveryItems[index] as HTMLElement;
       item.click();
       
-      console.log(`Clicked on discovery item at index ${index}`);
+      Logger.info(`Clicked on discovery item at index ${index}`);
       return true;
     } catch (error) {
-      console.error('Error clicking discovery item:', error);
+      Logger.error('Error clicking discovery item:', error);
       return false;
     }
   }
@@ -2540,30 +2005,30 @@ export class BandcampFacade {
    */
   public static clickFeaturedDiscoveryItem(index: number): boolean {
     if (!window.location.href.includes('/discover')) {
-      console.warn('Not on discovery page, cannot click featured discovery item');
+      Logger.warn('Not on discovery page, cannot click featured discovery item');
       return false;
     }
     
     try {
-      const featuredItems = document.querySelectorAll('.featured-item, .featured-discovery-item, .discover-featured-item');
+      const featuredItems = DOMSelectors.findWithSelectors<HTMLElement>(DOMSelectors.FEATURED_DISCOVERY_ITEMS);
       
       if (!featuredItems || featuredItems.length === 0) {
-        console.warn('No featured discovery items found on page');
+        Logger.warn('No featured discovery items found on page');
         return false;
       }
       
       if (index < 0 || index >= featuredItems.length) {
-        console.warn(`Invalid featured item index: ${index}. Available range: 0-${featuredItems.length - 1}`);
+        Logger.warn(`Invalid featured item index: ${index}. Available range: 0-${featuredItems.length - 1}`);
         return false;
       }
       
       const item = featuredItems[index] as HTMLElement;
       item.click();
       
-      console.log(`Clicked on featured discovery item at index ${index}`);
+      Logger.info(`Clicked on featured discovery item at index ${index}`);
       return true;
     } catch (error) {
-      console.error('Error clicking featured discovery item:', error);
+      Logger.error('Error clicking featured discovery item:', error);
       return false;
     }
   }
@@ -2574,7 +2039,7 @@ export class BandcampFacade {
    */
   public static getDiscoveryFilters(): Record<string, any> {
     if (!window.location.href.includes('/discover')) {
-      console.warn('Not on discovery page, cannot get discovery filters');
+      Logger.warn('Not on discovery page, cannot get discovery filters');
       return {};
     }
     
@@ -2638,7 +2103,7 @@ export class BandcampFacade {
       
       return filters;
     } catch (error) {
-      console.error('Error getting discovery filters:', error);
+      Logger.error('Error getting discovery filters:', error);
       return {};
     }
   }
@@ -2651,7 +2116,7 @@ export class BandcampFacade {
    */
   public static applyDiscoveryFilter(filterType: string, value: string): boolean {
     if (!window.location.href.includes('/discover')) {
-      console.warn('Not on discovery page, cannot apply discovery filter');
+      Logger.warn('Not on discovery page, cannot apply discovery filter');
       return false;
     }
 
@@ -2667,14 +2132,14 @@ export class BandcampFacade {
       
       const selector = selectorMap[filterType.toLowerCase()];
       if (!selector) {
-        console.warn(`Unknown filter type: ${filterType}`);
+        Logger.warn(`Unknown filter type: ${filterType}`);
         return false;
       }
       
       // Find the filter element
       const filterElement = document.querySelector(selector);
       if (!filterElement) {
-        console.warn(`Filter element not found for filter type: ${filterType}`);
+        Logger.warn(`Filter element not found for filter type: ${filterType}`);
         return false;
       }
       
@@ -2687,7 +2152,7 @@ export class BandcampFacade {
         const event = new Event('change', { bubbles: true });
         selectElement.dispatchEvent(event);
         
-        console.log(`Applied ${filterType} filter with value: ${value}`);
+        Logger.info(`Applied ${filterType} filter with value: ${value}`);
         return true;
       }
       
@@ -2700,15 +2165,15 @@ export class BandcampFacade {
         
         if (optionValue === value || option.textContent === value) {
           (option as HTMLElement).click();
-          console.log(`Applied ${filterType} filter with value: ${value}`);
+          Logger.info(`Applied ${filterType} filter with value: ${value}`);
           return true;
         }
       }
       
-      console.warn(`Could not find option with value ${value} for filter type ${filterType}`);
+      Logger.warn(`Could not find option with value ${value} for filter type ${filterType}`);
       return false;
     } catch (error) {
-      console.error('Error applying discovery filter:', error);
+      Logger.error('Error applying discovery filter:', error);
       return false;
     }
   }
@@ -2720,7 +2185,7 @@ export class BandcampFacade {
    */
   public static saveDiscoveryPreference(name: string): boolean {
     if (!window.location.href.includes('/discover')) {
-      console.warn('Not on discovery page, cannot save discovery preferences');
+      Logger.warn('Not on discovery page, cannot save discovery preferences');
       return false;
     }
     
@@ -2736,7 +2201,7 @@ export class BandcampFacade {
         try {
           preferences = JSON.parse(existingPreferencesString);
         } catch (error) {
-          console.error('Error parsing existing preferences:', error);
+          Logger.error('Error parsing existing preferences:', error);
           preferences = {};
         }
       }
@@ -2747,10 +2212,10 @@ export class BandcampFacade {
       // Save back to localStorage
       localStorage.setItem('bandcampPlusDiscoveryPreferences', JSON.stringify(preferences));
       
-      console.log(`Saved discovery preference '${name}' with URL: ${currentUrl}`);
+      Logger.info(`Saved discovery preference '${name}' with URL: ${currentUrl}`);
       return true;
     } catch (error) {
-      console.error('Error saving discovery preference:', error);
+      Logger.error('Error saving discovery preference:', error);
       return false;
     }
   }
@@ -2766,7 +2231,7 @@ export class BandcampFacade {
       const existingPreferencesString = localStorage.getItem('bandcampPlusDiscoveryPreferences');
       
       if (!existingPreferencesString) {
-        console.warn('No saved discovery preferences found');
+        Logger.warn('No saved discovery preferences found');
         return false;
       }
       
@@ -2775,23 +2240,23 @@ export class BandcampFacade {
       try {
         preferences = JSON.parse(existingPreferencesString);
       } catch (error) {
-        console.error('Error parsing discovery preferences:', error);
+        Logger.error('Error parsing discovery preferences:', error);
         return false;
       }
       
       const savedUrl = preferences[name];
       
       if (!savedUrl) {
-        console.warn(`No discovery preference found with name: ${name}`);
+        Logger.warn(`No discovery preference found with name: ${name}`);
         return false;
       }
       
       // Navigate to the saved URL
-      console.log(`Loading discovery preference '${name}' with URL: ${savedUrl}`);
+      Logger.info(`Loading discovery preference '${name}' with URL: ${savedUrl}`);
       window.location.href = savedUrl;
       return true;
     } catch (error) {
-      console.error('Error loading discovery preference:', error);
+      Logger.error('Error loading discovery preference:', error);
       return false;
     }
   }
@@ -2812,11 +2277,11 @@ export class BandcampFacade {
       try {
         return JSON.parse(existingPreferencesString);
       } catch (error) {
-        console.error('Error parsing discovery preferences:', error);
+        Logger.error('Error parsing discovery preferences:', error);
         return {};
       }
     } catch (error) {
-      console.error('Error getting stored discovery preferences:', error);
+      Logger.error('Error getting stored discovery preferences:', error);
       return {};
     }
   }
@@ -2832,7 +2297,7 @@ export class BandcampFacade {
       const existingPreferencesString = localStorage.getItem('bandcampPlusDiscoveryPreferences');
       
       if (!existingPreferencesString) {
-        console.warn('No saved discovery preferences found');
+        Logger.warn('No saved discovery preferences found');
         return false;
       }
       
@@ -2841,12 +2306,12 @@ export class BandcampFacade {
       try {
         preferences = JSON.parse(existingPreferencesString);
       } catch (error) {
-        console.error('Error parsing discovery preferences:', error);
+        Logger.error('Error parsing discovery preferences:', error);
         return false;
       }
       
       if (!preferences[name]) {
-        console.warn(`No discovery preference found with name: ${name}`);
+        Logger.warn(`No discovery preference found with name: ${name}`);
         return false;
       }
       
@@ -2856,10 +2321,10 @@ export class BandcampFacade {
       // Save back to localStorage
       localStorage.setItem('bandcampPlusDiscoveryPreferences', JSON.stringify(preferences));
       
-      console.log(`Deleted discovery preference: ${name}`);
+      Logger.info(`Deleted discovery preference: ${name}`);
       return true;
     } catch (error) {
-      console.error('Error deleting discovery preference:', error);
+      Logger.error('Error deleting discovery preference:', error);
       return false;
     }
   }
@@ -2873,7 +2338,7 @@ export class BandcampFacade {
       window.location.href = 'https://bandcamp.com/discover';
       return true;
     } catch (error) {
-      console.error('Error navigating to discovery page:', error);
+      Logger.error('Error navigating to discovery page:', error);
       return false;
     }
   }
@@ -2884,26 +2349,26 @@ export class BandcampFacade {
    */
   public static async loadAllWishlistItems(): Promise<boolean> {
     if (!this.isWishlistPage) {
-      console.warn('Not on wishlist page, cannot load all items');
+      Logger.warn('Not on wishlist page, cannot load all items');
       return false;
     }
 
     try {
-      console.log('Attempting to load all wishlist items...');
+      Logger.info('Attempting to load all wishlist items...');
       
       // Look for "show-more" buttons
       const showMoreButtons = Array.from(document.getElementsByClassName('show-more')) as HTMLElement[];
-      console.log(`Found ${showMoreButtons.length} buttons with class="show-more"`);
+      Logger.info(`Found ${showMoreButtons.length} buttons with class="show-more"`);
       
       // GOAL: Find the button specific to the wishlist tab, not the collection tab
       
       // First check if we're already on the wishlist tab
-      const isWishlistTabActive = document.querySelector('li[data-tab="wishlist"].active, .wishlist.active, a[href*="wishlist"].active') !== null;
-      console.log(`Wishlist tab active: ${isWishlistTabActive}`);
+      const isWishlistTabActive = DOMSelectors.findOneWithSelectors<HTMLElement>(DOMSelectors.ACTIVE_WISHLIST_TAB) !== null;
+      Logger.info(`Wishlist tab active: ${isWishlistTabActive}`);
       
       // Try to get the number entries in each section from the tab counts
       const tabCounts: Record<string, number> = {};
-      const tabs = document.querySelectorAll('li[data-tab], .tabs > li, .tab-sides > li');
+      const tabs = DOMSelectors.findWithSelectors<HTMLElement>(DOMSelectors.TABS);
       
       tabs.forEach(tab => {
         const countElement = tab.querySelector('.count');
@@ -2915,7 +2380,7 @@ export class BandcampFacade {
           const count = parseInt(countElement.textContent || '0', 10);
           if (!isNaN(count)) {
             tabCounts[tabName] = count;
-            console.log(`Tab "${tabName}" has count: ${count}`);
+            Logger.info(`Tab "${tabName}" has count: ${count}`);
           }
         }
       });
@@ -2926,7 +2391,7 @@ export class BandcampFacade {
         return /^view all \d+ items?$/.test(text);
       });
       
-      console.log(`Found ${itemButtons.length} buttons with "view all X items" text`);
+      Logger.info(`Found ${itemButtons.length} buttons with "view all X items" text`);
       
       // Extract counts from button text for sorting
       const buttonDetails = itemButtons.map(button => {
@@ -2937,21 +2402,21 @@ export class BandcampFacade {
         return { button, count, text };
       });
       
-      console.log('Available item buttons:');
+      Logger.info('Available item buttons:');
       buttonDetails.forEach(details => {
-        console.log(`- "${details.text}" (count: ${details.count})`);
+        Logger.info(`- "${details.text}" (count: ${details.count})`);
       });
       
       // Look for the wishlist count in the tab counts
       let wishlistCount = tabCounts['wishlist'] || 0;
-      console.log(`Wishlist count from tabs: ${wishlistCount}`);
+      Logger.info(`Wishlist count from tabs: ${wishlistCount}`);
       
       // Match button with the count that matches the wishlist tab count
       let wishlistButton = buttonDetails.find(details => details.count === wishlistCount)?.button;
       
       // If we couldn't find a matching button by count, try other approaches
       if (!wishlistButton && buttonDetails.length > 1) {
-        console.log('Could not find button with count matching wishlist tab, using position approach');
+        Logger.info('Could not find button with count matching wishlist tab, using position approach');
         
         // On typical Bandcamp profiles, the tabs are: collection, wishlist, followers, following
         // So the second "items" button should be for wishlist if there are two
@@ -2968,31 +2433,31 @@ export class BandcampFacade {
           }).sort((a, b) => a.count - b.count);
           
           // Log the buttons sorted by count
-          console.log('Buttons sorted by count:');
+          Logger.info('Buttons sorted by count:');
           buttonsByCount.forEach(({ button, count }) => {
-            console.log(`  "${button.textContent?.trim()}" - count: ${count}`);
+            Logger.info(`  "${button.textContent?.trim()}" - count: ${count}`);
           });
           
           // Take the button with the smallest count - which should be the wishlist count
           if (buttonsByCount.length > 0) {
             wishlistButton = buttonsByCount[0].button;
-            console.log(`Selected wishlist button by count: "${wishlistButton.textContent?.trim()}"`);
+            Logger.info(`Selected wishlist button by count: "${wishlistButton.textContent?.trim()}"`);
           }
         } else if (buttonDetails.length === 1) {
           // If there's only one button, use it
           wishlistButton = buttonDetails[0].button;
-          console.log(`Only one 'items' button found, using it: "${wishlistButton.textContent?.trim()}"`);
+          Logger.info(`Only one 'items' button found, using it: "${wishlistButton.textContent?.trim()}"`);
         }
       } else if (wishlistButton) {
-        console.log(`Found wishlist button by matching tab count: "${wishlistButton.textContent?.trim()}"`);
+        Logger.info(`Found wishlist button by matching tab count: "${wishlistButton.textContent?.trim()}"`);
       }
       
       if (!wishlistButton) {
-        console.warn('Could not determine which button is for the wishlist');
+        Logger.warn('Could not determine which button is for the wishlist');
         return false;
       }
       
-      console.log(`Clicking wishlist button: "${wishlistButton.textContent?.trim()}"`);
+      Logger.info(`Clicking wishlist button: "${wishlistButton.textContent?.trim()}"`);
       
       // Save the current scroll position
       const originalScrollPosition = window.scrollY;
@@ -3000,7 +2465,7 @@ export class BandcampFacade {
       // Click the wishlist "view all items" button
       try {
         wishlistButton.click();
-        console.log('Clicked wishlist "view all items" button');
+        Logger.info('Clicked wishlist "view all items" button');
         
         // Wait for content to load
         await new Promise(resolve => setTimeout(resolve, 2000));
@@ -3010,15 +2475,15 @@ export class BandcampFacade {
         
         // Reload wishlist items
         const items = this.loadWishlistItems();
-        console.log(`Loaded ${items.length} wishlist items after clicking "view all items" button`);
+        Logger.info(`Loaded ${items.length} wishlist items after clicking "view all items" button`);
         
         return items.length > 0;
       } catch (clickError) {
-        console.warn(`Error clicking wishlist "view all items" button:`, clickError);
+        Logger.warn(`Error clicking wishlist "view all items" button:`, clickError);
         return false;
       }
     } catch (error) {
-      console.error('Error loading all wishlist items:', error);
+      Logger.error('Error loading all wishlist items:', error);
       return false;
     }
   }

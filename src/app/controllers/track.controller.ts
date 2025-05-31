@@ -2,6 +2,7 @@ import {TrackView} from '../views/track.view';
 import {BandcampTrackParser} from '../common/bandcamp-track-parser';
 import {KeyboardController} from './keyboard.controller';
 import {AlbumController} from './album.controller';
+import {WishlistService} from '../services/wishlist.service';
 
 export class TrackController {
   public view: TrackView;
@@ -59,41 +60,16 @@ export class TrackController {
   }
 
   private async toggleWishlist(): Promise<boolean> {
-    try {
-      let f;
-
-      // @ts-expect-error TS2693
-      if (typeof content !== 'undefined') {
-        // @ts-expect-error TS2693
-        f = content?.fetch;
-      } else {
-        f = fetch;
-      }
-
-      const host = window.location.host;
-      const endpoint = this.isWishlisted ? 'uncollect_item_cb' : 'collect_item_cb';
-      const url = `https://${host}/${endpoint}`;
-      const body = this.isWishlisted ? this.meta.uncollect : this.meta.collect;
-
-      const request = await f(
-        url,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body,
-        },
-      );
-
-      const response = await request.json();
-
-      return response.ok === true;
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error(error);
-      return false;
-    }
+    // Handle fetch function selection like the original code
+    // @ts-expect-error TS2693
+    const fetchFunction = typeof content !== 'undefined' ? content?.fetch : fetch;
+    
+    return WishlistService.toggleWishlistWithExternalPayload(
+      this.isWishlisted,
+      this.meta.collect,
+      this.meta.uncollect,
+      fetchFunction
+    );
   }
 
   private render(): void {

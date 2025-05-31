@@ -1,4 +1,6 @@
 import { BandcampFacade } from '../facades/bandcamp.facade';
+import { AudioUtils } from '../utils/audio-utils';
+import { SeekUtils } from '../utils/seek-utils';
 
 /**
  * PlaybarController class for handling playbar interactions
@@ -95,30 +97,7 @@ export class PlaybarController {
     // Ensure ratio is between 0 and 1
     const clampedRatio = Math.max(0, Math.min(1, ratio));
     
-    // Get the audio element
-    let audio: HTMLAudioElement;
-    
-    // Handle different page types
-    if (BandcampFacade.isWishlistPage) {
-      // Find the audio element in the carousel player
-      audio = document.querySelector('.carousel-player-inner audio') || document.querySelector('audio');
-    } else {
-      // Standard album/track page
-      audio = document.querySelector('audio');
-    }
-    
-    // Set the current time if audio is available and has a valid duration
-    if (audio && !isNaN(audio.duration)) {
-      const newTime = clampedRatio * audio.duration;
-      audio.currentTime = newTime;
-      
-      // Force UI update
-      const event = new Event('timeupdate');
-      audio.dispatchEvent(event);
-      
-      console.log(`Set audio position to ${newTime.toFixed(1)}s (${(clampedRatio * 100).toFixed(0)}%)`);
-    } else {
-      console.warn('Could not set playback position - no valid audio element found');
-    }
+    // Use the centralized seek utility
+    SeekUtils.seekToRatio(clampedRatio, BandcampFacade.isWishlistPage);
   }
 }
