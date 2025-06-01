@@ -37,7 +37,6 @@ Beyond that, it was completely built with VS Code Copilot's Agent Mode.
 | `↑` | Increase playback speed |
 | `↓` | Decrease playback speed |
 | `r` | Reset playback speed to normal |
-| `a` | Load all wishlist items (on wishlist page) |
 | `c` | Add current track to cart |
 
 ## Add-to-Cart Feature

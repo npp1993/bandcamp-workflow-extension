@@ -1,7 +1,6 @@
 TODO:
 
-- is the 'a' key still a valid shortcut?  possibly remove from README.md (current item)
-- fix q key adding full release (not seeming to work)
+- fix q key adding full release (not seeming to work) (current item)
 - add handling for release pages that do not allow you to buy individual tracks, for example #fetch https://dj-surgeon.bandcamp.com/track/part-1-9
 
 
