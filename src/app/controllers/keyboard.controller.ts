@@ -84,14 +84,6 @@ export class KeyboardController {
           this.handleNextTrack();
           break;
           
-        case 'a':
-          // Load all items in wishlist page
-          e.preventDefault();
-          if (BandcampFacade.isWishlistPage) {
-            this.loadAllWishlistItems();
-          }
-          break;
-          
         case 'h':
         case 'arrowleft':
           e.preventDefault();
@@ -155,7 +147,10 @@ export class KeyboardController {
    */
   private static handlePreviousTrack() {
     if (BandcampFacade.isWishlistPage) {
-      BandcampFacade.playPreviousWishlistTrack();
+      // Handle async call without blocking
+      BandcampFacade.playPreviousWishlistTrack().catch(error => {
+        Logger.error('Error in playPreviousWishlistTrack:', error);
+      });
     } else {
       BandcampFacade.getPrevious().click();
     }
@@ -170,22 +165,5 @@ export class KeyboardController {
     } else {
       BandcampFacade.getNext().click();
     }
-  }
-  
-  /**
-   * Load all wishlist items by clicking the "view all items" button
-   */
-  private static loadAllWishlistItems() {
-    BandcampFacade.loadAllWishlistItems()
-      .then(success => {
-        if (success) {
-          Logger.info('Successfully loaded all wishlist items');
-        } else {
-          Logger.warn('Failed to load all wishlist items');
-        }
-      })
-      .catch(error => {
-        Logger.error('Error loading all wishlist items:', error);
-      });
   }
 }

@@ -1,6 +1,5 @@
 TODO:
 
-- implement tests with puppeteer and possibly refactor code base
 - fix 'c' functionality (not working)
 
 Waveform Display

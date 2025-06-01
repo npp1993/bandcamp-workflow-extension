@@ -821,7 +821,7 @@ export class BandcampFacade {
   /**
    * Play the previous track in the wishlist
    */
-  public static playPreviousWishlistTrack(): void {
+  public static async playPreviousWishlistTrack(): Promise<void> {
     if (!this.isWishlistPage || this._wishlistItems.length === 0) {
       return;
     }
@@ -837,7 +837,25 @@ export class BandcampFacade {
     this._skipInProgress = true;
 
     // Use a delay to ensure any previous track operations have completed
-    setTimeout(() => {
+    setTimeout(async () => {
+      // If we're trying to go to the previous track from the first track (index 0),
+      // ensure all wishlist items are loaded to get the correct "last" track
+      if (this._currentWishlistIndex === 0) {
+        Logger.info('At first track, ensuring all wishlist items are loaded before going to last track');
+        try {
+          const loadSuccess = await this.loadAllWishlistItems();
+          if (loadSuccess) {
+            // Reload wishlist items to get the updated array
+            this.loadWishlistItems();
+            Logger.info(`Updated wishlist items count: ${this._wishlistItems.length}`);
+          } else {
+            Logger.warn('Failed to load all wishlist items, using current list');
+          }
+        } catch (error) {
+          Logger.warn('Error loading all wishlist items, using current list:', error);
+        }
+      }
+
       let prevIndex = this._currentWishlistIndex - 1;
       if (prevIndex < 0) {
         prevIndex = this._wishlistItems.length - 1; // Loop back to the last track
@@ -2354,19 +2372,9 @@ export class BandcampFacade {
     }
 
     try {
-      Logger.info('Attempting to load all wishlist items...');
+      Logger.info('Checking if all wishlist items need to be loaded...');
       
-      // Look for "show-more" buttons
-      const showMoreButtons = Array.from(document.getElementsByClassName('show-more')) as HTMLElement[];
-      Logger.info(`Found ${showMoreButtons.length} buttons with class="show-more"`);
-      
-      // GOAL: Find the button specific to the wishlist tab, not the collection tab
-      
-      // First check if we're already on the wishlist tab
-      const isWishlistTabActive = DOMSelectors.findOneWithSelectors<HTMLElement>(DOMSelectors.ACTIVE_WISHLIST_TAB) !== null;
-      Logger.info(`Wishlist tab active: ${isWishlistTabActive}`);
-      
-      // Try to get the number entries in each section from the tab counts
+      // Try to get the number of items expected from the tab counts
       const tabCounts: Record<string, number> = {};
       const tabs = DOMSelectors.findWithSelectors<HTMLElement>(DOMSelectors.TABS);
       
@@ -2384,6 +2392,29 @@ export class BandcampFacade {
           }
         }
       });
+      
+      // Get the expected wishlist count
+      let wishlistCount = tabCounts['wishlist'] || 0;
+      Logger.info(`Expected wishlist count: ${wishlistCount}`);
+      
+      // Check if we already have all items loaded
+      const currentItems = this.loadWishlistItems();
+      Logger.info(`Currently loaded items: ${currentItems.length}`);
+      
+      if (currentItems.length >= wishlistCount && wishlistCount > 0) {
+        Logger.info('All wishlist items already loaded, no need to click "view all"');
+        return true;
+      }
+      
+      Logger.info('Need to load more items, looking for "view all" button...');
+      
+      // Look for "show-more" buttons
+      const showMoreButtons = Array.from(document.getElementsByClassName('show-more')) as HTMLElement[];
+      Logger.info(`Found ${showMoreButtons.length} buttons with class="show-more"`);
+      
+      // First check if we're already on the wishlist tab
+      const isWishlistTabActive = DOMSelectors.findOneWithSelectors<HTMLElement>(DOMSelectors.ACTIVE_WISHLIST_TAB) !== null;
+      Logger.info(`Wishlist tab active: ${isWishlistTabActive}`);
       
       // Find buttons with "view all X items" text
       const itemButtons = showMoreButtons.filter(button => {
@@ -2406,10 +2437,6 @@ export class BandcampFacade {
       buttonDetails.forEach(details => {
         Logger.info(`- "${details.text}" (count: ${details.count})`);
       });
-      
-      // Look for the wishlist count in the tab counts
-      let wishlistCount = tabCounts['wishlist'] || 0;
-      Logger.info(`Wishlist count from tabs: ${wishlistCount}`);
       
       // Match button with the count that matches the wishlist tab count
       let wishlistButton = buttonDetails.find(details => details.count === wishlistCount)?.button;
@@ -2467,17 +2494,106 @@ export class BandcampFacade {
         wishlistButton.click();
         Logger.info('Clicked wishlist "view all items" button');
         
-        // Wait for content to load
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Wait for content to load and verify we get the expected count
+        let attempts = 0;
+        const maxAttempts = 20; // Maximum 20 attempts
+        let items: HTMLElement[] = [];
+        
+        while (attempts < maxAttempts) {
+          attempts++;
+          
+          // Trigger lazy loading by scrolling to bottom and staying there longer
+          if (attempts <= 15) { // Scroll for more attempts
+            Logger.info(`Scrolling to trigger lazy loading (attempt ${attempts})`);
+            
+            // Scroll to the very bottom of the page
+            const maxScroll = Math.max(
+              document.body.scrollHeight,
+              document.body.offsetHeight,
+              document.documentElement.clientHeight,
+              document.documentElement.scrollHeight,
+              document.documentElement.offsetHeight
+            );
+            
+            window.scrollTo(0, maxScroll);
+            
+            // Stay at the bottom longer to ensure lazy loading triggers
+            await new Promise(resolve => setTimeout(resolve, 800));
+            
+            // Check if more items loaded while at bottom
+            const itemsAtBottom = this.loadWishlistItems();
+            Logger.info(`Found ${itemsAtBottom.length} items while at bottom`);
+            
+            // Scroll back to top
+            window.scrollTo(0, 0);
+            await new Promise(resolve => setTimeout(resolve, 400));
+          }
+          
+          // Wait a bit before checking again
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Reload wishlist items and check count
+          items = this.loadWishlistItems();
+          Logger.info(`Attempt ${attempts}: Found ${items.length} wishlist items (expected: ${wishlistCount})`);
+          
+          // If we have the expected count or more, we're done
+          if (items.length >= wishlistCount) {
+            Logger.info(`Successfully loaded all ${items.length} wishlist items`);
+            break;
+          }
+          
+          // If this is not the last attempt, log that we're waiting
+          if (attempts < maxAttempts) {
+            Logger.info(`Still loading items, waiting... (${items.length}/${wishlistCount})`);
+          }
+        }
+        
+        // If we still don't have all items, try alternative loading strategies
+        if (items.length < wishlistCount) {
+          Logger.info(`Still missing items (${items.length}/${wishlistCount}), trying alternative strategies...`);
+          
+          // Strategy 1: Try scrolling in smaller increments
+          for (let i = 0; i < 5 && items.length < wishlistCount; i++) {
+            Logger.info(`Alternative strategy 1 - incremental scroll ${i + 1}/5`);
+            const scrollStep = document.body.scrollHeight / 4;
+            window.scrollTo(0, scrollStep * (i + 1));
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            items = this.loadWishlistItems();
+            Logger.info(`After incremental scroll ${i + 1}: Found ${items.length} items`);
+          }
+          
+          // Strategy 2: Try staying at bottom for extended time
+          if (items.length < wishlistCount) {
+            Logger.info('Alternative strategy 2 - extended bottom stay');
+            window.scrollTo(0, document.body.scrollHeight);
+            await new Promise(resolve => setTimeout(resolve, 3000)); // Stay 3 seconds
+            items = this.loadWishlistItems();
+            Logger.info(`After extended bottom stay: Found ${items.length} items`);
+          }
+          
+          // Strategy 3: Try triggering scroll events manually
+          if (items.length < wishlistCount) {
+            Logger.info('Alternative strategy 3 - manual scroll events');
+            window.scrollTo(0, document.body.scrollHeight);
+            // Dispatch scroll events to trigger any lazy loading listeners
+            window.dispatchEvent(new Event('scroll'));
+            document.dispatchEvent(new Event('scroll'));
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            items = this.loadWishlistItems();
+            Logger.info(`After manual scroll events: Found ${items.length} items`);
+          }
+          
+          // Final scroll back to top
+          window.scrollTo(0, 0);
+        }
         
         // Restore scroll position
         window.scrollTo(0, originalScrollPosition);
         
-        // Reload wishlist items
-        const items = this.loadWishlistItems();
-        Logger.info(`Loaded ${items.length} wishlist items after clicking "view all items" button`);
+        Logger.info(`Final result: Loaded ${items.length} wishlist items after clicking "view all items" button`);
         
-        return items.length > 0;
+        // Return true if we got at least the expected count
+        return items.length >= wishlistCount;
       } catch (clickError) {
         Logger.warn(`Error clicking wishlist "view all items" button:`, clickError);
         return false;

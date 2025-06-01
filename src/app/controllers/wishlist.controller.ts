@@ -1,4 +1,5 @@
 import {BandcampFacade} from '../facades/bandcamp.facade';
+import {Logger} from '../utils/logger';
 
 /**
  * Controller for the wishlist page
@@ -26,13 +27,16 @@ export class WishlistController {
     // Wait for the page to fully load
     setTimeout(() => {
       try {
+        // Add a visual indicator that we're loading
+        this.showLoadingIndicator();
+        
         // First, load all wishlist items by clicking the "view all" button
-        console.log('Attempting to load all wishlist items...');
+        Logger.info('Initializing wishlist controller - checking if all items need to be loaded...');
         BandcampFacade.loadAllWishlistItems().then(success => {
           if (success) {
-            console.log('Successfully loaded all wishlist items');
+            Logger.info('All wishlist items are now loaded');
           } else {
-            console.log('Unable to load all wishlist items, proceeding with visible items');
+            Logger.info('Unable to load all wishlist items, proceeding with visible items');
           }
           
           // Now load the wishlist items that are visible
@@ -45,14 +49,17 @@ export class WishlistController {
             // Add controls to the player
             this.addWishlistControls();
             
-            console.log('Wishlist controller initialized. Press spacebar to start playing.');
+            // Remove loading indicator and show success message
+            this.hideLoadingIndicator();
+            Logger.info(`Wishlist controller initialized with ${items.length} items. Press spacebar to start playing.`);
           } else {
-            console.warn('No wishlist items found during initialization');
+            this.hideLoadingIndicator();
+            Logger.warn('No wishlist items found during initialization');
           }
           
           this.hasInitialized = true;
         }).catch(error => {
-          console.error('Error loading all wishlist items:', error);
+          Logger.error('Error loading all wishlist items:', error);
           
           // Fall back to just loading visible items
           const items = BandcampFacade.loadWishlistItems();
@@ -60,12 +67,15 @@ export class WishlistController {
           if (items.length > 0) {
             BandcampFacade.setupWishlistContinuousPlayback();
             this.addWishlistControls();
+            Logger.info(`Wishlist controller initialized in fallback mode with ${items.length} items.`);
           }
           
+          this.hideLoadingIndicator();
           this.hasInitialized = true;
         });
       } catch (error) {
-        console.error('Error initializing wishlist controller:', error);
+        Logger.error('Error initializing wishlist controller:', error);
+        this.hideLoadingIndicator();
         this.hasInitialized = true;
       }
     }, 1000);
@@ -107,7 +117,7 @@ export class WishlistController {
           // Add it to the player
           playerElement.appendChild(controlsContainer);
         } else {
-          console.warn('Could not find player element to add controls');
+          Logger.warn('Could not find player element to add controls');
           return;
         }
       }
@@ -127,7 +137,51 @@ export class WishlistController {
       controlsContainer.appendChild(streamButton);
       
     } catch (error) {
-      console.error('Error adding wishlist controls:', error);
+      Logger.error('Error adding wishlist controls:', error);
+    }
+  }
+
+  /**
+   * Show a loading indicator while wishlist items are being loaded
+   */
+  private showLoadingIndicator(): void {
+    try {
+      // Create a subtle loading indicator
+      const indicator = document.createElement('div');
+      indicator.id = 'bandcamp-plus-loading';
+      indicator.innerHTML = `
+        <div style="
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: rgba(29, 160, 195, 0.9);
+          color: white;
+          padding: 10px 15px;
+          border-radius: 4px;
+          font-size: 13px;
+          z-index: 10000;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        ">
+          <span>🎵 Loading wishlist items...</span>
+        </div>
+      `;
+      document.body.appendChild(indicator);
+    } catch (error) {
+      Logger.error('Error showing loading indicator:', error);
+    }
+  }
+
+  /**
+   * Hide the loading indicator
+   */
+  private hideLoadingIndicator(): void {
+    try {
+      const indicator = document.getElementById('bandcamp-plus-loading');
+      if (indicator) {
+        indicator.remove();
+      }
+    } catch (error) {
+      Logger.error('Error hiding loading indicator:', error);
     }
   }
 }

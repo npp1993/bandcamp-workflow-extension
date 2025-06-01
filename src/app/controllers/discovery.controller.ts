@@ -1,5 +1,6 @@
 import { BandcampFacade } from '../facades/bandcamp.facade';
 import { MessageService } from '../services/message.service';
+import { Logger } from '../utils/logger';
 
 /**
  * Controller for Bandcamp discovery page functionality
@@ -9,7 +10,7 @@ export class DiscoveryController {
    * Initialize the discovery controller
    */
   public static initialize(): void {
-    console.log('Initializing DiscoveryController');
+    Logger.info('Initializing DiscoveryController');
     
     // Only initialize on discovery pages
     if (!window.location.href.includes('/discover')) {
