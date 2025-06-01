@@ -30,90 +30,128 @@ export class KeyboardController {
    * Main keyboard event handler
    */
   private static handleKeyboardEvent = (e: KeyboardEvent): void => {
-    // Only log in debug mode - log once at the entry point
+    // Only process keyboard events when not in input fields
     if (!["INPUT", "TEXTAREA", "SELECT"].includes((e.target as Element).tagName) && 
         !(e.target as HTMLElement).isContentEditable) {
-      // Create a more condensed log format with key info
-      const modifiers = 
-        (e.shiftKey ? 'Shift+' : '') + 
-        (e.ctrlKey ? 'Ctrl+' : '') + 
-        (e.altKey ? 'Alt+' : '') + 
-        (e.metaKey ? 'Meta+' : '');
-      
-      Logger.debug(`Key: ${modifiers}${e.key.toLowerCase()} (${e.code})`);
       
       // Handle our specific shortcut keys
       switch (e.key.toLowerCase()) {
         case 'q':
-          e.preventDefault();
-          BandcampFacade.toggleWishlist();
+          // Only trigger wishlist toggle if no modifier keys are pressed
+          // This allows Command+Q (quit), Ctrl+Q, etc. to work normally
+          if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+            Logger.debug('Extension shortcut: Q (toggle wishlist)');
+            e.preventDefault();
+            BandcampFacade.toggleWishlist();
+          }
           break;
           
         case 'w':
-          e.preventDefault();
-          this.toggleWishlistTrack();
+          // Only trigger wishlist track toggle if no modifier keys are pressed
+          // This allows Command+W (close tab), Ctrl+W, etc. to work normally
+          if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+            Logger.debug('Extension shortcut: W (toggle wishlist track)');
+            e.preventDefault();
+            this.toggleWishlistTrack();
+          }
           break;
           
         case 'c':
-          e.preventDefault();
-          BandcampFacade.buyCurrentTrack();
+          // Only trigger buy functionality if no modifier keys are pressed
+          // This allows Command+C (copy), Ctrl+C (copy), etc. to work normally
+          if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+            Logger.debug('Extension shortcut: C (buy current track)');
+            e.preventDefault();
+            BandcampFacade.buyCurrentTrack();
+          }
           break;
           
         case 'i':
-          e.preventDefault();
-          BandcampFacade.seekReset();
+          // Only trigger seek reset if no modifier keys are pressed
+          if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+            e.preventDefault();
+            BandcampFacade.seekReset();
+          }
           break;
           
         case ' ':
-          e.preventDefault();
-          BandcampFacade.togglePlayPause();
+          // Only trigger play/pause if no modifier keys are pressed
+          // This allows Shift+Space for scrolling up, etc.
+          if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+            e.preventDefault();
+            BandcampFacade.togglePlayPause();
+          }
           break;
           
         case 'p':
           // Check for shift modifier for first track functionality
-          e.preventDefault();
-          if (e.shiftKey) {
-            BandcampFacade.playFirstTrack();
-          } else {
-            this.handlePreviousTrack();
+          // Only trigger if no Command/Ctrl keys are pressed (allow Command+P for print)
+          if (!e.metaKey && !e.ctrlKey && !e.altKey) {
+            e.preventDefault();
+            if (e.shiftKey) {
+              BandcampFacade.playFirstTrack();
+            } else {
+              this.handlePreviousTrack();
+            }
           }
           break;
           
         case 'n':
-          e.preventDefault();
-          this.handleNextTrack();
+          // Only trigger next track if no modifier keys are pressed
+          // This allows Command+N (new window), Ctrl+N, etc. to work normally
+          if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+            e.preventDefault();
+            this.handleNextTrack();
+          }
           break;
           
         case 'h':
         case 'arrowleft':
-          e.preventDefault();
-          BandcampFacade.seekBackward();
+          // Only trigger seek backward if no modifier keys are pressed
+          if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+            e.preventDefault();
+            BandcampFacade.seekBackward();
+          }
           break;
           
         case 'l':
         case 'arrowright':
-          e.preventDefault();
-          BandcampFacade.seekForward();
+          // Only trigger seek forward if no modifier keys are pressed
+          // This allows Cmd+L (address bar), Ctrl+L, etc. to work normally
+          if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+            e.preventDefault();
+            BandcampFacade.seekForward();
+          }
           break;
           
         case 'arrowup':
-          e.preventDefault();
-          if (this.controllers && this.controllers.speed) {
-            this.controllers.speed.increase();
+          // Only trigger speed increase if no modifier keys are pressed
+          if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+            e.preventDefault();
+            if (this.controllers && this.controllers.speed) {
+              this.controllers.speed.increase();
+            }
           }
           break;
           
         case 'arrowdown':
-          e.preventDefault();
-          if (this.controllers && this.controllers.speed) {
-            this.controllers.speed.decrease();
+          // Only trigger speed decrease if no modifier keys are pressed
+          if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+            e.preventDefault();
+            if (this.controllers && this.controllers.speed) {
+              this.controllers.speed.decrease();
+            }
           }
           break;
           
         case 'r':
-          // e.preventDefault();
-          if (this.controllers && this.controllers.speed) {
-            this.controllers.speed.reset();
+          // Only trigger speed reset if no modifier keys are pressed
+          // This allows Cmd+R (reload page), Ctrl+R, etc. to work normally
+          if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+            // Don't prevent default for 'r' to allow page reload
+            if (this.controllers && this.controllers.speed) {
+              this.controllers.speed.reset();
+            }
           }
           break;
       }

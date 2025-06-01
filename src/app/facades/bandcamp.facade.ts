@@ -1624,8 +1624,39 @@ export class BandcampFacade {
       } else {
         Logger.warn('No wishlist items loaded');
       }
+    } else if (this.isAlbum) {
+      // Special handling for album pages - buy the currently playing track, not the entire album
+      Logger.info('C key detected on album page - looking for currently playing track');
+      
+      // Find the currently playing track row (has 'current_track' class)
+      const currentTrackRow = document.querySelector('.track_row_view.current_track');
+      
+      if (currentTrackRow) {
+        Logger.info('Found currently playing track row, looking for track link');
+        
+        // Look for the track link within the current track row
+        const trackLink = currentTrackRow.querySelector('.title a') as HTMLAnchorElement;
+        
+        if (trackLink && trackLink.href) {
+          Logger.info('Found track link for currently playing track, opening with cart parameter:', trackLink.href);
+          BuyUtils.openBuyLinkWithCart(trackLink.href);
+          return;
+        } else {
+          Logger.warn('Could not find track link in currently playing track row');
+        }
+      } else {
+        Logger.info('No track currently playing on album page, buying entire album instead');
+      }
+      
+      // Fallback: buy the entire album if no specific track is playing
+      this.clickBuyButtonOnCurrentPage();
+    } else if (this.isTrack) {
+      // For individual track pages, click the buy button directly to open buy dialog
+      Logger.info('C key detected on track page - clicking buy button to open buy dialog');
+      this.clickBuyButtonOnCurrentPage();
     } else {
-      // Default behavior for non-wishlist pages
+      // Fallback for other page types
+      Logger.info('C key detected on unsupported page type - attempting default buy action');
       this.clickBuyButtonOnCurrentPage();
     }
   }

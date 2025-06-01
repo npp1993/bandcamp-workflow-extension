@@ -140,7 +140,13 @@ export class DOMSelectors {
     'button.buyItem',
     '.buy-button',
     '.buyItem',
-    '[data-tralbumdata] button'
+    '[data-tralbumdata] button',
+    '.commerce-button',
+    'button[class*="buy"]',
+    '.buyItemOrMerch',
+    'button:contains("Buy")',
+    '.buynowlater',
+    '.purchase-item'
   ];
 
   /**
