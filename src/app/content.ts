@@ -1,6 +1,7 @@
 import {PageController} from './controllers/page.controller';
 import {BandcampFacade} from './facades/bandcamp.facade';
 import {Logger} from './utils/logger';
+import {AlbumOnlyUtils} from './utils/album-only-utils';
 
 /**
  * Checks if the current URL contains the add_to_cart parameter
@@ -36,25 +37,7 @@ function handleAddToCart() {
         Logger.info('On a track page, using track-specific workflow to handle album-only restrictions');
         // For track pages, we need to check if only album purchase is available
         // and handle it the same way as when hitting 'C' directly on the track page
-        const albumOnlyIndicators = [
-          'Buy the Full Digital Album',
-          'Buy the Full Album',
-          'Buy Full Digital Album',
-          'Buy Digital Album',
-          'Album Only'
-        ];
-        
-        let isAlbumOnly = false;
-        
-        // Look for album-only purchase indicators in the page text
-        for (const indicator of albumOnlyIndicators) {
-          const pageText = document.body.textContent || '';
-          if (pageText.includes(indicator)) {
-            Logger.info(`Found album-only purchase indicator: "${indicator}"`);
-            isAlbumOnly = true;
-            break;
-          }
-        }
+        const { isAlbumOnly } = AlbumOnlyUtils.checkForAlbumOnlyPurchase();
         
         if (isAlbumOnly) {
           Logger.info('Track page only allows album purchase, ignoring add_to_cart parameter as expected');
