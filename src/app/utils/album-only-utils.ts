@@ -5,55 +5,26 @@ import {Logger} from './logger';
  */
 export class AlbumOnlyUtils {
   /**
-   * Common indicators that a track page only allows album purchase
-   */
-  private static readonly ALBUM_ONLY_INDICATORS = [
-    'Buy the Full Digital Album',
-    'Buy the Full Album',
-    'Buy Full Digital Album',
-    'Buy Digital Album',
-    'Digital Album',
-    'Full Album',
-    'Full Digital Album',
-    'entire album',
-    'whole album',
-    'complete album',
-    'album only',
-    'not available as individual track',
-    'track not available for purchase',
-    'only available as part of',
-    'purchase the album',
-    'get the album',
-    'Album Only'
-  ];
-
-  /**
    * Check if the current track page only allows album purchase
    * @returns Object with isAlbumOnly boolean and any detected indicators
    */
   public static checkForAlbumOnlyPurchase(): { isAlbumOnly: boolean; indicators?: string[] } {
     try {
       const pageText = document.body.textContent || '';
-      const foundIndicators: string[] = [];
-
-      // Check for album-only indicators in the page text
-      for (const indicator of AlbumOnlyUtils.ALBUM_ONLY_INDICATORS) {
-        if (pageText.includes(indicator)) {
-          foundIndicators.push(indicator);
-        }
-      }
-
-      const isAlbumOnly = foundIndicators.length > 0;
+      
+      // Simple logic: if we can't find "Buy Digital Track", consider it album-only
+      const hasIndividualTrackPurchase = pageText.includes('Buy Digital Track');
+      const isAlbumOnly = !hasIndividualTrackPurchase;
       
       if (isAlbumOnly) {
-        Logger.info(`Album-only purchase detected. Found indicators: ${foundIndicators.join(', ')}`);
+        Logger.info('Album-only purchase detected: "Buy Digital Track" text not found on page');
       } else {
-        Logger.info('No album-only purchase restrictions detected');
+        Logger.info('Individual track purchase available: "Buy Digital Track" text found on page');
       }
 
       return {
         isAlbumOnly,
-        indicators: foundIndicators.length > 0 ? foundIndicators : undefined
+        indicators: isAlbumOnly ? ['Buy Digital Track not found'] : ['Buy Digital Track found']
       };
     } catch (error) {
       Logger.error('Error checking for album-only purchase:', error);
