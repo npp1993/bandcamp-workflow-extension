@@ -1537,7 +1537,7 @@ export class BandcampFacade {
       // If we have wishlist items but no track is currently playing (index is -1)
       // Simply do nothing as requested
       if (this._currentWishlistIndex < 0) {
-        Logger.info('C key detected - no track selected, ignoring press');
+        Logger.info('c key detected - no track selected, ignoring press');
         return;
       }
       
@@ -1545,7 +1545,7 @@ export class BandcampFacade {
       if (this._wishlistItems.length > 0) {
         const currentItem = this._wishlistItems[this._currentWishlistIndex];
         if (currentItem) {
-          Logger.info('C key detected - buying current track from wishlist');
+          Logger.info('c key detected - buying current track from wishlist');
           
           // First priority: Check the now-playing section which has accurate links for the current track
           const nowPlaying = document.querySelector('.now-playing');
@@ -1626,7 +1626,7 @@ export class BandcampFacade {
       }
     } else if (this.isAlbum) {
       // Special handling for album pages - buy the currently playing track, not the entire album
-      Logger.info('C key detected on album page - looking for currently playing track');
+      Logger.info('c key detected on album page - looking for currently playing track');
       
       // Find the currently playing track row (has 'current_track' class)
       const currentTrackRow = document.querySelector('.track_row_view.current_track');
@@ -1652,7 +1652,7 @@ export class BandcampFacade {
       this.clickBuyButtonOnCurrentPage();
     } else if (this.isTrack) {
       // For individual track pages, first check if only album purchase is available
-      Logger.info('C key detected on track page - checking purchase options');
+      Logger.info('c key detected on track page - checking purchase options');
       
       // Check for "Buy the Full Digital Album" or similar text indicating album-only purchase
       const albumOnlyIndicators = [
@@ -1731,7 +1731,7 @@ export class BandcampFacade {
       }
       
       if (isAlbumOnly) {
-        Logger.info('Track page only allows album purchase, ignoring C key press as requested');
+        Logger.info('Track page only allows album purchase, ignoring c key press as requested');
         return;
       }
       
@@ -1740,7 +1740,7 @@ export class BandcampFacade {
       this.clickBuyButtonOnCurrentPage();
     } else {
       // Fallback for other page types
-      Logger.info('C key detected on unsupported page type - attempting default buy action');
+      Logger.info('c key detected on unsupported page type - attempting default buy action');
       this.clickBuyButtonOnCurrentPage();
     }
   }
