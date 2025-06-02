@@ -26,9 +26,9 @@ export class Logger {
   }
 
   /**
-   * Log a debug message (regular console.log without prefix for debugging)
+   * Log a debug message
    */
   public static debug(message: string, ...args: any[]): void {
-    console.log(message, ...args);
+    console.log(`${this.PREFIX} ${message}`, ...args);
   }
 }
