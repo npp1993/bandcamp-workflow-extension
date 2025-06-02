@@ -3,14 +3,14 @@ import { ErrorHandler } from './error-handler';
 import { Logger } from './logger';
 
 /**
- * Utility for buy button functionality
+ * Utility for add to cart functionality
  */
-export class BuyUtils {
+export class AddToCartUtils {
   /**
-   * Click the buy button on the current page
-   * @returns True if a buy button/link was found and clicked, false otherwise
+   * Click the add to cart button on the current page
+   * @returns True if an add to cart button/link was found and clicked, false otherwise
    */
-  public static clickBuyButtonOnCurrentPage(): boolean {
+  public static clickAddToCartButtonOnCurrentPage(): boolean {
     try {
       let clicked = false;
       let isTrack = true; // Default to track, will try to detect
@@ -21,59 +21,59 @@ export class BuyUtils {
         isTrack = false;
       }
 
-      // First, try to find buy buttons by text content (most reliable for modern Bandcamp)
-      const buyButtonByText = this.findBuyButtonByText();
-      if (buyButtonByText) {
-        Logger.info('Found buy button by text content, clicking it');
-        buyButtonByText.click();
+      // First, try to find add to cart buttons by text content (most reliable for modern Bandcamp)
+      const addToCartButtonByText = this.findAddToCartButtonByText();
+      if (addToCartButtonByText) {
+        Logger.info('Found add to cart button by text content, clicking it');
+        addToCartButtonByText.click();
         clicked = true;
 
         // Auto-fill price after dialog opens
-        this.autoFillBuyPrice(isTrack);
+        this.autoFillAddToCartPrice(isTrack);
         return true;
       }
 
-      // Try to find the buy button using class selectors
-      const buyButton = DOMSelectors.findOneWithSelectors<HTMLElement>(DOMSelectors.BUY_BUTTONS);
+      // Try to find the add to cart button using class selectors
+      const addToCartButton = DOMSelectors.findOneWithSelectors<HTMLElement>(DOMSelectors.BUY_BUTTONS);
       
-      if (buyButton) {
-        Logger.info('Found buy button by class selector, clicking it');
-        buyButton.click();
+      if (addToCartButton) {
+        Logger.info('Found add to cart button by class selector, clicking it');
+        addToCartButton.click();
         clicked = true;
 
         // Auto-fill price after dialog opens
-        this.autoFillBuyPrice(isTrack);
+        this.autoFillAddToCartPrice(isTrack);
         return true;
       }
 
-      // Try alternate selectors for buy links
-      const buyLink = DOMSelectors.findOneWithSelectors<HTMLElement>(DOMSelectors.BUY_LINKS);
+      // Try alternate selectors for add to cart links
+      const addToCartLink = DOMSelectors.findOneWithSelectors<HTMLElement>(DOMSelectors.BUY_LINKS);
       
-      if (buyLink) {
-        Logger.info('Found buy link, clicking it');
-        buyLink.click();
+      if (addToCartLink) {
+        Logger.info('Found add to cart link, clicking it');
+        addToCartLink.click();
         clicked = true;
 
         // Auto-fill price after dialog opens
-        this.autoFillBuyPrice(isTrack);
+        this.autoFillAddToCartPrice(isTrack);
         return true;
       }
 
-      Logger.warn('No buy button found on the current page');
+      Logger.warn('No add to cart button found on the current page');
       return false;
     } catch (error) {
-      ErrorHandler.withErrorHandling(() => { throw error; }, 'Error clicking buy button');
+      ErrorHandler.withErrorHandling(() => { throw error; }, 'Error clicking add to cart button');
       return false;
     }
   }
 
   /**
-   * Find buy button by text content - most reliable for modern Bandcamp pages
-   * @returns The buy button element or null if not found
+   * Find add to cart button by text content - most reliable for modern Bandcamp pages
+   * @returns The add to cart button element or null if not found
    */
-  private static findBuyButtonByText(): HTMLElement | null {
-    // Common buy button text patterns on Bandcamp (prioritized by specificity)
-    const buyTexts = [
+  private static findAddToCartButtonByText(): HTMLElement | null {
+    // Common add to cart button text patterns on Bandcamp (prioritized by specificity)
+    const addToCartTexts = [
       'Buy Digital Track',
       'Buy Digital Album', 
       'Buy Track',
@@ -86,16 +86,16 @@ export class BuyUtils {
       'digital album'
     ];
 
-    // Look for buttons and links with buy-related text
+    // Look for buttons and links with add to cart related text
     const allElements = Array.from(document.querySelectorAll('button, a, span[role="button"], div[role="button"], span.buyItem, .buyItem'));
     
     for (const element of allElements) {
       const text = element.textContent?.trim() || '';
       
-      // Check if the text matches any of our buy patterns
-      for (const buyText of buyTexts) {
-        const isExactMatch = text === buyText;
-        const isContainsMatch = text.toLowerCase().includes(buyText.toLowerCase());
+      // Check if the text matches any of our add to cart patterns
+      for (const addToCartText of addToCartTexts) {
+        const isExactMatch = text === addToCartText;
+        const isContainsMatch = text.toLowerCase().includes(addToCartText.toLowerCase());
         
         if (isExactMatch || (isContainsMatch && text.length < 50)) { // Avoid matching long paragraphs
           // Make sure it's clickable and visible
@@ -106,25 +106,25 @@ export class BuyUtils {
                                  window.getComputedStyle(htmlElement).visibility === 'hidden';
           
           if (isVisible && !isDisabled && !hasHiddenStyle) {
-            Logger.info(`Found buy button with text: "${text}" (matched pattern: "${buyText}")`);
+            Logger.info(`Found add to cart button by text: "${text}"`);
             return htmlElement;
           }
         }
       }
     }
 
-    // Secondary approach: look for elements that might be buy buttons based on structure
-    const potentialBuyElements = Array.from(document.querySelectorAll(
+    // Secondary approach: look for elements that might be add to cart buttons based on structure
+    const potentialAddToCartElements = Array.from(document.querySelectorAll(
       '.buyItem, .buy-button, .purchase-button, [class*="buy"], [class*="purchase"], .commerce-button'
     ));
     
-    for (const element of potentialBuyElements) {
+    for (const element of potentialAddToCartElements) {
       const htmlElement = element as HTMLElement;
       const text = htmlElement.textContent?.trim() || '';
       const isDisabled = (htmlElement as any).disabled === true;
       const isVisible = htmlElement.offsetParent !== null;
       
-      // Check if it has buy-related text or seems to be a buy button
+      // Check if it has add to cart related text or seems to be an add to cart button
       if (isVisible && !isDisabled && (
         text.toLowerCase().includes('buy') ||
         text.toLowerCase().includes('purchase') ||
@@ -132,7 +132,7 @@ export class BuyUtils {
         text.toLowerCase().includes('track') ||
         text.toLowerCase().includes('album')
       )) {
-        Logger.info(`Found potential buy button by class with text: "${text}"`);
+        Logger.info(`Found potential add to cart button by class with text: "${text}"`);
         return htmlElement;
       }
     }
@@ -141,16 +141,16 @@ export class BuyUtils {
   }
 
   /**
-   * Find buy link in a specific element/container
+   * Find add to cart link in a specific element/container
    * @param container The container element to search within
-   * @returns The buy link element or null if not found
+   * @returns The add to cart link element or null if not found
    */
-  public static findBuyLinkInContainer(container: HTMLElement): HTMLElement | null {
-    // First try standard buy link selectors
-    let buyLink = DOMSelectors.findOneWithSelectors<HTMLElement>(DOMSelectors.BUY_LINKS, container);
+  public static findAddToCartLinkInContainer(container: HTMLElement): HTMLElement | null {
+    // First try standard add to cart link selectors
+    let addToCartLink = DOMSelectors.findOneWithSelectors<HTMLElement>(DOMSelectors.BUY_LINKS, container);
     
-    if (buyLink) {
-      return buyLink;
+    if (addToCartLink) {
+      return addToCartLink;
     }
 
     // Look for elements with the text "buy now"
@@ -158,9 +158,9 @@ export class BuyUtils {
     for (let i = 0; i < allSpans.length; i++) {
       const span = allSpans[i];
       if (span.textContent && span.textContent.trim().toLowerCase() === 'buy now') {
-        buyLink = span.closest('a') as HTMLElement;
-        if (buyLink) {
-          return buyLink;
+        addToCartLink = span.closest('a') as HTMLElement;
+        if (addToCartLink) {
+          return addToCartLink;
         }
       }
     }
@@ -182,20 +182,20 @@ export class BuyUtils {
   }
 
   /**
-   * Open buy link with add_to_cart parameter in new tab
+   * Open add to cart link with add_to_cart parameter in new tab
    * @param href The URL to open
    */
-  public static openBuyLinkWithCart(href: string): void {
+  public static openAddToCartLinkWithCart(href: string): void {
     const cartUrl = this.addCartParameterToUrl(href);
-    Logger.info('Opening buy link with add_to_cart parameter in new tab:', cartUrl);
+    Logger.info('Opening add to cart link with add_to_cart parameter in new tab:', cartUrl);
     window.open(cartUrl, '_blank');
   }
 
   /**
-   * Automatically fill in the minimum price in the buy dialog
+   * Automatically fill in the minimum price in the add to cart dialog
    * @param isTrack Whether this is for a track (true) or album (false)
    */
-  public static autoFillBuyPrice(isTrack: boolean = true): void {
+  public static autoFillAddToCartPrice(isTrack: boolean = true): void {
     // Wait a bit for the dialog to fully render
     setTimeout(() => {
       try {
@@ -266,14 +266,14 @@ export class BuyUtils {
         
         if (priceInput) {
           // Try to find the minimum price from the dialog
-          let minPrice = BuyUtils.extractMinimumPrice();
+          let minPrice = AddToCartUtils.extractMinimumPrice();
           
           if (!minPrice) {
             // Fallback: use reasonable defaults based on currency and item type
-            minPrice = BuyUtils.getDefaultPrice(isTrack);
+            minPrice = AddToCartUtils.getDefaultPrice(isTrack);
           }
           
-          Logger.info(`Auto-filling buy price: ${minPrice}`);
+          Logger.info(`Auto-filling add to cart price: ${minPrice}`);
           
           // Clear the current value and fill in the price
           priceInput.value = '';
@@ -295,11 +295,11 @@ export class BuyUtils {
           
           // Auto-click "Add to cart" button after filling price
           setTimeout(() => {
-            BuyUtils.clickAddToCartButton();
+            AddToCartUtils.clickAddToCartButton();
           }, 300);
           
         } else {
-          Logger.warn('Could not find price input field in buy dialog');
+          Logger.warn('Could not find price input field in add to cart dialog');
         }
       } catch (error) {
         ErrorHandler.withErrorHandling(() => { throw error; }, 'Error auto-filling buy price');

@@ -4,7 +4,7 @@ import {AudioUtils} from '../utils/audio-utils';
 import {SeekUtils} from '../utils/seek-utils';
 import {ErrorHandler} from '../utils/error-handler';
 import {DOMSelectors} from '../utils/dom-selectors';
-import {BuyUtils} from '../utils/buy-utils';
+import {AddToCartUtils} from '../utils/add-to-cart-utils';
 import {WishlistService} from '../services/wishlist.service';
 
 // Add type definition for window.TralbumData
@@ -726,7 +726,7 @@ export class BandcampFacade {
       const clickableElements = DOMSelectors.findWithSelectors<HTMLElement>(DOMSelectors.CLICKABLE_ELEMENTS, item);
       
       if (clickableElements.length > 0) {
-        // Try to click the first element that isn't an explicit "buy" or "share" button
+        // Try to click the first element that isn't an explicit "add to cart" or "share" button
         let clicked = false;
         
         for (let i = 0; i < clickableElements.length; i++) {
@@ -1522,10 +1522,10 @@ export class BandcampFacade {
   }
   
   /**
-   * Click the buy button on the current page
+   * Click the add to cart button on the current page
    */
-  public static clickBuyButtonOnCurrentPage(): void {
-    BuyUtils.clickBuyButtonOnCurrentPage();
+  public static clickAddToCartButtonOnCurrentPage(): void {
+    AddToCartUtils.clickAddToCartButtonOnCurrentPage();
   }
 
   /**
@@ -1545,46 +1545,46 @@ export class BandcampFacade {
       if (this._wishlistItems.length > 0) {
         const currentItem = this._wishlistItems[this._currentWishlistIndex];
         if (currentItem) {
-          Logger.info('c key detected - buying current track from wishlist');
+          Logger.info('c key detected - adding current track to cart from wishlist');
           
           // First priority: Check the now-playing section which has accurate links for the current track
           const nowPlaying = document.querySelector('.now-playing');
           if (nowPlaying) {
-            Logger.info('Found now-playing section, checking for direct buy links');
+            Logger.info('Found now-playing section, checking for direct add to cart links');
             
-            // Look for the buy-now link in the now-playing section which should point to the individual track
-            const nowPlayingBuyLink = BuyUtils.findBuyLinkInContainer(nowPlaying as HTMLElement);
-            if (nowPlayingBuyLink) {
-              Logger.info('Found buy now link in now-playing section, using this');
-              const href = (nowPlayingBuyLink as HTMLAnchorElement).href;
-              BuyUtils.openBuyLinkWithCart(href);
+            // Look for the add-to-cart link in the now-playing section which should point to the individual track
+            const nowPlayingAddToCartLink = AddToCartUtils.findAddToCartLinkInContainer(nowPlaying as HTMLElement);
+            if (nowPlayingAddToCartLink) {
+              Logger.info('Found add to cart link in now-playing section, using this');
+              const href = (nowPlayingAddToCartLink as HTMLAnchorElement).href;
+              AddToCartUtils.openAddToCartLinkWithCart(href);
               return;
             }
             
-            // If no buy link, try the track URL from the title
+            // If no add to cart link, try the track URL from the title
             const nowPlayingTrackLink = nowPlaying.querySelector('.title');
             if (nowPlayingTrackLink) {
               const trackLinkParent = nowPlayingTrackLink.closest('a');
               if (trackLinkParent) {
                 Logger.info('Found track link in now-playing section, using this instead');
                 const href = (trackLinkParent as HTMLAnchorElement).href;
-                BuyUtils.openBuyLinkWithCart(href);
+                AddToCartUtils.openAddToCartLinkWithCart(href);
                 return;
               }
             }
           }
           
-          // Look for buy links in the current item
-          const buyLink = BuyUtils.findBuyLinkInContainer(currentItem);
+          // Look for add to cart links in the current item
+          const addToCartLink = AddToCartUtils.findAddToCartLinkInContainer(currentItem);
           
-          if (buyLink) {
-            Logger.info('Found buy link, opening it in new tab');
-            const href = (buyLink as HTMLAnchorElement).href;
-            BuyUtils.openBuyLinkWithCart(href);
+          if (addToCartLink) {
+            Logger.info('Found add to cart link, opening it in new tab');
+            const href = (addToCartLink as HTMLAnchorElement).href;
+            AddToCartUtils.openAddToCartLinkWithCart(href);
             return;
           }
           
-          // If no direct buy link in the item, try to find the track/album URL
+          // If no direct add to cart link in the item, try to find the track/album URL
           // Prioritize track links over album links
           const trackLink = DOMSelectors.findOneWithSelectors<HTMLAnchorElement>(DOMSelectors.ALBUM_TRACK_LINKS, currentItem);
           
@@ -1592,7 +1592,7 @@ export class BandcampFacade {
             // Get the href and add add_to_cart parameter
             const href = (trackLink as HTMLAnchorElement).href;
             Logger.info('Opening track page with add_to_cart parameter in new tab:', href);
-            BuyUtils.openBuyLinkWithCart(href);
+            AddToCartUtils.openAddToCartLinkWithCart(href);
             return;
           }
           
@@ -1602,7 +1602,7 @@ export class BandcampFacade {
                           currentItem.getAttribute('data-track-href');
           if (trackUrl) {
             Logger.info('Opening track URL from data attribute with add_to_cart parameter in new tab:', trackUrl);
-            BuyUtils.openBuyLinkWithCart(trackUrl);
+            AddToCartUtils.openAddToCartLinkWithCart(trackUrl);
             return;
           }
           
@@ -1612,7 +1612,7 @@ export class BandcampFacade {
             const href = (anyLink as HTMLAnchorElement).href;
             if (href && (href.includes('bandcamp.com') || href.startsWith('/'))) {
               Logger.info('Opening potentially related page with add_to_cart parameter in new tab:', href);
-              BuyUtils.openBuyLinkWithCart(href);
+              AddToCartUtils.openAddToCartLinkWithCart(href);
               return;
             }
           }
@@ -1625,7 +1625,7 @@ export class BandcampFacade {
         Logger.warn('No wishlist items loaded');
       }
     } else if (this.isAlbum) {
-      // Special handling for album pages - buy the currently playing track, not the entire album
+      // Special handling for album pages - add the currently playing track to cart, not the entire album
       Logger.info('c key detected on album page - looking for currently playing track');
       
       // Find the currently playing track row (has 'current_track' class)
@@ -1639,17 +1639,17 @@ export class BandcampFacade {
         
         if (trackLink && trackLink.href) {
           Logger.info('Found track link for currently playing track, opening with cart parameter:', trackLink.href);
-          BuyUtils.openBuyLinkWithCart(trackLink.href);
+          AddToCartUtils.openAddToCartLinkWithCart(trackLink.href);
           return;
         } else {
           Logger.warn('Could not find track link in currently playing track row');
         }
       } else {
-        Logger.info('No track currently playing on album page, buying entire album instead');
+        Logger.info('No track currently playing on album page, adding entire album to cart instead');
       }
       
-      // Fallback: buy the entire album if no specific track is playing
-      this.clickBuyButtonOnCurrentPage();
+      // Fallback: add the entire album to cart if no specific track is playing
+      this.clickAddToCartButtonOnCurrentPage();
     } else if (this.isTrack) {
       // For individual track pages, first check if only album purchase is available
       Logger.info('c key detected on track page - checking purchase options');
@@ -1736,12 +1736,12 @@ export class BandcampFacade {
       }
       
       // If no album-only indicator found, proceed with normal track purchase
-      Logger.info('No album-only restriction detected, clicking buy button to open buy dialog');
-      this.clickBuyButtonOnCurrentPage();
+      Logger.info('No album-only restriction detected, clicking add to cart button to open dialog');
+      this.clickAddToCartButtonOnCurrentPage();
     } else {
       // Fallback for other page types
-      Logger.info('c key detected on unsupported page type - attempting default buy action');
-      this.clickBuyButtonOnCurrentPage();
+      Logger.info('c key detected on unsupported page type - attempting default add to cart action');
+      this.clickAddToCartButtonOnCurrentPage();
     }
   }
 

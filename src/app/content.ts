@@ -25,18 +25,18 @@ function handleAddToCart() {
   if (addToCart === 'true') {
     Logger.info('Add-to-cart parameter detected, will attempt to purchase track/album');
     
-    // Wait for the page to fully load before attempting to buy
-    Logger.info('Waiting for page to fully load before attempting to buy...');
+    // Wait for the page to fully load before attempting to add to cart
+    Logger.info('Waiting for page to fully load before attempting to add to cart...');
     setTimeout(() => {
       // Check if we're on a release page
       Logger.info('Page loaded. Checking if we are on a release page. isTrack:', 
         BandcampFacade.isTrack, 'isAlbum:', BandcampFacade.isAlbum);
       
       if (BandcampFacade.isTrack || BandcampFacade.isAlbum) {
-        Logger.info('On a release page, attempting to click buy button');
-        BandcampFacade.clickBuyButtonOnCurrentPage();
+        Logger.info('On a release page, attempting to click add to cart button');
+        BandcampFacade.clickAddToCartButtonOnCurrentPage();
       } else {
-        Logger.info('Not on a release page, skipping buy button click');
+        Logger.info('Not on a release page, skipping add to cart button click');
         Logger.info('Page URL:', window.location.href);
         Logger.info('Page title:', document.title);
       }
