@@ -32,7 +32,9 @@
     "test:coverage": "jest --coverage",
     "test:watch": "jest --watchAll",
     "webpack:chrome": "webpack --env chrome",
-    "webpack:firefox": "webpack --env firefox"
+    "webpack:chrome:build": "NODE_ENV=production webpack --env chrome",
+    "webpack:firefox": "webpack --env firefox",
+    "webpack:firefox:build": "NODE_ENV=production webpack --env firefox"
   },
   "dependencies": {
     "speed-to-percentage": "^1.2.1",

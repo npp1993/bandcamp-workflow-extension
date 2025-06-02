@@ -1520,7 +1520,7 @@ export class BandcampFacade {
       }
     }
   }
-
+  
   /**
    * Click the buy button on the current page
    */
@@ -1651,8 +1651,92 @@ export class BandcampFacade {
       // Fallback: buy the entire album if no specific track is playing
       this.clickBuyButtonOnCurrentPage();
     } else if (this.isTrack) {
-      // For individual track pages, click the buy button directly to open buy dialog
-      Logger.info('C key detected on track page - clicking buy button to open buy dialog');
+      // For individual track pages, first check if only album purchase is available
+      Logger.info('C key detected on track page - checking purchase options');
+      
+      // Check for "Buy the Full Digital Album" or similar text indicating album-only purchase
+      const albumOnlyIndicators = [
+        'Buy the Full Digital Album',
+        'Buy the Full Album',
+        'Buy Full Digital Album',
+        'Buy Digital Album',
+        'Album Only'
+      ];
+      
+      let isAlbumOnly = false;
+      let albumLink: HTMLAnchorElement | null = null;
+      
+      // Look for album-only purchase indicators in the page text
+      for (const indicator of albumOnlyIndicators) {
+        const pageText = document.body.textContent || '';
+        if (pageText.includes(indicator)) {
+          Logger.info(`Found album-only purchase indicator: "${indicator}"`);
+          isAlbumOnly = true;
+          
+          // Try to find the album link associated with this text
+          const elements = Array.from(document.querySelectorAll('a, span, div'));
+          for (const element of elements) {
+            const text = element.textContent?.trim() || '';
+            if (text.includes(indicator) && element.tagName.toLowerCase() === 'a') {
+              albumLink = element as HTMLAnchorElement;
+              Logger.info(`Found album link with text: "${text}"`);
+              break;
+            } else if (text.includes(indicator)) {
+              // Look for a parent or nearby link
+              const parentLink = element.closest('a') || element.querySelector('a');
+              if (parentLink) {
+                albumLink = parentLink as HTMLAnchorElement;
+                Logger.info(`Found album link near indicator text: "${parentLink.href}"`);
+                break;
+              }
+            }
+          }
+          
+          // If no direct link found with the text, look for album links in the page structure
+          if (!albumLink) {
+            // Look for album link in breadcrumb navigation or "from" section
+            const fromSection = document.querySelector('.fromAlbum, .from-album, [class*="from"]');
+            if (fromSection) {
+              const albumLinkInFrom = fromSection.querySelector('a[href*="/album/"]');
+              if (albumLinkInFrom) {
+                albumLink = albumLinkInFrom as HTMLAnchorElement;
+                Logger.info(`Found album link in "from" section: "${albumLink.href}"`);
+              }
+            }
+            
+            // Check for breadcrumb or navigation links
+            if (!albumLink) {
+              const breadcrumbLinks = document.querySelectorAll('.breadcrumb a, .nav a, .navigation a');
+              for (const link of Array.from(breadcrumbLinks)) {
+                const href = (link as HTMLAnchorElement).href;
+                if (href && href.includes('/album/')) {
+                  albumLink = link as HTMLAnchorElement;
+                  Logger.info(`Found album link in breadcrumb: "${href}"`);
+                  break;
+                }
+              }
+            }
+            
+            // Last resort: look for any album links in the page
+            if (!albumLink) {
+              const albumLinks = DOMSelectors.findWithSelectors<HTMLAnchorElement>(['a[href*="/album/"]'], document);
+              if (albumLinks.length > 0) {
+                albumLink = albumLinks[0];
+                Logger.info(`Found album link in page: "${albumLink.href}"`);
+              }
+            }
+          }
+          break;
+        }
+      }
+      
+      if (isAlbumOnly) {
+        Logger.info('Track page only allows album purchase, ignoring C key press as requested');
+        return;
+      }
+      
+      // If no album-only indicator found, proceed with normal track purchase
+      Logger.info('No album-only restriction detected, clicking buy button to open buy dialog');
       this.clickBuyButtonOnCurrentPage();
     } else {
       // Fallback for other page types
