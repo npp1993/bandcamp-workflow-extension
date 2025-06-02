@@ -1,6 +1,5 @@
 TODO:
 
-- fix q key adding full release (not seeming to work) (current item)
 - add handling for release pages that do not allow you to buy individual tracks, for example #fetch https://dj-surgeon.bandcamp.com/track/part-1-9
 
 

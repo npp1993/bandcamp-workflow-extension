@@ -138,12 +138,73 @@ export class WishlistService {
     Logger.info('Attempting to click wishlist toggle in UI');
     
     try {
-      // First, try to find the specifically styled in-wishlist element in the player
+      // First, try to find the main wishlist button (for album/release pages)
+      const collectItemContainer = document.getElementById('collect-item');
+      if (collectItemContainer) {
+        // Check if the album is currently in the wishlist by looking for visible elements
+        const wishlistedButton = collectItemContainer.querySelector('#wishlisted-msg .action');
+        const wishlistButton = collectItemContainer.querySelector('#wishlist-msg');
+        
+        // Determine which button is currently visible/active
+        const isCurrentlyWishlisted = wishlistedButton && 
+          (wishlistedButton as HTMLElement).offsetParent !== null &&
+          window.getComputedStyle(wishlistedButton as HTMLElement).display !== 'none';
+          
+        const isWishlistButtonVisible = wishlistButton && 
+          (wishlistButton as HTMLElement).offsetParent !== null &&
+          window.getComputedStyle(wishlistButton as HTMLElement).display !== 'none';
+        
+        if (isCurrentlyWishlisted) {
+          Logger.info('Album is currently in wishlist, clicking remove button');
+          (wishlistedButton as HTMLElement).click();
+          return true;
+        } else if (isWishlistButtonVisible) {
+          Logger.info('Album is not in wishlist, clicking add button');
+          (wishlistButton as HTMLElement).click();
+          return true;
+        }
+        
+        // Fallback: try any clickable element inside the container
+        const anyClickableButton = collectItemContainer.querySelector('#wishlist-msg, #wishlist-msg .action, #wishlist-msg a, #wishlisted-msg .action, #wishlisted-msg a');
+        if (anyClickableButton) {
+          Logger.info('Found fallback clickable button inside #collect-item, clicking it');
+          (anyClickableButton as HTMLElement).click();
+          return true;
+        }
+        
+        // Last resort: click the container if no specific button found
+        Logger.info('Found #collect-item container but no specific button, clicking container');
+        collectItemContainer.click();
+        return true;
+      }
+
+      // Second, try to find the specifically styled in-wishlist element in the player
       const inWishlistButton = document.querySelector('.wishlisted-msg a, .wishlisted-msg.collection-btn a');
       if (inWishlistButton) {
         Logger.info('Found in-wishlist button in player, clicking it');
         (inWishlistButton as HTMLElement).click();
         return true;
+      }
+
+      // Third, try more general wishlist button selectors
+      const generalWishlistSelectors = [
+        '.collect-item', 
+        '.wishlist-button',
+        '.add-to-wishlist',
+        'button[title*="wishlist"]',
+        'a[title*="wishlist"]',
+        '.collection-btn',
+        'button[title*="Add to wishlist"]',
+        'a[title*="Add to wishlist"]'
+      ];
+
+      for (const selector of generalWishlistSelectors) {
+        const wishlistElement = document.querySelector(selector);
+        if (wishlistElement) {
+          Logger.info(`Found wishlist button with selector: ${selector}`);
+          (wishlistElement as HTMLElement).click();
+          return true;
+        }
       }
 
       // If we have a current item, look for wishlist toggle elements within it

@@ -39,10 +39,15 @@ export class KeyboardController {
         case 'q':
           // Only trigger wishlist toggle if no modifier keys are pressed
           // This allows Command+Q (quit), Ctrl+Q, etc. to work normally
+          // Only works on album/release pages, not on track or wishlist pages
           if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
-            Logger.debug('Extension shortcut: Q (toggle wishlist)');
-            e.preventDefault();
-            BandcampFacade.toggleWishlist();
+            if (BandcampFacade.isAlbum) {
+              Logger.debug('Extension shortcut: Q (toggle wishlist on album page)');
+              e.preventDefault();
+              BandcampFacade.toggleWishlist();
+            } else {
+              Logger.debug('Q key pressed but not on album page - ignoring');
+            }
           }
           break;
           
