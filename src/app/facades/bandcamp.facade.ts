@@ -1529,9 +1529,9 @@ export class BandcampFacade {
   }
 
   /**
-   * Buy the current track
+   * Add the current track to cart
    */
-  public static buyCurrentTrack(): void {
+  public static addCurrentTrackToCart(): void {
     // Special handling for wishlist pages
     if (this.isWishlistPage) {
       // If we have wishlist items but no track is currently playing (index is -1)
