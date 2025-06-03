@@ -189,13 +189,23 @@ export class KeyboardController {
    * Handle playing the previous track
    */
   private static handlePreviousTrack() {
+    const startTime = Logger.startTiming('Previous track navigation');
+    
     if (BandcampFacade.isWishlistPage) {
+      Logger.info('🎵 Previous track requested on wishlist page');
       // Handle async call without blocking
-      BandcampFacade.playPreviousWishlistTrack().catch(error => {
-        Logger.error('Error in playPreviousWishlistTrack:', error);
-      });
+      BandcampFacade.playPreviousWishlistTrack()
+        .then(() => {
+          Logger.timing('Previous track navigation completed', startTime);
+        })
+        .catch(error => {
+          Logger.error('Error in playPreviousWishlistTrack:', error);
+          Logger.timing('Previous track navigation failed', startTime);
+        });
     } else {
+      Logger.info('🎵 Previous track requested on regular page');
       BandcampFacade.getPrevious().click();
+      Logger.timing('Previous track navigation completed', startTime);
     }
   }
 
@@ -203,10 +213,17 @@ export class KeyboardController {
    * Handle playing the next track
    */
   private static handleNextTrack() {
+    const startTime = Logger.startTiming('Next track navigation');
+    
     if (BandcampFacade.isWishlistPage) {
+      Logger.info('🎵 Next track requested on wishlist page');
       BandcampFacade.playNextWishlistTrack();
+      // Note: playNextWishlistTrack is sync but has internal delays, so timing will be logged there
+      Logger.timing('Next track navigation initiated', startTime);
     } else {
+      Logger.info('🎵 Next track requested on regular page');
       BandcampFacade.getNext().click();
+      Logger.timing('Next track navigation completed', startTime);
     }
   }
 }
