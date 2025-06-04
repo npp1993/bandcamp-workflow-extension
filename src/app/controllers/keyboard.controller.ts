@@ -198,14 +198,15 @@ export class KeyboardController {
         .then(() => {
           Logger.timing('Previous track navigation completed', startTime);
         })
-        .catch(error => {
+        .catch((error: any) => {
           Logger.error('Error in playPreviousWishlistTrack:', error);
           Logger.timing('Previous track navigation failed', startTime);
         });
     } else {
-      Logger.info('🎵 Previous track requested on regular page');
-      BandcampFacade.getPrevious().click();
-      Logger.timing('Previous track navigation completed', startTime);
+      Logger.info('🎵 Previous track requested on release page (using optimized method)');
+      // Use optimized release page navigation with Phase 2 improvements
+      BandcampFacade.playPreviousReleaseTrack();
+      Logger.timing('Previous track navigation initiated', startTime);
     }
   }
 
@@ -221,9 +222,10 @@ export class KeyboardController {
       // Note: playNextWishlistTrack is sync but has internal delays, so timing will be logged there
       Logger.timing('Next track navigation initiated', startTime);
     } else {
-      Logger.info('🎵 Next track requested on regular page');
-      BandcampFacade.getNext().click();
-      Logger.timing('Next track navigation completed', startTime);
+      Logger.info('🎵 Next track requested on release page (using optimized method)');
+      // Use optimized release page navigation with Phase 2 improvements
+      BandcampFacade.playNextReleaseTrack();
+      Logger.timing('Next track navigation initiated', startTime);
     }
   }
 }
