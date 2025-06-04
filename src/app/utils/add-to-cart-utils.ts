@@ -72,30 +72,74 @@ export class AddToCartUtils {
    * @returns The add to cart button element or null if not found
    */
   private static findAddToCartButtonByText(): HTMLElement | null {
-    // Common add to cart button text patterns on Bandcamp (prioritized by specificity)
-    const addToCartTexts = [
+    // Look for buttons and links with add to cart related text
+    const allElements = Array.from(document.querySelectorAll('button, a, span[role="button"], div[role="button"], span.buyItem, .buyItem'));
+    
+    // Physical formats to avoid (prioritize digital over physical)
+    const physicalFormats = [
+      'vinyl', 'cassette', 'cd', 'record', 'tape', 'physical', 'lp', 'ep'
+    ];
+    
+    // First pass: Look specifically for digital options
+    const digitalTexts = [
       'Buy Digital Track',
-      'Buy Digital Album', 
+      'Buy Digital Album',
+      'digital track',
+      'digital album'
+    ];
+    
+    for (const element of allElements) {
+      const text = element.textContent?.trim() || '';
+      const textLower = text.toLowerCase();
+      
+      // Skip if this is clearly a physical format
+      if (physicalFormats.some(format => textLower.includes(format))) {
+        continue;
+      }
+      
+      // Check for digital-specific text patterns
+      for (const digitalText of digitalTexts) {
+        const isExactMatch = text === digitalText;
+        const isContainsMatch = textLower.includes(digitalText.toLowerCase());
+        
+        if (isExactMatch || (isContainsMatch && text.length < 50)) {
+          const htmlElement = element as HTMLElement;
+          const isDisabled = (htmlElement as any).disabled === true;
+          const isVisible = htmlElement.offsetParent !== null;
+          const hasHiddenStyle = window.getComputedStyle(htmlElement).display === 'none' || 
+                                 window.getComputedStyle(htmlElement).visibility === 'hidden';
+          
+          if (isVisible && !isDisabled && !hasHiddenStyle) {
+            Logger.info(`Found digital add to cart button by text: "${text}"`);
+            return htmlElement;
+          }
+        }
+      }
+    }
+    
+    // Second pass: Look for generic buy buttons but still avoid physical formats
+    const genericBuyTexts = [
       'Buy Track',
       'Buy Album',
       'Buy Now',
       'Purchase',
       'Add to Cart',
-      'Buy',
-      'digital track',
-      'digital album'
+      'Buy'
     ];
-
-    // Look for buttons and links with add to cart related text
-    const allElements = Array.from(document.querySelectorAll('button, a, span[role="button"], div[role="button"], span.buyItem, .buyItem'));
     
     for (const element of allElements) {
       const text = element.textContent?.trim() || '';
+      const textLower = text.toLowerCase();
       
-      // Check if the text matches any of our add to cart patterns
-      for (const addToCartText of addToCartTexts) {
-        const isExactMatch = text === addToCartText;
-        const isContainsMatch = text.toLowerCase().includes(addToCartText.toLowerCase());
+      // Skip if this is clearly a physical format
+      if (physicalFormats.some(format => textLower.includes(format))) {
+        continue;
+      }
+      
+      // Check if the text matches any of our generic buy patterns
+      for (const buyText of genericBuyTexts) {
+        const isExactMatch = text === buyText;
+        const isContainsMatch = textLower.includes(buyText.toLowerCase());
         
         if (isExactMatch || (isContainsMatch && text.length < 50)) { // Avoid matching long paragraphs
           // Make sure it's clickable and visible
@@ -106,7 +150,7 @@ export class AddToCartUtils {
                                  window.getComputedStyle(htmlElement).visibility === 'hidden';
           
           if (isVisible && !isDisabled && !hasHiddenStyle) {
-            Logger.info(`Found add to cart button by text: "${text}"`);
+            Logger.info(`Found generic add to cart button by text: "${text}"`);
             return htmlElement;
           }
         }
