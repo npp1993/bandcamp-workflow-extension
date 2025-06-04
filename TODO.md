@@ -2,6 +2,5 @@ TODO:
 
 
 - how to actually release on chrome web store?
-- fix add to cart with this link:
-https://dvs1hush.bandcamp.com/track/solf-ges-framework
+- analyze waveform_export and display audio waveform for playing track on album and release pages
 
