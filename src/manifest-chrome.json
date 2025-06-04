@@ -16,8 +16,12 @@
     "activeTab"
   ],
   "host_permissions": [
-    "*://*.bandcamp.com/*"
+    "*://*.bandcamp.com/*",
+    "https://t4.bcbits.com/*"
   ],
+  "background": {
+    "service_worker": "scripts/background.js"
+  },
   "content_scripts": [
     {
       "matches": [
