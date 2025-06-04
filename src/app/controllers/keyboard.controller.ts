@@ -192,7 +192,7 @@ export class KeyboardController {
     const startTime = Logger.startTiming('Previous track navigation');
     
     if (BandcampFacade.isWishlistPage) {
-      Logger.info('🎵 Previous track requested on wishlist page');
+      Logger.info('Previous track requested on wishlist page');
       // Handle async call without blocking
       BandcampFacade.playPreviousWishlistTrack()
         .then(() => {
@@ -203,7 +203,7 @@ export class KeyboardController {
           Logger.timing('Previous track navigation failed', startTime);
         });
     } else {
-      Logger.info('🎵 Previous track requested on release page (using optimized method)');
+      Logger.info('Previous track requested on release page (using optimized method)');
       // Use optimized release page navigation with Phase 2 improvements
       BandcampFacade.playPreviousReleaseTrack();
       Logger.timing('Previous track navigation initiated', startTime);
@@ -217,12 +217,12 @@ export class KeyboardController {
     const startTime = Logger.startTiming('Next track navigation');
     
     if (BandcampFacade.isWishlistPage) {
-      Logger.info('🎵 Next track requested on wishlist page');
+      Logger.info('Next track requested on wishlist page');
       BandcampFacade.playNextWishlistTrack();
       // Note: playNextWishlistTrack is sync but has internal delays, so timing will be logged there
       Logger.timing('Next track navigation initiated', startTime);
     } else {
-      Logger.info('🎵 Next track requested on release page (using optimized method)');
+      Logger.info('Next track requested on release page (using optimized method)');
       // Use optimized release page navigation with Phase 2 improvements
       BandcampFacade.playNextReleaseTrack();
       Logger.timing('Next track navigation initiated', startTime);

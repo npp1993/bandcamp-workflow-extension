@@ -162,7 +162,7 @@ export class WishlistController {
           z-index: 10000;
           box-shadow: 0 2px 10px rgba(0,0,0,0.2);
         ">
-          <span>🎵 Loading wishlist items...</span>
+          <span>Loading wishlist items...</span>
         </div>
       `;
       document.body.appendChild(indicator);

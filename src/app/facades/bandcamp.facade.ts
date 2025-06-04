@@ -267,7 +267,7 @@ export class BandcampFacade {
    * Applies Phase 2 optimization techniques: event-based verification, smart delays, error recovery
    */
   public static playNextReleaseTrack(): void {
-    const startTime = Logger.startTiming('⏭️ playNextReleaseTrack');
+    const startTime = Logger.startTiming('playNextReleaseTrack');
     
     // Check if we're on a supported release page
     if (!this.isAlbum && !this.isTrack) {
@@ -278,7 +278,7 @@ export class BandcampFacade {
 
     // Check if navigation is already in progress
     if (this._releaseNavigationInProgress) {
-      Logger.info('🚫 Release navigation already in progress, ignoring additional request');
+      Logger.info('Release navigation already in progress, ignoring additional request');
       Logger.timing('playNextReleaseTrack blocked - concurrent request', startTime);
       return;
     }
@@ -295,21 +295,21 @@ export class BandcampFacade {
       
       const nextButton = this.getNext();
       if (!nextButton) {
-        Logger.warn('❌ Next button not found on release page');
+        Logger.warn('Next button not found on release page');
         this._releaseNavigationInProgress = false;
         Logger.timing('playNextReleaseTrack failed - no next button', startTime);
         return;
       }
 
-      Logger.info('⏭️ Clicking next track button on release page');
+      Logger.info('Clicking next track button on release page');
       Logger.timing('Next button found', delayCompleteTime);
       
-      const clickStart = Logger.startTiming('🖱️ Next button click');
+      const clickStart = Logger.startTiming('Next button click');
       nextButton.click();
       Logger.timing('Next button clicked', clickStart);
       
       // Use event-based verification instead of timeout-based
-      const verificationStart = Logger.startTiming('✅ Event-based navigation verification');
+      const verificationStart = Logger.startTiming('Event-based navigation verification');
       this.verifyReleaseNavigationWithEvents('next', verificationStart, startTime);
       
     }, 100); // Phase 2: Reduced from 250ms to 100ms
@@ -320,7 +320,7 @@ export class BandcampFacade {
    * Applies Phase 2 optimization techniques: event-based verification, smart delays, error recovery
    */
   public static playPreviousReleaseTrack(): void {
-    const startTime = Logger.startTiming('⏮️ playPreviousReleaseTrack');
+    const startTime = Logger.startTiming('playPreviousReleaseTrack');
     
     // Check if we're on a supported release page
     if (!this.isAlbum && !this.isTrack) {
@@ -331,7 +331,7 @@ export class BandcampFacade {
 
     // Check if navigation is already in progress
     if (this._releaseNavigationInProgress) {
-      Logger.info('🚫 Release navigation already in progress, ignoring additional request');
+      Logger.info('Release navigation already in progress, ignoring additional request');
       Logger.timing('playPreviousReleaseTrack blocked - concurrent request', startTime);
       return;
     }
@@ -348,21 +348,21 @@ export class BandcampFacade {
       
       const prevButton = this.getPrevious();
       if (!prevButton) {
-        Logger.warn('❌ Previous button not found on release page');
+        Logger.warn('Previous button not found on release page');
         this._releaseNavigationInProgress = false;
         Logger.timing('playPreviousReleaseTrack failed - no previous button', startTime);
         return;
       }
 
-      Logger.info('⏮️ Clicking previous track button on release page');
+      Logger.info('Clicking previous track button on release page');
       Logger.timing('Previous button found', delayCompleteTime);
       
-      const clickStart = Logger.startTiming('🖱️ Previous button click');
+      const clickStart = Logger.startTiming('Previous button click');
       prevButton.click();
       Logger.timing('Previous button clicked', clickStart);
       
       // Use event-based verification instead of timeout-based
-      const verificationStart = Logger.startTiming('✅ Event-based navigation verification');
+      const verificationStart = Logger.startTiming('Event-based navigation verification');
       this.verifyReleaseNavigationWithEvents('previous', verificationStart, startTime);
       
     }, 100); // Phase 2: Reduced from 250ms to 100ms
@@ -385,7 +385,7 @@ export class BandcampFacade {
 
     const audio = this.audio || AudioUtils.getAudioElement();
     if (!audio) {
-      Logger.warn('❌ No audio element found for release navigation verification');
+      Logger.warn('No audio element found for release navigation verification');
       this._releaseNavigationInProgress = false;
       Logger.timing('verifyReleaseNavigationWithEvents failed - no audio', verificationStartTime);
       return;
@@ -395,7 +395,7 @@ export class BandcampFacade {
       if (verificationComplete) return;
       verificationComplete = true;
       
-      Logger.info(`✅ Release page ${direction} navigation verified successfully`);
+      Logger.info(`Release page ${direction} navigation verified successfully`);
       Logger.timing('Release navigation verification completed', verificationStartTime);
       
       // Clear navigation flags with optimized delays
@@ -409,7 +409,7 @@ export class BandcampFacade {
       if (verificationComplete) return;
       verificationComplete = true;
       
-      Logger.warn(`❌ Release page ${direction} navigation verification failed: ${reason}`);
+      Logger.warn(`Release page ${direction} navigation verification failed: ${reason}`);
       Logger.timing('Release navigation verification failed', verificationStartTime);
       
       // Clear navigation flags with error recovery
@@ -421,34 +421,34 @@ export class BandcampFacade {
 
     // Event handlers for navigation success detection
     const onLoadStart = () => {
-      Logger.info('🎵 Release page: Audio loading started (navigation successful)');
+      Logger.info('Release page: Audio loading started (navigation successful)');
       onNavigationSuccess();
     };
 
     const onLoadedData = () => {
-      Logger.info('🎵 Release page: Audio data loaded (navigation successful)');
+      Logger.info('Release page: Audio data loaded (navigation successful)');
       onNavigationSuccess();
     };
 
     const onCanPlay = () => {
-      Logger.info('🎵 Release page: Audio can play (navigation successful)');
+      Logger.info('Release page: Audio can play (navigation successful)');
       onNavigationSuccess();
     };
 
     const onPlay = () => {
-      Logger.info('🎵 Release page: Audio started playing (navigation successful)');
+      Logger.info('Release page: Audio started playing (navigation successful)');
       onNavigationSuccess();
     };
 
     const onTimeUpdate = () => {
       if (audio.currentTime > 0) {
-        Logger.info('🎵 Release page: Audio time progressing (navigation successful)');
+        Logger.info('Release page: Audio time progressing (navigation successful)');
         onNavigationSuccess();
       }
     };
 
     const onError = () => {
-      Logger.warn('❌ Release page: Audio error during navigation');
+      Logger.warn('Release page: Audio error during navigation');
       onNavigationFailure('audio error');
     };
 
@@ -511,8 +511,8 @@ export class BandcampFacade {
    * @param timeSaved The amount of time saved in milliseconds
    */
   private static logReleasePageMetrics(operation: string, timeSaved: number): void {
-    Logger.info(`📊 Release Page Metrics: ${operation} optimization saved ${timeSaved}ms`);
-    Logger.info(`🎯 Release Page Performance: Phase 2 optimization applied`);
+    Logger.info(`Release Page Metrics: ${operation} optimization saved ${timeSaved}ms`);
+    Logger.info(`Release Page Performance: Phase 2 optimization applied`);
   }
 
   // ============================================
@@ -949,7 +949,7 @@ export class BandcampFacade {
    * @param index Index of the track to play
    */
   public static playWishlistTrack(index: number): void {
-    const startTime = Logger.startTiming('🎵 playWishlistTrack');
+    const startTime = Logger.startTiming('playWishlistTrack');
     
     if (!this.isWishlistPage || this._wishlistItems.length === 0) {
       Logger.warn('Cannot play wishlist track - not on wishlist page or no items loaded');
@@ -970,37 +970,37 @@ export class BandcampFacade {
       // Store the current index
       this._currentWishlistIndex = index;
       
-      Logger.info(`🎵 Attempting to play wishlist track ${index + 1} of ${this._wishlistItems.length}`);
+      Logger.info(`Attempting to play wishlist track ${index + 1} of ${this._wishlistItems.length}`);
       Logger.timing('playWishlistTrack setup completed', startTime);
       
       // Try to find and click the play button directly
-      const playButtonSearchStart = Logger.startTiming('🔍 Finding play button');
+      const playButtonSearchStart = Logger.startTiming('Finding play button');
       let playButton = this.findPlayButton(item);
       Logger.timing('Play button search completed', playButtonSearchStart);
       
       if (playButton) {
-        const playClickStart = Logger.startTiming('▶️ Play button click');
-        Logger.info(`🎯 Found play button for wishlist track ${index + 1}, clicking it`);
+        const playClickStart = Logger.startTiming('Play button click');
+        Logger.info(`Found play button for wishlist track ${index + 1}, clicking it`);
         playButton.click();
         Logger.timing('Play button clicked', playClickStart);
         
         // Use event-based verification instead of timeout-based
-        const verificationStart = Logger.startTiming('✅ Event-based playback verification');
+        const verificationStart = Logger.startTiming('Event-based playback verification');
         this.verifyPlaybackWithEvents(index, verificationStart, startTime);
         
         return;
       }
       
       // No play button found, try to click an item to select it
-      Logger.info(`🔍 No play button found for track ${index + 1}, trying to click the item itself`);
+      Logger.info(`No play button found for track ${index + 1}, trying to click the item itself`);
       
       // Try to find any clickable element
-      const elementSearchStart = Logger.startTiming('🔍 Finding clickable elements');
+      const elementSearchStart = Logger.startTiming('Finding clickable elements');
       const clickableElements = DOMSelectors.findWithSelectors<HTMLElement>(DOMSelectors.CLICKABLE_ELEMENTS, item);
       Logger.timing('Clickable elements search completed', elementSearchStart);
       
       if (clickableElements.length > 0) {
-        const elementSelectionStart = Logger.startTiming('🎯 Element selection');
+        const elementSelectionStart = Logger.startTiming('Element selection');
         // Try to click the first element that isn't an explicit "add to cart" or "share" button
         let clicked = false;
         
@@ -1009,8 +1009,8 @@ export class BandcampFacade {
           const text = element.textContent?.toLowerCase() || '';
           
           if (!text.includes('buy') && !text.includes('share') && !text.includes('wishlist')) {
-            Logger.info(`🎯 Clicking element to select track: "${text.substring(0, 50)}..."`);
-            const elementClickStart = Logger.startTiming('🖱️ Element click');
+            Logger.info(`Clicking element to select track: "${text.substring(0, 50)}..."`);
+            const elementClickStart = Logger.startTiming('Element click');
             element.click();
             Logger.timing('Element clicked', elementClickStart);
             clicked = true;
@@ -1018,18 +1018,18 @@ export class BandcampFacade {
             
             // Phase 2: Smart delay reduction - try immediate and fallback with minimal delay
             const tryFocusedPlayButton = () => {
-              const focusedPlaySearchStart = Logger.startTiming('🔍 Finding focused play button');
+              const focusedPlaySearchStart = Logger.startTiming('Finding focused play button');
               const playButton = document.querySelector('.carousel-player-inner .playbutton, .play-button');
               Logger.timing('Focused play button search completed', focusedPlaySearchStart);
               
               if (playButton) {
-                const focusedPlayClickStart = Logger.startTiming('▶️ Focused play button click');
-                Logger.info('🎯 Found play button in focused track, clicking it');
+                const focusedPlayClickStart = Logger.startTiming('Focused play button click');
+                Logger.info('Found play button in focused track, clicking it');
                 (playButton as HTMLElement).click();
                 Logger.timing('Focused play button clicked', focusedPlayClickStart);
                 
                 // Use event-based verification instead of timeout-based
-                const focusedVerificationStart = Logger.startTiming('✅ Focused event-based playback verification');
+                const focusedVerificationStart = Logger.startTiming('Focused event-based playback verification');
                 this.verifyPlaybackWithEvents(index, focusedVerificationStart, startTime);
                 return true;
               }
@@ -1041,7 +1041,7 @@ export class BandcampFacade {
               // Fallback with minimal delay if DOM needs time to update
               setTimeout(() => {
                 if (!tryFocusedPlayButton()) {
-                  Logger.info('❌ No play button found after selection, moving to next track');
+                  Logger.info('No play button found after selection, moving to next track');
                   Logger.timing('playWishlistTrack failed - no focused play button', startTime);
                   this.playNextWishlistTrack();
                 }
@@ -1053,13 +1053,13 @@ export class BandcampFacade {
         }
         
         if (!clicked) {
-          Logger.info('❌ No suitable clickable element found, moving to next track');
+          Logger.info('No suitable clickable element found, moving to next track');
           Logger.timing('Element selection failed - no suitable elements', elementSelectionStart);
           Logger.timing('playWishlistTrack failed - no suitable clickable elements', startTime);
           this.playNextWishlistTrack();
         }
       } else {
-        Logger.info('❌ No clickable elements found, moving to next track');
+        Logger.info('No clickable elements found, moving to next track');
         Logger.timing('playWishlistTrack failed - no clickable elements', startTime);
         this.playNextWishlistTrack();
       }
@@ -1075,7 +1075,7 @@ export class BandcampFacade {
    * Play the next track in the wishlist
    */
   public static playNextWishlistTrack(): void {
-    const startTime = Logger.startTiming('⏭️ playNextWishlistTrack');
+    const startTime = Logger.startTiming('playNextWishlistTrack');
     
     if (!this.isWishlistPage || this._wishlistItems.length === 0) {
       Logger.timing('playNextWishlistTrack failed - invalid state', startTime);
@@ -1084,7 +1084,7 @@ export class BandcampFacade {
 
     // Check if we already have a pending next track request
     if (this._pendingNextTrackRequest || this._skipInProgress) {
-      Logger.info('🚫 Already processing a track change request, ignoring additional request');
+      Logger.info('Already processing a track change request, ignoring additional request');
       Logger.timing('playNextWishlistTrack blocked - concurrent request', startTime);
       return;
     }
@@ -1105,10 +1105,10 @@ export class BandcampFacade {
         nextIndex = 0; // Loop back to the first track
       }
 
-      Logger.info(`⏭️ Playing next wishlist track (${nextIndex + 1} of ${this._wishlistItems.length})`);
+      Logger.info(`Playing next wishlist track (${nextIndex + 1} of ${this._wishlistItems.length})`);
       Logger.timing('Next index calculated', delayCompleteTime);
       
-      const playTrackStart = Logger.startTiming('🎵 Calling playWishlistTrack');
+      const playTrackStart = Logger.startTiming('Calling playWishlistTrack');
       this.playWishlistTrack(nextIndex);
       Logger.timing('playWishlistTrack call completed', playTrackStart);
       
@@ -1137,7 +1137,7 @@ export class BandcampFacade {
    * Play the previous track in the wishlist
    */
   public static async playPreviousWishlistTrack(): Promise<void> {
-    const startTime = Logger.startTiming('⏮️ playPreviousWishlistTrack');
+    const startTime = Logger.startTiming('playPreviousWishlistTrack');
     
     if (!this.isWishlistPage || this._wishlistItems.length === 0) {
       Logger.timing('playPreviousWishlistTrack failed - invalid state', startTime);
@@ -1146,7 +1146,7 @@ export class BandcampFacade {
 
     // Check if we already have a pending track request
     if (this._pendingNextTrackRequest || this._skipInProgress) {
-      Logger.info('🚫 Already processing a track change request, ignoring additional request');
+      Logger.info('Already processing a track change request, ignoring additional request');
       Logger.timing('playPreviousWishlistTrack blocked - concurrent request', startTime);
       return;
     }
@@ -1165,23 +1165,23 @@ export class BandcampFacade {
       // If we're trying to go to the previous track from the first track (index 0),
       // ensure all wishlist items are loaded to get the correct "last" track
       if (this._currentWishlistIndex === 0) {
-        Logger.info('🔄 At first track, ensuring all wishlist items are loaded before going to last track');
+        Logger.info('At first track, ensuring all wishlist items are loaded before going to last track');
         const loadAllStart = Logger.startTiming('📥 Loading all wishlist items');
         try {
           const loadSuccess = await this.loadAllWishlistItems();
           Logger.timing('loadAllWishlistItems completed', loadAllStart);
           
           if (loadSuccess) {
-            const reloadStart = Logger.startTiming('🔄 Reloading wishlist items');
+            const reloadStart = Logger.startTiming('Reloading wishlist items');
             // Reload wishlist items to get the updated array
             this.loadWishlistItems();
-            Logger.info(`📊 Updated wishlist items count: ${this._wishlistItems.length}`);
+            Logger.info(`Updated wishlist items count: ${this._wishlistItems.length}`);
             Logger.timing('Wishlist items reloaded', reloadStart);
           } else {
-            Logger.warn('⚠️ Failed to load all wishlist items, using current list');
+            Logger.warn('Failed to load all wishlist items, using current list');
           }
         } catch (error) {
-          Logger.warn('❌ Error loading all wishlist items, using current list:', error);
+          Logger.warn('Error loading all wishlist items, using current list:', error);
           Logger.timing('loadAllWishlistItems failed', loadAllStart);
         }
       }
@@ -1193,15 +1193,15 @@ export class BandcampFacade {
       }
 
       // Check if the previous track is in our problem list
-      const problemCheckStart = Logger.startTiming('🔍 Problem track check');
+      const problemCheckStart = Logger.startTiming('Problem track check');
       const item = this._wishlistItems[prevIndex];
       const trackId = item?.getAttribute('data-track-id');
       Logger.timing('Problem track check completed', problemCheckStart);
       
       if (trackId && this._problemTrackIds.has(trackId)) {
-        Logger.info(`⚠️ Previous track (${prevIndex + 1}) has known issues, skipping it`);
+        Logger.info(`Previous track (${prevIndex + 1}) has known issues, skipping it`);
         
-        const skipProblemStart = Logger.startTiming('⏭️ Skipping problem tracks');
+        const skipProblemStart = Logger.startTiming('Skipping problem tracks');
         // Calculate the next valid previous index
         let nextValidPrevIndex = prevIndex - 1;
         if (nextValidPrevIndex < 0) {
@@ -1220,7 +1220,7 @@ export class BandcampFacade {
             // Found a track that's not in our problem list
             prevIndex = nextValidPrevIndex;
             foundValidTrack = true;
-            Logger.info(`✅ Found valid previous track at index ${prevIndex + 1}`);
+            Logger.info(`Found valid previous track at index ${prevIndex + 1}`);
           } else {
             // This track is also problematic, go to previous one
             nextValidPrevIndex--;
@@ -1233,7 +1233,7 @@ export class BandcampFacade {
         Logger.timing('Problem track skipping completed', skipProblemStart);
         
         if (!foundValidTrack) {
-          Logger.warn('❌ Could not find any valid previous tracks, staying on current track');
+          Logger.warn('Could not find any valid previous tracks, staying on current track');
           this._pendingNextTrackRequest = false;
           this._skipInProgress = false;
           Logger.timing('playPreviousWishlistTrack failed - no valid tracks', startTime);
@@ -1241,8 +1241,8 @@ export class BandcampFacade {
         }
       }
 
-      Logger.info(`⏮️ Playing previous wishlist track (${prevIndex + 1} of ${this._wishlistItems.length})`);
-      const playTrackStart = Logger.startTiming('🎵 Calling playWishlistTrack');
+      Logger.info(`Playing previous wishlist track (${prevIndex + 1} of ${this._wishlistItems.length})`);
+      const playTrackStart = Logger.startTiming('Calling playWishlistTrack');
       this.playWishlistTrack(prevIndex);
       Logger.timing('playWishlistTrack call completed', playTrackStart);
       
@@ -3064,7 +3064,7 @@ export class BandcampFacade {
       clearTimeout(timeoutId);
       cleanup();
       
-      Logger.info(`✅ Track ${index + 1} playing via event-based verification`);
+      Logger.info(`Track ${index + 1} playing via event-based verification`);
       Logger.timing('Event-based verification successful', verificationStart);
       Logger.timing('playWishlistTrack completed successfully', startTime);
     };
@@ -3077,7 +3077,7 @@ export class BandcampFacade {
       clearTimeout(timeoutId);
       cleanup();
       
-      Logger.info(`❌ Track ${index + 1} failed to play: ${reason}`);
+      Logger.info(`Track ${index + 1} failed to play: ${reason}`);
       Logger.timing('Event-based verification failed', verificationStart);
       Logger.timing('playWishlistTrack failed - playback failed', startTime);
       this.playNextWishlistTrack();
