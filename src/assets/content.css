@@ -155,3 +155,91 @@
   width: 1.1em;
   text-align: left;
 }
+
+/**
+ * ------------------------------------------------------------
+ * Waveform Display
+ * ------------------------------------------------------------
+ */
+
+/* Waveform container styling */
+.bandcamp-waveform-container {
+  margin: 10px 0;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+  text-align: center;
+  position: relative;
+  cursor: pointer;
+  border: 1px solid rgba(190, 190, 190, 0.3);
+  transition: background-color 0.2s ease;
+}
+
+.bandcamp-waveform-container:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+/* Waveform canvas */
+.bandcamp-waveform {
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+  height: auto;
+  border-radius: 2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Playhead position overlay */
+.bandcamp-waveform-playhead {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  bottom: 10px;
+  background: rgba(255, 255, 255, 0.3);
+  pointer-events: none;
+  transition: width 0.1s ease;
+  width: 0%;
+  border-radius: 2px;
+}
+
+/* Loading state */
+.bandcamp-waveform-loading {
+  margin: 10px 0;
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+  text-align: center;
+  color: #666;
+  font-size: 12px;
+  border: 1px solid rgba(190, 190, 190, 0.3);
+}
+
+
+
+/* Error state */
+.bandcamp-waveform-error {
+  margin: 10px 0;
+  padding: 10px;
+  background: rgba(255, 0, 0, 0.1);
+  border-radius: 4px;
+  text-align: center;
+  color: #666;
+  font-size: 11px;
+  border: 1px solid rgba(255, 0, 0, 0.2);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .bandcamp-waveform-container {
+    margin: 8px 0;
+    padding: 8px;
+  }
+  
+  .bandcamp-waveform {
+    max-width: 100%;
+  }
+  
+  .bandcamp-waveform-title {
+    font-size: 11px;
+  }
+}

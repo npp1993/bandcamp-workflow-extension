@@ -6,7 +6,7 @@
 // Type definitions for background script messaging
 interface WaveformRequest {
   contentScriptQuery: 'renderBuffer';
-  url: string;
+  url: string; // Complete audio URL with authentication parameters
 }
 
 interface WaveformResponse {
@@ -16,7 +16,7 @@ interface WaveformResponse {
 
 /**
  * Handle waveform audio buffer requests from content scripts
- * Bypasses CORS by fetching audio from Bandcamp CDN directly
+ * Bypasses CORS by fetching audio directly using the complete authenticated URL
  */
 chrome.runtime.onMessage.addListener((
   request: WaveformRequest,
@@ -39,13 +39,14 @@ chrome.runtime.onMessage.addListener((
     return true;
   }
 
-  // Construct full Bandcamp CDN URL
-  const fullUrl = `https://t4.bcbits.com/stream/${request.url}`;
+  // Use the complete URL as provided (it should already include auth parameters)
+  const audioUrl = request.url;
   
-  console.log('[Background] Fetching audio buffer from:', fullUrl);
+  console.log('[Background] Fetching audio buffer from:', audioUrl);
+  console.log('[Background] URL includes auth params:', audioUrl.includes('?'));
 
-  // Fetch the audio buffer from Bandcamp CDN
-  fetch(fullUrl)
+  // Fetch the audio buffer from the provided URL
+  fetch(audioUrl)
     .then(response => {
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);

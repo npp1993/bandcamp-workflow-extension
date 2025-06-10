@@ -7,6 +7,7 @@ import {KeyboardController} from './keyboard.controller';
 import {WishlistController} from './wishlist.controller';
 import {PlaybarController} from './playbar.controller';
 import {DownloadHelperController} from './download-helper.controller';
+import {WaveformController} from './waveform.controller';
 
 export interface Controllers {
   speed: SpeedController;
@@ -14,6 +15,7 @@ export interface Controllers {
   album: AlbumController;
   wishlist?: WishlistController;
   downloadHelper?: DownloadHelperController;
+  waveform?: WaveformController;
 }
 
 /**
@@ -29,7 +31,8 @@ export class PageController {
       copyInfo: null,
       album: null,
       wishlist: null,
-      downloadHelper: null
+      downloadHelper: null,
+      waveform: null
     };
 
     // Initialize download helper controller for download pages
@@ -54,6 +57,11 @@ export class PageController {
       this.controllers.album = new AlbumController();
       BandcampFacade.arrange();
       this.createSpeedRow();
+    }
+
+    // Initialize waveform controller for supported page types (track, album, wishlist)
+    if (BandcampFacade.isPageSupported || BandcampFacade.isWishlistPage) {
+      WaveformController.initialize();
     }
 
     // Initialize keyboard controller for both supported pages and wishlist page
