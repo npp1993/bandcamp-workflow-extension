@@ -49,7 +49,7 @@ The extension includes an Add-to-Cart feature that lets you quickly move tracks 
    - Set appropriate pricing:
      - For items with a minimum price, it sets exactly that amount
      - For "name your price" tracks, it sets $1.00
-     - For "name your price" albums, it sets $5.00. Consider increasing this for albums)
+     - For "name your price" albums, it sets $5.00. (Consider increasing this for albums)
    - Add the item to your cart
 
 This feature is only activated when the `add_to_cart=true` parameter is explicitly included in the URL.
