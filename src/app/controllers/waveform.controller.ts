@@ -297,12 +297,41 @@ export class WaveformController {
         background: rgba(0, 0, 0, 0.05);
         border-radius: 4px;
         text-align: center;
-        color: #666;
-        font-size: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
         border: 1px solid rgba(190, 190, 190, 0.3);
       `;
       
-      container.textContent = 'Generating waveform...';
+      // Create loading dots animation
+      const loadingText = document.createElement('span');
+      loadingText.textContent = 'Generating waveform';
+      loadingText.style.cssText = `
+        color: #666;
+        font-size: 12px;
+      `;
+      
+      const dotsContainer = document.createElement('span');
+      dotsContainer.style.cssText = `
+        display: inline-block;
+        width: 20px;
+        text-align: left;
+      `;
+      
+      container.appendChild(loadingText);
+      container.appendChild(dotsContainer);
+      
+      // Animate dots
+      let dotCount = 0;
+      const animateDots = () => {
+        dotCount = (dotCount + 1) % 4;
+        dotsContainer.textContent = '.'.repeat(dotCount);
+      };
+      
+      // Start animation and store interval ID on container
+      container.dataset.intervalId = setInterval(animateDots, 500).toString();
+      animateDots(); // Initial call
 
       BandcampFacade.insertBelowPlayer(container);
       this.currentWaveformContainer = container;
@@ -317,6 +346,12 @@ export class WaveformController {
   private static removeLoadingIndicator(): void {
     const loadingElement = document.querySelector('.bandcamp-waveform-loading');
     if (loadingElement && loadingElement.parentNode) {
+      // Clear animation interval if it exists
+      const intervalId = (loadingElement as HTMLElement).dataset.intervalId;
+      if (intervalId) {
+        clearInterval(parseInt(intervalId));
+      }
+      
       loadingElement.parentNode.removeChild(loadingElement);
       if (this.currentWaveformContainer === loadingElement) {
         this.currentWaveformContainer = null;
