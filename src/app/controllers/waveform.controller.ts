@@ -12,6 +12,8 @@ export class WaveformController {
   private static currentWaveformContainer: HTMLElement | null = null;
   private static isGenerating = false;
   private static lastAudioSrc = '';
+  private static debounceTimer: number | null = null;
+  private static generationPromise: Promise<void> | null = null;
 
   /**
    * Initialize waveform functionality on the current page
@@ -54,14 +56,12 @@ export class WaveformController {
     try {
       Logger.info('[WaveformController] Setting up audio event listeners');
 
-      // Listen for audio source changes
+      // Listen for audio source changes with debouncing
       const checkAudioChanges = () => {
         const audio = AudioUtils.getAudioElement();
         if (audio && audio.src && audio.src !== this.lastAudioSrc) {
-          Logger.info('[WaveformController] Audio source changed, regenerating waveform');
-          this.lastAudioSrc = audio.src;
-          // Add a small delay to ensure audio is ready
-          setTimeout(() => this.generateWaveformIfNeeded(), 500);
+          Logger.info('[WaveformController] Audio source changed, scheduling waveform regeneration');
+          this.debouncedGenerateWaveform();
         }
       };
 
@@ -72,7 +72,7 @@ export class WaveformController {
       document.addEventListener('loadstart', (event) => {
         if (event.target instanceof HTMLAudioElement) {
           Logger.info('[WaveformController] Audio loadstart detected');
-          setTimeout(() => this.generateWaveformIfNeeded(), 1000);
+          this.debouncedGenerateWaveform(1000);
         }
       }, true);
 
@@ -80,7 +80,7 @@ export class WaveformController {
       document.addEventListener('play', (event) => {
         if (event.target instanceof HTMLAudioElement) {
           Logger.info('[WaveformController] Audio play detected');
-          setTimeout(() => this.generateWaveformIfNeeded(), 500);
+          this.debouncedGenerateWaveform(500);
         }
       }, true);
 
@@ -94,9 +94,10 @@ export class WaveformController {
    */
   private static async generateWaveformIfNeeded(): Promise<void> {
     try {
-      // Prevent multiple simultaneous generations
-      if (this.isGenerating) {
-        Logger.info('[WaveformController] Waveform generation already in progress');
+      // If a generation is already in progress, wait for it to complete
+      if (this.generationPromise) {
+        Logger.info('[WaveformController] Waveform generation already in progress, waiting for completion');
+        await this.generationPromise;
         return;
       }
 
@@ -108,17 +109,35 @@ export class WaveformController {
       }
 
       // Skip if audio source hasn't changed and we already have a waveform
-      if (audio.src === this.lastAudioSrc && this.currentWaveformContainer) {
+      if (audio.src === this.lastAudioSrc && this.currentWaveformContainer && 
+          !this.currentWaveformContainer.classList.contains('bandcamp-waveform-loading') &&
+          !this.currentWaveformContainer.classList.contains('bandcamp-waveform-error')) {
         Logger.info('[WaveformController] Waveform already generated for current audio');
         return;
       }
 
+      // Create the generation promise to prevent concurrent executions
+      this.generationPromise = this.performWaveformGeneration(audio.src);
+      await this.generationPromise;
+      this.generationPromise = null;
+
+    } catch (error) {
+      Logger.error('[WaveformController] Error in generateWaveformIfNeeded:', error);
+      this.generationPromise = null;
+    }
+  }
+
+  /**
+   * Perform the actual waveform generation process
+   */
+  private static async performWaveformGeneration(audioSrc: string): Promise<void> {
+    try {
       this.isGenerating = true;
-      this.lastAudioSrc = audio.src;
+      this.lastAudioSrc = audioSrc;
 
       Logger.info('[WaveformController] Generating waveform for current audio');
 
-      // Remove existing waveform
+      // Remove existing waveform first
       this.removeCurrentWaveform();
 
       // Show loading indicator
@@ -157,15 +176,6 @@ export class WaveformController {
       // Create container for the waveform
       const container = document.createElement('div');
       container.className = 'bandcamp-waveform-container';
-      container.style.cssText = `
-        margin: 10px 0;
-        padding: 10px;
-        background: rgba(0, 0, 0, 0.05);
-        border-radius: 4px;
-        text-align: center;
-        position: relative;
-        cursor: pointer;
-      `;
 
       // Add canvas to container
       container.appendChild(canvas);
@@ -223,16 +233,6 @@ export class WaveformController {
       // Create playhead overlay
       const playheadOverlay = document.createElement('div');
       playheadOverlay.className = 'bandcamp-waveform-playhead';
-      playheadOverlay.style.cssText = `
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        bottom: 10px;
-        background: rgba(255, 255, 255, 0.3);
-        pointer-events: none;
-        transition: width 0.1s ease;
-        width: 0%;
-      `;
       
       container.appendChild(playheadOverlay);
 
@@ -268,19 +268,38 @@ export class WaveformController {
    * Remove the current waveform from the page
    */
   private static removeCurrentWaveform(): void {
-    if (this.currentWaveformContainer && this.currentWaveformContainer.parentNode) {
-      // Clean up event listeners
-      if (this.currentWaveformContainer.getAttribute('data-timeupdate-listener')) {
-        const listener = (this.currentWaveformContainer as any)._timeUpdateListener;
-        const audioElement = (this.currentWaveformContainer as any)._audioElement;
-        if (listener && audioElement) {
-          audioElement.removeEventListener('timeupdate', listener);
+    // Remove any existing waveform containers (including loading and error states)
+    const existingContainers = document.querySelectorAll(
+      '.bandcamp-waveform-container, .bandcamp-waveform-loading, .bandcamp-waveform-error'
+    );
+    
+    existingContainers.forEach(container => {
+      if (container.parentNode) {
+        // Clean up event listeners if this is our tracked container
+        if (container === this.currentWaveformContainer) {
+          if (container.getAttribute('data-timeupdate-listener')) {
+            const listener = (container as any)._timeUpdateListener;
+            const audioElement = (container as any)._audioElement;
+            if (listener && audioElement) {
+              audioElement.removeEventListener('timeupdate', listener);
+            }
+          }
         }
+
+        // Clear any animation intervals
+        const intervalId = (container as HTMLElement).dataset.intervalId;
+        if (intervalId) {
+          clearInterval(parseInt(intervalId));
+        }
+        
+        container.parentNode.removeChild(container);
       }
-      
-      this.currentWaveformContainer.parentNode.removeChild(this.currentWaveformContainer);
-      this.currentWaveformContainer = null;
-      Logger.info('[WaveformController] Removed existing waveform');
+    });
+    
+    this.currentWaveformContainer = null;
+    
+    if (existingContainers.length > 0) {
+      Logger.info('[WaveformController] Removed', existingContainers.length, 'existing waveform container(s)');
     }
   }
 
@@ -353,9 +372,13 @@ export class WaveformController {
       }
       
       loadingElement.parentNode.removeChild(loadingElement);
+      
+      // Only reset currentWaveformContainer if it was pointing to the loading element
       if (this.currentWaveformContainer === loadingElement) {
         this.currentWaveformContainer = null;
       }
+      
+      Logger.info('[WaveformController] Removed loading indicator');
     }
   }
 
@@ -397,6 +420,13 @@ export class WaveformController {
   public static regenerateWaveform(): void {
     Logger.info('[WaveformController] Manually regenerating waveform');
     this.lastAudioSrc = ''; // Reset to force regeneration
+    
+    // Clear any pending debounced generation
+    if (this.debounceTimer !== null) {
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = null;
+    }
+    
     this.generateWaveformIfNeeded();
   }
 
@@ -474,8 +504,22 @@ export class WaveformController {
    */
   public static cleanup(): void {
     try {
+      // Clear debounce timer
+      if (this.debounceTimer !== null) {
+        clearTimeout(this.debounceTimer);
+        this.debounceTimer = null;
+      }
+      
+      // Reset generation promise
+      this.generationPromise = null;
+      this.isGenerating = false;
+      
+      // Remove any waveform containers
       this.removeCurrentWaveform();
+      
+      // Clear expired cache
       WaveformService.clearExpiredCache();
+      
       Logger.info('[WaveformController] Cleaned up waveform resources');
     } catch (error) {
       Logger.error('[WaveformController] Error during cleanup:', error);
@@ -489,9 +533,31 @@ export class WaveformController {
     return {
       isGenerating: this.isGenerating,
       hasCurrentWaveform: !!this.currentWaveformContainer,
+      hasGenerationPromise: !!this.generationPromise,
+      hasDebounceTimer: this.debounceTimer !== null,
       lastAudioSrc: this.lastAudioSrc,
       pageSupported: this.isPageSupported(),
-      cacheStats: WaveformService.getCacheStats()
+      cacheStats: WaveformService.getCacheStats(),
+      existingContainers: document.querySelectorAll(
+        '.bandcamp-waveform-container, .bandcamp-waveform-loading, .bandcamp-waveform-error'
+      ).length
     };
+  }
+
+  /**
+   * Debounced waveform generation to prevent multiple simultaneous generations
+   * @param delay Optional delay in milliseconds (default: 300ms)
+   */
+  private static debouncedGenerateWaveform(delay: number = 300): void {
+    // Clear any existing timer
+    if (this.debounceTimer !== null) {
+      clearTimeout(this.debounceTimer);
+    }
+
+    // Set new timer
+    this.debounceTimer = window.setTimeout(() => {
+      this.debounceTimer = null;
+      this.generateWaveformIfNeeded();
+    }, delay);
   }
 }

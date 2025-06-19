@@ -15,7 +15,6 @@ export class WaveformService {
     canvasWidth: 600,
     canvasHeight: 60,
     color: '#333',
-    rmsSize: 256, // Increased from 128 for better amplitude resolution
     cacheTTL: 1000 * 60 * 15 // 15 minutes
   };
 
@@ -134,7 +133,7 @@ export class WaveformService {
   }
 
   /**
-   * Process audio buffer to extract LUFS-based amplitude data
+   * Process audio buffer to extract RMS-based amplitude data
    * @param audioData Raw audio buffer data
    * @returns Promise resolving to normalized amplitude array
    */
@@ -152,9 +151,9 @@ export class WaveformService {
       // Extract left channel data (mono or stereo left)
       const leftChannel = decodedAudio.getChannelData(0);
       
-      // Calculate RMS values for amplitude visualization
+      // Calculate RMS values for amplitude visualization using reference logic
       const stepSize = Math.round(decodedAudio.length / this.CONFIG.datapoints);
-      const rmsSize = Math.min(stepSize, this.CONFIG.rmsSize);
+      const rmsSize = Math.min(stepSize, 128); // Use 128 as in the reference code
       const subStepSize = Math.round(stepSize / rmsSize);
       
       const rmsBuffer: number[] = [];
@@ -200,16 +199,15 @@ export class WaveformService {
     const canvas = document.createElement('canvas');
     canvas.width = this.CONFIG.canvasWidth;
     canvas.height = this.CONFIG.canvasHeight;
-    canvas.style.display = 'block';
-    canvas.style.margin = '10px 0';
     canvas.className = 'bandcamp-waveform';
 
-    const ctx = canvas.getContext('2d')!;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const canvasCtx = canvas.getContext('2d')!;
+    canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Render waveform bars
+    // Render waveform bars using the new fillBar method
     for (let i = 0; i < waveformData.length; i++) {
-      this.renderWaveformBar(canvas, waveformData[i], i, waveformData.length);
+      const amplitude = waveformData[i];
+      this.fillBar(canvas, amplitude, i, waveformData.length, this.CONFIG.color);
     }
 
     Logger.info('[WaveformService] Successfully rendered waveform canvas');
@@ -217,24 +215,26 @@ export class WaveformService {
   }
 
   /**
-   * Render individual waveform bar
+   * Fill individual waveform bar following reference implementation
    * @param canvas Target canvas element
    * @param amplitude Normalized amplitude (0-1)
    * @param index Bar index
-   * @param totalBars Total number of bars
+   * @param numElements Total number of elements
+   * @param colour Bar color
    */
-  private static renderWaveformBar(
+  private static fillBar(
     canvas: HTMLCanvasElement,
     amplitude: number,
     index: number,
-    totalBars: number
+    numElements: number,
+    colour: string = '#333'
   ): void {
     const ctx = canvas.getContext('2d')!;
     ctx.globalCompositeOperation = 'source-over';
-    ctx.fillStyle = this.CONFIG.color;
+    ctx.fillStyle = colour;
     
     const graphHeight = canvas.height * amplitude;
-    const barWidth = canvas.width / totalBars;
+    const barWidth = canvas.width / numElements;
     const position = index * barWidth;
     
     ctx.fillRect(position, canvas.height, barWidth, -graphHeight);
