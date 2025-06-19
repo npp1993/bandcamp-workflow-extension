@@ -230,23 +230,35 @@ export class WaveformController {
    */
   private static setupPlayheadTracking(container: HTMLElement, canvas: HTMLCanvasElement): void {
     try {
-      // Create playhead overlay
-      const playheadOverlay = document.createElement('div');
-      playheadOverlay.className = 'bandcamp-waveform-playhead';
-      
-      container.appendChild(playheadOverlay);
+      // Get the current audio source for waveform data lookup
+      const audio = AudioUtils.getAudioElement();
+      if (!audio || !audio.src) {
+        Logger.warn('[WaveformController] No audio element available for playhead tracking');
+        return;
+      }
+
+      const streamId = WaveformService.extractStreamId(audio.src);
+      if (!streamId) {
+        Logger.warn('[WaveformController] Could not extract stream ID for playhead tracking');
+        return;
+      }
 
       // Set up audio time update listener
       const updatePlayhead = () => {
-        const audio = AudioUtils.getAudioElement();
-        if (audio && !isNaN(audio.duration) && audio.duration > 0) {
-          const progress = (audio.currentTime / audio.duration) * 100;
-          playheadOverlay.style.width = `${progress}%`;
+        const currentAudio = AudioUtils.getAudioElement();
+        if (currentAudio && !isNaN(currentAudio.duration) && currentAudio.duration > 0) {
+          const progress = currentAudio.currentTime / currentAudio.duration;
+          
+          // Get the cached waveform data
+          const waveformData = WaveformService.getWaveformDataForStream(streamId);
+          if (waveformData) {
+            // Update the canvas with progress
+            WaveformService.updateWaveformProgress(canvas, waveformData, progress);
+          }
         }
       };
 
       // Add event listener to audio element
-      const audio = AudioUtils.getAudioElement();
       if (audio) {
         audio.addEventListener('timeupdate', updatePlayhead);
         
@@ -254,6 +266,7 @@ export class WaveformController {
         container.setAttribute('data-timeupdate-listener', 'true');
         (container as any)._timeUpdateListener = updatePlayhead;
         (container as any)._audioElement = audio;
+        (container as any)._streamId = streamId;
       }
 
       // Initial update

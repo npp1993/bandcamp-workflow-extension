@@ -193,9 +193,10 @@ export class WaveformService {
   /**
    * Render waveform canvas from processed amplitude data
    * @param waveformData Normalized amplitude data
+   * @param progress Optional progress ratio (0-1) for rendering played/unplayed portions
    * @returns Canvas element with rendered waveform
    */
-  private static renderWaveformFromData(waveformData: number[]): HTMLCanvasElement {
+  private static renderWaveformFromData(waveformData: number[], progress: number = 0): HTMLCanvasElement {
     const canvas = document.createElement('canvas');
     canvas.width = this.CONFIG.canvasWidth;
     canvas.height = this.CONFIG.canvasHeight;
@@ -204,14 +205,41 @@ export class WaveformService {
     const canvasCtx = canvas.getContext('2d')!;
     canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Render waveform bars using the new fillBar method
+    // Calculate progress point
+    const progressPoint = progress * waveformData.length;
+
+    // Render waveform bars with different colors for played/unplayed
     for (let i = 0; i < waveformData.length; i++) {
       const amplitude = waveformData[i];
-      this.fillBar(canvas, amplitude, i, waveformData.length, this.CONFIG.color);
+      const isPlayed = i < progressPoint;
+      const color = isPlayed ? '#666' : this.CONFIG.color; // Darker color for played portion
+      this.fillBar(canvas, amplitude, i, waveformData.length, color);
     }
 
     Logger.info('[WaveformService] Successfully rendered waveform canvas');
     return canvas;
+  }
+
+  /**
+   * Update existing waveform canvas with new progress
+   * @param canvas Existing canvas element
+   * @param waveformData Normalized amplitude data
+   * @param progress Progress ratio (0-1)
+   */
+  public static updateWaveformProgress(canvas: HTMLCanvasElement, waveformData: number[], progress: number): void {
+    const canvasCtx = canvas.getContext('2d')!;
+    canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Calculate progress point
+    const progressPoint = progress * waveformData.length;
+
+    // Render waveform bars with different colors for played/unplayed
+    for (let i = 0; i < waveformData.length; i++) {
+      const amplitude = waveformData[i];
+      const isPlayed = i < progressPoint;
+      const color = isPlayed ? '#666' : this.CONFIG.color; // Darker color for played portion
+      this.fillBar(canvas, amplitude, i, waveformData.length, color);
+    }
   }
 
   /**
@@ -266,6 +294,15 @@ export class WaveformService {
     }
     
     return this.cache.get(cacheKey) || null;
+  }
+
+  /**
+   * Get cached waveform data for external use
+   * @param streamId Stream identifier  
+   * @returns Cached waveform data or null if not available
+   */
+  public static getWaveformDataForStream(streamId: string): number[] | null {
+    return this.getCachedWaveformData(streamId);
   }
 
   /**

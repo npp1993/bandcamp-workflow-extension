@@ -165,7 +165,7 @@
 /* Waveform container styling */
 .bandcamp-waveform-container {
   margin: 10px 0;
-  padding: 0;
+  padding: 5px;
   background: rgba(0, 0, 0, 0.05);
   border-radius: 4px;
   text-align: center;
@@ -189,21 +189,6 @@
   border-radius: 2px;
   position: relative;
   z-index: 1;
-}
-
-/* Playhead position overlay */
-.bandcamp-waveform-playhead {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.3);
-  pointer-events: none;
-  transition: width 0.1s ease;
-  width: 0%;
-  border-radius: 0;
-  z-index: 2;
 }
 
 /* Loading state */
@@ -236,7 +221,7 @@
 @media (max-width: 768px) {
   .bandcamp-waveform-container {
     margin: 8px 0;
-    padding: 0;
+    padding: 4px;
   }
   
   .bandcamp-waveform {
