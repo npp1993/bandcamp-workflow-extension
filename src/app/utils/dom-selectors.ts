@@ -10,7 +10,7 @@ export class DOMSelectors {
     '.discovery-item', 
     '.discover-results .item',
     '.discover-results li',
-    '.item[data-item-id]'
+    '.item[data-item-id]',
   ];
 
   /**
@@ -20,7 +20,7 @@ export class DOMSelectors {
     '.featured-item', 
     '.discover-featured .item',
     '.featured-items .item',
-    '.featured'
+    '.featured',
   ];
 
   /**
@@ -33,7 +33,7 @@ export class DOMSelectors {
     '.collection-items .item',
     '.collection-items > li',
     '[data-item-id]',
-    '.collection-title-details'
+    '.collection-title-details',
   ];
 
   /**
@@ -44,7 +44,7 @@ export class DOMSelectors {
     '.música_grid li',
     '.music-grid li',
     '.collection-item-container',
-    '.music_grid li'
+    '.music_grid li',
   ];
 
   /**
@@ -54,7 +54,7 @@ export class DOMSelectors {
     '.play-button', 
     '.play-col .playbutton', 
     '[class*="play"]', 
-    'button[title*="Play"]'
+    'button[title*="Play"]',
   ];
 
   /**
@@ -64,7 +64,7 @@ export class DOMSelectors {
     '.wishlist-icon',
     '.fav-icon', 
     '[class*="heart"]',
-    '.bc-ui2.icon.wishlist'
+    '.bc-ui2.icon.wishlist',
   ];
 
   /**
@@ -73,7 +73,7 @@ export class DOMSelectors {
   public static readonly CLICKABLE_ELEMENTS = [
     'a',
     'button', 
-    '[role="button"]'
+    '[role="button"]',
   ];
 
   /**
@@ -81,21 +81,21 @@ export class DOMSelectors {
    */
   public static readonly ALBUM_TRACK_LINKS = [
     'a[href*="/album/"]',
-    'a[href*="/track/"]'
+    'a[href*="/track/"]',
   ];
 
   /**
    * Image selectors for Bandcamp content
    */
   public static readonly BANDCAMP_IMAGES = [
-    'img[src*="bcbits.com/img"]'
+    'img[src*="bcbits.com/img"]',
   ];
 
   /**
    * Script elements with JSON-LD data
    */
   public static readonly JSON_LD_SCRIPTS = [
-    'script[type="application/ld+json"]'
+    'script[type="application/ld+json"]',
   ];
 
   /**
@@ -104,7 +104,7 @@ export class DOMSelectors {
   public static readonly TABS = [
     'li[data-tab]',
     '.tabs > li',
-    '.tab-sides > li'
+    '.tab-sides > li',
   ];
 
   /**
@@ -113,14 +113,14 @@ export class DOMSelectors {
   public static readonly ACTIVE_WISHLIST_TAB = [
     'li[data-tab="wishlist"].active',
     '.wishlist.active',
-    'a[href*="wishlist"].active'
+    'a[href*="wishlist"].active',
   ];
 
   /**
    * Remove button selectors
    */
   public static readonly REMOVE_BUTTONS = [
-    '[title*="Remove"]'
+    '[title*="Remove"]',
   ];
 
   /**
@@ -130,7 +130,7 @@ export class DOMSelectors {
     'a',
     'span', 
     '.wishlisted-msg',
-    '[class*="wishlist"]'
+    '[class*="wishlist"]',
   ];
 
   /**
@@ -146,7 +146,7 @@ export class DOMSelectors {
     '.buyItemOrMerch',
     'button:contains("Buy")',
     '.buynowlater',
-    '.purchase-item'
+    '.purchase-item',
   ];
 
   /**
@@ -161,7 +161,7 @@ export class DOMSelectors {
     'a[href*="/track/"]',
     'a.buyLink',
     'a[href*="/buy"]',
-    'a[href*="?buy"]'
+    'a[href*="?buy"]',
   ];
 
   /**
@@ -169,7 +169,7 @@ export class DOMSelectors {
    */
   public static findWithSelectors<T extends Element>(
     selectors: string[], 
-    context: Document | Element = document
+    context: Document | Element = document,
   ): T[] {
     for (const selector of selectors) {
       const elements = context.querySelectorAll<T>(selector);
@@ -185,7 +185,7 @@ export class DOMSelectors {
    */
   public static findOneWithSelectors<T extends Element>(
     selectors: string[], 
-    context: Document | Element = document
+    context: Document | Element = document,
   ): T | null {
     for (const selector of selectors) {
       const element = context.querySelector<T>(selector);

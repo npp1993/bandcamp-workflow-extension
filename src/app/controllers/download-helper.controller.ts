@@ -1,4 +1,4 @@
-import { DownloadHelperService } from '../services/download-helper.service';
+import {DownloadHelperService} from '../services/download-helper.service';
 
 /**
  * Controller for download helper functionality

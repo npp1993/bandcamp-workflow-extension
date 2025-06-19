@@ -1,4 +1,4 @@
-import { Logger } from './logger';
+import {Logger} from './logger';
 
 /**
  * Utility for common error handling patterns in the extension
@@ -11,7 +11,7 @@ export class ErrorHandler {
     error: MediaError | null, 
     trackId: string | null,
     onSkip: () => void,
-    isWishlistPage: boolean = false
+    isWishlistPage = false,
   ): void {
     if (trackId) {
       Logger.info(`Adding track ID ${trackId} to problem list due to playback error`);
@@ -56,7 +56,7 @@ export class ErrorHandler {
   public static withErrorHandling<T>(
     operation: () => T, 
     errorMessage: string, 
-    fallback?: T
+    fallback?: T,
   ): T | undefined {
     try {
       return operation();

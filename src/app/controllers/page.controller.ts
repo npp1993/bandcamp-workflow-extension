@@ -32,7 +32,7 @@ export class PageController {
       album: null,
       wishlist: null,
       downloadHelper: null,
-      waveform: null
+      waveform: null,
     };
 
     // Initialize download helper controller for download pages

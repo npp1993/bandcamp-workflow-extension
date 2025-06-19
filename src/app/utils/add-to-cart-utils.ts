@@ -1,6 +1,6 @@
-import { DOMSelectors } from './dom-selectors';
-import { ErrorHandler } from './error-handler';
-import { Logger } from './logger';
+import {DOMSelectors} from './dom-selectors';
+import {ErrorHandler} from './error-handler';
+import {Logger} from './logger';
 
 /**
  * Utility for add to cart functionality
@@ -8,6 +8,7 @@ import { Logger } from './logger';
 export class AddToCartUtils {
   /**
    * Click the add to cart button on the current page
+   *
    * @returns True if an add to cart button/link was found and clicked, false otherwise
    */
   public static clickAddToCartButtonOnCurrentPage(): boolean {
@@ -62,13 +63,16 @@ export class AddToCartUtils {
       Logger.warn('No add to cart button found on the current page');
       return false;
     } catch (error) {
-      ErrorHandler.withErrorHandling(() => { throw error; }, 'Error clicking add to cart button');
+      ErrorHandler.withErrorHandling(() => {
+        throw error; 
+      }, 'Error clicking add to cart button');
       return false;
     }
   }
 
   /**
    * Find add to cart button by text content - most reliable for modern Bandcamp pages
+   *
    * @returns The add to cart button element or null if not found
    */
   private static findAddToCartButtonByText(): HTMLElement | null {
@@ -77,7 +81,7 @@ export class AddToCartUtils {
     
     // Physical formats to avoid (prioritize digital over physical)
     const physicalFormats = [
-      'vinyl', 'cassette', 'cd', 'record', 'tape', 'physical', 'lp', 'ep'
+      'vinyl', 'cassette', 'cd', 'record', 'tape', 'physical', 'lp', 'ep',
     ];
     
     // First pass: Look specifically for digital options
@@ -85,7 +89,7 @@ export class AddToCartUtils {
       'Buy Digital Track',
       'Buy Digital Album',
       'digital track',
-      'digital album'
+      'digital album',
     ];
     
     for (const element of allElements) {
@@ -93,7 +97,7 @@ export class AddToCartUtils {
       const textLower = text.toLowerCase();
       
       // Skip if this is clearly a physical format
-      if (physicalFormats.some(format => textLower.includes(format))) {
+      if (physicalFormats.some((format) => textLower.includes(format))) {
         continue;
       }
       
@@ -124,7 +128,7 @@ export class AddToCartUtils {
       'Buy Now',
       'Purchase',
       'Add to Cart',
-      'Buy'
+      'Buy',
     ];
     
     for (const element of allElements) {
@@ -132,7 +136,7 @@ export class AddToCartUtils {
       const textLower = text.toLowerCase();
       
       // Skip if this is clearly a physical format
-      if (physicalFormats.some(format => textLower.includes(format))) {
+      if (physicalFormats.some((format) => textLower.includes(format))) {
         continue;
       }
       
@@ -159,7 +163,7 @@ export class AddToCartUtils {
 
     // Secondary approach: look for elements that might be add to cart buttons based on structure
     const potentialAddToCartElements = Array.from(document.querySelectorAll(
-      '.buyItem, .buy-button, .purchase-button, [class*="buy"], [class*="purchase"], .commerce-button'
+      '.buyItem, .buy-button, .purchase-button, [class*="buy"], [class*="purchase"], .commerce-button',
     ));
     
     for (const element of potentialAddToCartElements) {
@@ -186,6 +190,7 @@ export class AddToCartUtils {
 
   /**
    * Find add to cart link in a specific element/container
+   *
    * @param container The container element to search within
    * @returns The add to cart link element or null if not found
    */
@@ -214,6 +219,7 @@ export class AddToCartUtils {
 
   /**
    * Add add_to_cart parameter to a URL
+   *
    * @param url The URL to modify
    * @returns The URL with add_to_cart=true parameter
    */
@@ -227,6 +233,7 @@ export class AddToCartUtils {
 
   /**
    * Open add to cart link with add_to_cart parameter in new tab
+   *
    * @param href The URL to open
    */
   public static openAddToCartLinkWithCart(href: string): void {
@@ -237,9 +244,10 @@ export class AddToCartUtils {
 
   /**
    * Automatically fill in the minimum price in the add to cart dialog
+   *
    * @param isTrack Whether this is for a track (true) or album (false)
    */
-  public static autoFillAddToCartPrice(isTrack: boolean = true): void {
+  public static autoFillAddToCartPrice(isTrack = true): void {
     // Wait a bit for the dialog to fully render
     setTimeout(() => {
       try {
@@ -254,7 +262,7 @@ export class AddToCartUtils {
           '.price-input input',
           '.amount-input input',
           '.payment-amount input',
-          'input[type="text"]' // Fallback - any text input
+          'input[type="text"]', // Fallback - any text input
         ];
         
         let priceInput: HTMLInputElement | null = null;
@@ -278,7 +286,9 @@ export class AddToCartUtils {
               break;
             }
           }
-          if (priceInput) break;
+          if (priceInput) {
+            break;
+          }
         }
         
         // If we still haven't found one, try any visible text input in the dialog
@@ -324,9 +334,9 @@ export class AddToCartUtils {
           priceInput.value = minPrice;
           
           // Trigger events to ensure the change is registered
-          priceInput.dispatchEvent(new Event('input', { bubbles: true }));
-          priceInput.dispatchEvent(new Event('change', { bubbles: true }));
-          priceInput.dispatchEvent(new Event('keyup', { bubbles: true }));
+          priceInput.dispatchEvent(new Event('input', {bubbles: true}));
+          priceInput.dispatchEvent(new Event('change', {bubbles: true}));
+          priceInput.dispatchEvent(new Event('keyup', {bubbles: true}));
           
           // Focus the input to make it clear it's been filled
           priceInput.focus();
@@ -341,18 +351,20 @@ export class AddToCartUtils {
           setTimeout(() => {
             AddToCartUtils.clickAddToCartButton();
           }, 300);
-          
         } else {
           Logger.warn('Could not find price input field in add to cart dialog');
         }
       } catch (error) {
-        ErrorHandler.withErrorHandling(() => { throw error; }, 'Error auto-filling buy price');
+        ErrorHandler.withErrorHandling(() => {
+          throw error; 
+        }, 'Error auto-filling buy price');
       }
     }, 500); // Give the dialog time to render
   }
 
   /**
    * Extract the minimum price from the buy dialog
+   *
    * @returns The minimum price as a string, or null if not found
    */
   private static extractMinimumPrice(): string | null {
@@ -366,7 +378,7 @@ export class AddToCartUtils {
         /([0-9]+\.?[0-9]*)\s+EUR\s+or\s+more/i, // "1.50 EUR or more"
         /minimum.*?\$([0-9]+\.?[0-9]*)/i,    // "minimum $1.50"
         /minimum.*?€([0-9]+\.?[0-9]*)/i,     // "minimum €1.50"
-        /minimum.*?£([0-9]+\.?[0-9]*)/i      // "minimum £1.50"
+        /minimum.*?£([0-9]+\.?[0-9]*)/i,      // "minimum £1.50"
       ];
 
       // Search through all text on the page
@@ -413,6 +425,7 @@ export class AddToCartUtils {
 
   /**
    * Get default price based on currency and item type
+   *
    * @param isTrack Whether this is for a track (true) or album (false)
    * @returns Default price as string
    */
@@ -463,7 +476,7 @@ export class AddToCartUtils {
         'button:has(.icon-cart)', // Button with cart icon
         'button:has(svg)', // Button with SVG (likely cart icon)
         'button[style*="background-color: rgb(27, 129, 229)"]', // Blue color from screenshot
-        'button[style*="background-color: #1b81e5"]' // Blue color hex
+        'button[style*="background-color: #1b81e5"]', // Blue color hex
       ];
       
       let addToCartButton: HTMLElement | null = null;
@@ -523,7 +536,6 @@ export class AddToCartUtils {
       } else {
         Logger.warn('Could not find "Add to cart" button to click automatically');
       }
-      
     } catch (error) {
       Logger.error('Error clicking "Add to cart" button:', error);
     }

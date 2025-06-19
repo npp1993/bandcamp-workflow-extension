@@ -59,11 +59,17 @@ export class BandcampFacade {
   private static _currentWishlistIndex = -1;
 
   private static _pendingNextTrackRequest = false;
+
   private static _errorRecoveryInProgress = false;
+
   private static _skipInProgress = false;
+
   private static _consecutiveErrors = 0;
+
   private static _maxConsecutiveErrors = 3;
+
   private static _errorLogSuppressed = false;
+
   private static _releaseNavigationInProgress = false;
   // _playAttemptMade is already declared at line 59
 
@@ -72,9 +78,13 @@ export class BandcampFacade {
 
   // Phase 2 Performance Monitoring - track optimization effectiveness
   private static _phase2MetricsEnabled = true;
+
   private static _navigationDelaysSaved = 0;
+
   private static _errorRecoveryDelaysSaved = 0;
+
   private static _domSelectionOptimizations = 0;
+
   private static _flagClearingOptimizations = 0;
 
   /**
@@ -86,7 +96,7 @@ export class BandcampFacade {
       if (currentItem) {
         const trackId = currentItem.getAttribute('data-track-id');
         if (trackId && BandcampFacade._problemTrackIds.has(trackId)) {
-        Logger.info(`Track ID ${trackId} is in our problem list, skipping it`);
+          Logger.info(`Track ID ${trackId} is in our problem list, skipping it`);
           return true;
         }
       }
@@ -311,7 +321,6 @@ export class BandcampFacade {
       // Use event-based verification instead of timeout-based
       const verificationStart = Logger.startTiming('Event-based navigation verification');
       this.verifyReleaseNavigationWithEvents('next', verificationStart, startTime);
-      
     }, 100); // Phase 2: Reduced from 250ms to 100ms
   }
 
@@ -364,13 +373,13 @@ export class BandcampFacade {
       // Use event-based verification instead of timeout-based
       const verificationStart = Logger.startTiming('Event-based navigation verification');
       this.verifyReleaseNavigationWithEvents('previous', verificationStart, startTime);
-      
     }, 100); // Phase 2: Reduced from 250ms to 100ms
   }
 
   /**
    * Verify if release page navigation completed successfully using event-based approach
    * This replaces timeout-based verification for 89.8% performance improvement
+   *
    * @param direction The navigation direction ('next' or 'previous')
    * @param verificationStartTime The timing object for verification
    * @param navigationStartTime The timing object for overall navigation
@@ -378,7 +387,7 @@ export class BandcampFacade {
   private static verifyReleaseNavigationWithEvents(
     direction: 'next' | 'previous',
     verificationStartTime: number,
-    navigationStartTime: number
+    navigationStartTime: number,
   ): void {
     let verificationComplete = false;
     let timeoutId: NodeJS.Timeout;
@@ -392,7 +401,9 @@ export class BandcampFacade {
     }
 
     const onNavigationSuccess = () => {
-      if (verificationComplete) return;
+      if (verificationComplete) {
+        return;
+      }
       verificationComplete = true;
       
       Logger.info(`Release page ${direction} navigation verified successfully`);
@@ -406,7 +417,9 @@ export class BandcampFacade {
     };
 
     const onNavigationFailure = (reason: string) => {
-      if (verificationComplete) return;
+      if (verificationComplete) {
+        return;
+      }
       verificationComplete = true;
       
       Logger.warn(`Release page ${direction} navigation verification failed: ${reason}`);
@@ -453,7 +466,9 @@ export class BandcampFacade {
     };
 
     const cleanup = () => {
-      if (timeoutId) clearTimeout(timeoutId);
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
       audio.removeEventListener('loadstart', onLoadStart);
       audio.removeEventListener('loadeddata', onLoadedData);
       audio.removeEventListener('canplay', onCanPlay);
@@ -491,6 +506,7 @@ export class BandcampFacade {
 
   /**
    * Clear release navigation flags with optimized delays
+   *
    * @param startTime The timing object for overall navigation
    */
   private static clearReleaseNavigationFlags(startTime: number): void {
@@ -507,12 +523,13 @@ export class BandcampFacade {
 
   /**
    * Log performance metrics for release page navigation optimizations
+   *
    * @param operation The type of operation being tracked
    * @param timeSaved The amount of time saved in milliseconds
    */
   private static logReleasePageMetrics(operation: string, timeSaved: number): void {
     Logger.info(`Release Page Metrics: ${operation} optimization saved ${timeSaved}ms`);
-    Logger.info(`Release Page Performance: Phase 2 optimization applied`);
+    Logger.info('Release Page Performance: Phase 2 optimization applied');
   }
 
   // ============================================
@@ -599,7 +616,9 @@ export class BandcampFacade {
         Logger.warn('Could not find appropriate wishlist button to click');
       }
     } catch (error) {
-      ErrorHandler.withErrorHandling(() => { throw error; }, 'Error in toggleWishlist');
+      ErrorHandler.withErrorHandling(() => {
+        throw error; 
+      }, 'Error in toggleWishlist');
     }
   }
 
@@ -661,7 +680,7 @@ export class BandcampFacade {
       }
       
       // Find all items with play buttons or other interactive elements
-      this._wishlistItems = items.filter(item => {
+      this._wishlistItems = items.filter((item) => {
         // Check if the item has a play button or other meaningful data
         const playButton = DOMSelectors.findOneWithSelectors<HTMLElement>(DOMSelectors.PLAY_BUTTONS, item);
         const hasPlayButton = playButton !== null;
@@ -692,12 +711,12 @@ export class BandcampFacade {
               // This helps avoid unintended index updates from clicks elsewhere in the item
               const target = event.target as HTMLElement;
               if (playButton.contains(target)) {
-                 Logger.info(`Manual play detected on wishlist item index: ${index}`);
-                 BandcampFacade._currentWishlistIndex = index;
-                 // Ensure continuous playback listeners are (re)attached after a short delay
-                 // in case Bandcamp swaps the audio element on play.
-                 setTimeout(() => BandcampFacade.setupWishlistContinuousPlayback(), 50);
-                 // Let Bandcamp's default behavior handle the actual playback.
+                Logger.info(`Manual play detected on wishlist item index: ${index}`);
+                BandcampFacade._currentWishlistIndex = index;
+                // Ensure continuous playback listeners are (re)attached after a short delay
+                // in case Bandcamp swaps the audio element on play.
+                setTimeout(() => BandcampFacade.setupWishlistContinuousPlayback(), 50);
+                // Let Bandcamp's default behavior handle the actual playback.
               }
             };
             playButton.addEventListener('click', listener);
@@ -709,13 +728,16 @@ export class BandcampFacade {
       Logger.info(`Found ${this._wishlistItems.length} playable wishlist items`);
       return this._wishlistItems;
     } catch (error) {
-      ErrorHandler.withErrorHandling(() => { throw error; }, 'Error loading wishlist items');
+      ErrorHandler.withErrorHandling(() => {
+        throw error; 
+      }, 'Error loading wishlist items');
       return [];
     }
   }
   
   /**
    * Extract the track ID from a wishlist item and store it
+   *
    * @param item The wishlist item element
    * @param index The index of the item
    */
@@ -902,7 +924,7 @@ export class BandcampFacade {
         const dataAttributes: Record<string, string> = {};
         
         // Safely convert NamedNodeMap to a usable object
-        Array.from(item.attributes).forEach(attr => {
+        Array.from(item.attributes).forEach((attr) => {
           if (attr.name.startsWith('data-')) {
             dataAttributes[attr.name] = attr.value;
           }
@@ -939,13 +961,17 @@ export class BandcampFacade {
             item.setAttribute('data-track-href', anyLink.getAttribute('href'));
           }
         }
-      }      } catch (error) {
-        ErrorHandler.withErrorHandling(() => { throw error; }, `Error extracting track ID for item ${index}`);
-      }
+      } 
+    } catch (error) {
+      ErrorHandler.withErrorHandling(() => {
+        throw error; 
+      }, `Error extracting track ID for item ${index}`);
+    }
   }
 
   /**
    * Play a specific track from the wishlist
+   *
    * @param index Index of the track to play
    */
   public static playWishlistTrack(index: number): void {
@@ -975,7 +1001,7 @@ export class BandcampFacade {
       
       // Try to find and click the play button directly
       const playButtonSearchStart = Logger.startTiming('Finding play button');
-      let playButton = this.findPlayButton(item);
+      const playButton = this.findPlayButton(item);
       Logger.timing('Play button search completed', playButtonSearchStart);
       
       if (playButton) {
@@ -1064,7 +1090,9 @@ export class BandcampFacade {
         this.playNextWishlistTrack();
       }
     } catch (error) {
-      ErrorHandler.withErrorHandling(() => { throw error; }, 'Error playing wishlist track');
+      ErrorHandler.withErrorHandling(() => {
+        throw error; 
+      }, 'Error playing wishlist track');
       Logger.timing('playWishlistTrack failed - exception thrown', startTime);
       // On any error, move to the next track (Phase 2: reduced delay for faster recovery)
       setTimeout(() => this.playNextWishlistTrack(), 100); // Reduced from 250ms to 100ms
@@ -1337,9 +1365,10 @@ export class BandcampFacade {
       
       // Start setting up listeners
       setupAudioListeners();
-      
     } catch (error) {
-      ErrorHandler.withErrorHandling(() => { throw error; }, 'Error setting up continuous playback');
+      ErrorHandler.withErrorHandling(() => {
+        throw error; 
+      }, 'Error setting up continuous playback');
     }
   }
   
@@ -1465,6 +1494,7 @@ export class BandcampFacade {
   
   /**
    * Helper method to try the next recovery method for audio playback
+   *
    * @param audio The audio element
    * @param currentItem The current wishlist item
    * @param trackId The track ID
@@ -1494,8 +1524,10 @@ export class BandcampFacade {
       // Give more time for the audio to load and play
       const playPromise = audio.play();
       if (playPromise !== undefined) {
-        playPromise.catch(e => {
-          ErrorHandler.withErrorHandling(() => { throw e; }, 'Error playing with fixed URL');
+        playPromise.catch((e) => {
+          ErrorHandler.withErrorHandling(() => {
+            throw e; 
+          }, 'Error playing with fixed URL');
           
           // Try a second approach - create a completely new URL
           const directStreamUrl = `https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=${trackId}&ts=${timestamp}`;
@@ -1503,8 +1535,10 @@ export class BandcampFacade {
           
           audio.src = directStreamUrl;
           audio.load();
-          audio.play().catch(innerError => {
-            ErrorHandler.withErrorHandling(() => { throw innerError; }, 'Error playing with direct URL');
+          audio.play().catch((innerError) => {
+            ErrorHandler.withErrorHandling(() => {
+              throw innerError; 
+            }, 'Error playing with direct URL');
             
             // Wait longer before giving up on this track
             setTimeout(() => {
@@ -1563,7 +1597,6 @@ export class BandcampFacade {
           Logger.info('Waiting for recovery attempt result...');
         }
       }, 1500);
-      
     } catch (urlError) {
       Logger.error('Error creating fixed URL:', urlError);
       
@@ -1577,6 +1610,7 @@ export class BandcampFacade {
   
   /**
    * Find a play button element within a wishlist item
+   *
    * @param item The wishlist item element
    * @returns The play button element or null if not found
    */
@@ -1640,13 +1674,16 @@ export class BandcampFacade {
       // No play button found
       return null;
     } catch (error) {
-      ErrorHandler.withErrorHandling(() => { throw error; }, 'Error finding play button');
+      ErrorHandler.withErrorHandling(() => {
+        throw error; 
+      }, 'Error finding play button');
       return null;
     }
   }
   
   /**
    * Verify if the current wishlist track is playing correctly
+   *
    * @param index The index of the track that should be playing
    */
   private static verifyWishlistPlayback(index: number): void {
@@ -1718,7 +1755,7 @@ export class BandcampFacade {
                 // Set the new URL and try to play
                 audio.src = fixedUrl;
                 audio.load();
-                audio.play().catch(e => {
+                audio.play().catch((e) => {
                   Logger.warn(`[Bandcamp+] Error playing fixed audio: ${e.message}`);
                   // If it still fails, skip to next track (reduced from 1000ms to 500ms for Phase 1)
                   setTimeout(() => {
@@ -1766,7 +1803,6 @@ export class BandcampFacade {
         BandcampFacade._currentWishlistIndex >= 0 &&
         audio.src && 
         (audio.src.includes('track_id=&') || !audio.src.includes('track_id='))) {
-      
       Logger.info('[Bandcamp+] Detected stream URL with missing track ID:', audio.src);
       
       // Get the current item
@@ -1820,7 +1856,7 @@ export class BandcampFacade {
             // Set the new URL and try to play
             audio.src = fixedUrl;
             audio.load();
-            audio.play().catch(e => {
+            audio.play().catch((e) => {
               Logger.warn('[Bandcamp+] Error playing fixed audio:', e);
               
               // Check if this is a 404 error or media format error
@@ -1841,7 +1877,7 @@ export class BandcampFacade {
                   
                   audio.src = directStreamUrl;
                   audio.load();
-                  audio.play().catch(directError => {
+                  audio.play().catch((directError) => {
                     Logger.warn('[Bandcamp+] Direct stream URL also failed:', directError);
                     
                     // Give up and move to next track
@@ -1856,10 +1892,13 @@ export class BandcampFacade {
                   }, 500);
                 }
               }
-            });              } catch (error) {
-                ErrorHandler.withErrorHandling(() => { throw error; }, 'Error fixing stream URL');
+            }); 
+          } catch (error) {
+            ErrorHandler.withErrorHandling(() => {
+              throw error; 
+            }, 'Error fixing stream URL');
                 
-                // Move to the next trackif we encounter an error
+            // Move to the next trackif we encounter an error
             setTimeout(() => {
               BandcampFacade.playNextWishlistTrack();
             }, 500);
@@ -2012,7 +2051,7 @@ export class BandcampFacade {
       // For individual track pages, first check if only album purchase is available
       Logger.info('c key detected on track page - checking purchase options');
       
-      const { isAlbumOnly } = AlbumOnlyUtils.checkForAlbumOnlyPurchase();
+      const {isAlbumOnly} = AlbumOnlyUtils.checkForAlbumOnlyPurchase();
       
       if (isAlbumOnly) {
         Logger.info('Track page only allows album purchase, ignoring c key press as requested');
@@ -2075,8 +2114,10 @@ export class BandcampFacade {
                   this._playPauseInProgress = false;
                 }, 300);
               })
-              .catch(e => {
-                ErrorHandler.withErrorHandling(() => { throw e; }, 'Error playing audio');
+              .catch((e) => {
+                ErrorHandler.withErrorHandling(() => {
+                  throw e; 
+                }, 'Error playing audio');
                 // Clear the flag even if there's an error
                 this._playPauseInProgress = false;
               });
@@ -2125,7 +2166,7 @@ export class BandcampFacade {
                   this._playPauseInProgress = false;
                 }, 300);
               })
-              .catch(e => {
+              .catch((e) => {
                 Logger.error('Error playing audio:', e);
                 // Clear the flag even if there's an error
                 this._playPauseInProgress = false;
@@ -2200,13 +2241,11 @@ export class BandcampFacade {
                         if (currentItem.parentElement) {
                           currentItem.parentElement.removeChild(currentItem);
                           // Update the wishlist items array
-                          this._wishlistItems = this._wishlistItems.filter(item => item !== currentItem);
+                          this._wishlistItems = this._wishlistItems.filter((item) => item !== currentItem);
                         } else {
                           currentItem.style.display = 'none';
                         }
                       }, 300);
-                      
-                      return;
                     } else {
                       // Fall back to UI clicking
                       this.fallbackToWishlistButtonClick(currentItem);
@@ -2229,7 +2268,6 @@ export class BandcampFacade {
       
       // If we couldn't use the API approach, fall back to clicking UI elements
       this.fallbackToWishlistButtonClick(currentItem);
-      
     } catch (error) {
       Logger.error('Error toggling current track wishlist:', error);
     }
@@ -2237,6 +2275,7 @@ export class BandcampFacade {
   
   /**
    * Fallback method to find and click wishlist button in the UI
+   *
    * @param currentItem The current wishlist item element
    */
   private static fallbackToWishlistButtonClick(currentItem: HTMLElement): void {
@@ -2268,6 +2307,7 @@ export class BandcampFacade {
   
   /**
    * Helper method to update wishlist icons without removing the item
+   *
    * @param item The wishlist item to update
    * @param isInWishlist Whether the item is in the wishlist or not
    */
@@ -2278,6 +2318,7 @@ export class BandcampFacade {
   
   /**
    * Helper method to handle wishlist item removal UI updates
+   *
    * @param item The wishlist item to update UI for
    */
   private static handleWishlistItemRemoval(item: HTMLElement): void {
@@ -2289,6 +2330,7 @@ export class BandcampFacade {
 
   /**
    * Load more discovery items from the Bandcamp discovery page
+   *
    * @returns Promise that resolves to true if more items were loaded
    */
   public static async loadMoreDiscoveryItems(): Promise<boolean> {
@@ -2328,6 +2370,7 @@ export class BandcampFacade {
 
   /**
    * Get all discovery items from the current discovery page
+   *
    * @returns Array of discovery item elements
    */
   public static getDiscoveryItems(): HTMLElement[] {
@@ -2356,6 +2399,7 @@ export class BandcampFacade {
 
   /**
    * Get featured discovery items from the current discovery page
+   *
    * @returns Array of featured discovery item elements
    */
   public static getFeaturedDiscoveryItems(): HTMLElement[] {
@@ -2382,6 +2426,7 @@ export class BandcampFacade {
 
   /**
    * Click on a discovery item by its index
+   *
    * @param index The index of the discovery item to click
    * @returns True if successful, false otherwise
    */
@@ -2399,7 +2444,7 @@ export class BandcampFacade {
         return false;
       }
       
-           if (index < 0 || index >= discoveryItems.length) {
+      if (index < 0 || index >= discoveryItems.length) {
         Logger.warn(`Invalid discovery item index: ${index}. Available range: 0-${discoveryItems.length - 1}`);
         return false;
       }
@@ -2417,8 +2462,9 @@ export class BandcampFacade {
   
   /**
    * Click on a featured discovery item by its index
+   *
    * @param index The index of the featured discovery item to click
-   *   * @returns True if successful, false otherwise
+   *   @returns True if successful, false otherwise
    */
   public static clickFeaturedDiscoveryItem(index: number): boolean {
     if (!window.location.href.includes('/discover')) {
@@ -2452,6 +2498,7 @@ export class BandcampFacade {
   
   /**
    * Get the available discovery filters
+   *
    * @returns An object containing the available filters
    */
   public static getDiscoveryFilters(): Record<string, any> {
@@ -2466,56 +2513,46 @@ export class BandcampFacade {
       // Get genre filters
       const genreSelector = document.querySelector('.genre-selector, #genre-selector, [data-bind*="genre"]');
       if (genreSelector) {
-        filters.genres = Array.from(genreSelector.querySelectorAll('option, li, a')).map(option => {
-          return {
-            value: option.getAttribute('value') || option.getAttribute('data-value') || option.textContent,
-            label: option.textContent?.trim()
-          };
-        });
+        filters.genres = Array.from(genreSelector.querySelectorAll('option, li, a')).map((option) => ({
+          value: option.getAttribute('value') || option.getAttribute('data-value') || option.textContent,
+          label: option.textContent?.trim(),
+        }));
       }
       
       // Get subgenre filters
       const subgenreSelector = document.querySelector('.subgenre-selector, #subgenre-selector, [data-bind*="subgenre"]');
       if (subgenreSelector) {
-        filters.subgenres = Array.from(subgenreSelector.querySelectorAll('option, li, a')).map(option => {
-          return {
-            value: option.getAttribute('value') || option.getAttribute('data-value') || option.textContent,
-            label: option.textContent?.trim()
-          };
-        });
+        filters.subgenres = Array.from(subgenreSelector.querySelectorAll('option, li, a')).map((option) => ({
+          value: option.getAttribute('value') || option.getAttribute('data-value') || option.textContent,
+          label: option.textContent?.trim(),
+        }));
       }
       
       // Get format filters
       const formatSelector = document.querySelector('.format-selector, #format-selector, [data-bind*="format"]');
       if (formatSelector) {
-        filters.formats = Array.from(formatSelector.querySelectorAll('option, li, a')).map(option => {
-          return {
-            value: option.getAttribute('value') || option.getAttribute('data-value') || option.textContent,
-            label: option.textContent?.trim()
-          };
-        });
+        filters.formats = Array.from(formatSelector.querySelectorAll('option, li, a')).map((option) => ({
+          value: option.getAttribute('value') || option.getAttribute('data-value') || option.textContent,
+          label: option.textContent?.trim(),
+        }));
       }
       
       // Get location filters
       const locationSelector = document.querySelector('.location-selector, #location-selector, [data-bind*="location"]');
       if (locationSelector) {
-        filters.locations = Array.from(locationSelector.querySelectorAll('option, li, a')).map(option => {
-          return {
-            value: option.getAttribute('value') || option.getAttribute('data-value') || option.textContent,
-            label: option.textContent?.trim()
-          };
-        });
+        filters.locations = Array.from(locationSelector.querySelectorAll('option, li, a')).map((option) => ({
+          value: option.getAttribute('value') || option.getAttribute('data-value') || option.textContent,
+          label: option.textContent?.trim(),
+        }));
       }
       
       // Get time filters
       const timeSelector = document.querySelector('.time-selector, #time-selector, [data-bind*="time"]');
       if (timeSelector) {
-        filters.times = Array.from(timeSelector.querySelectorAll('option, li, a')).map(option => {
-          return {
-            value: option.getAttribute('value') || option.getAttribute('data-value') || option.textContent,
-            label: option.textContent?.trim()
-          };
-        });
+        filters.times = Array.from(timeSelector.querySelectorAll('option, li, a')).map((option) => ({
+          value: option.getAttribute('value') || option.getAttribute('data-value') || option.textContent,
+          label: option.textContent?.trim(),
+        }));
       }
       
       return filters;
@@ -2527,6 +2564,7 @@ export class BandcampFacade {
   
   /**
    * Apply a filter to the discovery page
+   *
    * @param filterType The type of filter to apply (genre, subgenre, format, location, time)
    * @param value The value to set for the filter
    * @returns True if the filter was applied successfully
@@ -2544,7 +2582,7 @@ export class BandcampFacade {
         subgenre: '.subgenre-selector, #subgenre-selector, [data-bind*="subgenre"]',
         format: '.format-selector, #format-selector, [data-bind*="format"]',
         location: '.location-selector, #location-selector, [data-bind*="location"]',
-        time: '.time-selector, #time-selector, [data-bind*="time"]'
+        time: '.time-selector, #time-selector, [data-bind*="time"]',
       };
       
       const selector = selectorMap[filterType.toLowerCase()];
@@ -2566,7 +2604,7 @@ export class BandcampFacade {
         selectElement.value = value;
         
         // Trigger change event
-        const event = new Event('change', { bubbles: true });
+        const event = new Event('change', {bubbles: true});
         selectElement.dispatchEvent(event);
         
         Logger.info(`Applied ${filterType} filter with value: ${value}`);
@@ -2597,6 +2635,7 @@ export class BandcampFacade {
   
   /**
    * Save the current discovery page preferences with a name
+   *
    * @param name The name to save the preferences under
    * @returns True if saved successfully
    */
@@ -2639,6 +2678,7 @@ export class BandcampFacade {
   
   /**
    * Load a saved discovery preference by name
+   *
    * @param name The name of the preference to load
    * @returns True if loaded successfully
    */
@@ -2680,6 +2720,7 @@ export class BandcampFacade {
   
   /**
    * Get all stored discovery preferences
+   *
    * @returns A record of preference names and their URLs
    */
   public static getStoredDiscoveryPreferences(): Record<string, any> {
@@ -2705,6 +2746,7 @@ export class BandcampFacade {
   
   /**
    * Delete a saved discovery preference by name
+   *
    * @param name The name of the preference to delete
    * @returns True if deleted successfully
    */
@@ -2748,6 +2790,7 @@ export class BandcampFacade {
   
   /**
    * Navigate to the Bandcamp discovery page
+   *
    * @returns True if navigation was initiated successfully
    */
   public static navigateToDiscovery(): boolean {
@@ -2762,6 +2805,7 @@ export class BandcampFacade {
 
   /**
    * Load all wishlist items by clicking the "view all items" button
+   *
    * @returns Promise that resolves to true if all items were loaded successfully
    */
   public static async loadAllWishlistItems(): Promise<boolean> {
@@ -2777,7 +2821,7 @@ export class BandcampFacade {
       const tabCounts: Record<string, number> = {};
       const tabs = DOMSelectors.findWithSelectors<HTMLElement>(DOMSelectors.TABS);
       
-      tabs.forEach(tab => {
+      tabs.forEach((tab) => {
         const countElement = tab.querySelector('.count');
         if (countElement) {
           const tabName = tab.getAttribute('data-tab') || 
@@ -2793,7 +2837,7 @@ export class BandcampFacade {
       });
       
       // Get the expected wishlist count
-      let wishlistCount = tabCounts['wishlist'] || 0;
+      const wishlistCount = tabCounts['wishlist'] || 0;
       Logger.info(`Expected wishlist count: ${wishlistCount}`);
       
       // Check if we already have all items loaded
@@ -2816,7 +2860,7 @@ export class BandcampFacade {
       Logger.info(`Wishlist tab active: ${isWishlistTabActive}`);
       
       // Find buttons with "view all X items" text
-      const itemButtons = showMoreButtons.filter(button => {
+      const itemButtons = showMoreButtons.filter((button) => {
         const text = button.textContent?.trim().toLowerCase() || '';
         return /^view all \d+ items?$/.test(text);
       });
@@ -2824,21 +2868,21 @@ export class BandcampFacade {
       Logger.info(`Found ${itemButtons.length} buttons with "view all X items" text`);
       
       // Extract counts from button text for sorting
-      const buttonDetails = itemButtons.map(button => {
+      const buttonDetails = itemButtons.map((button) => {
         const text = button.textContent?.trim().toLowerCase() || '';
         const match = text.match(/view all (\d+) items?/);
         const count = match ? parseInt(match[1], 10) : 0;
         
-        return { button, count, text };
+        return {button, count, text};
       });
       
       Logger.info('Available item buttons:');
-      buttonDetails.forEach(details => {
+      buttonDetails.forEach((details) => {
         Logger.info(`- "${details.text}" (count: ${details.count})`);
       });
       
       // Match button with the count that matches the wishlist tab count
-      let wishlistButton = buttonDetails.find(details => details.count === wishlistCount)?.button;
+      let wishlistButton = buttonDetails.find((details) => details.count === wishlistCount)?.button;
       
       // If we couldn't find a matching button by count, try other approaches
       if (!wishlistButton && buttonDetails.length > 1) {
@@ -2848,19 +2892,19 @@ export class BandcampFacade {
         // So the second "items" button should be for wishlist if there are two
         if (buttonDetails.length >= 2) {
           // Sort buttons by their numeric count
-          const buttonsByCount = showMoreButtons.filter(button => {
+          const buttonsByCount = showMoreButtons.filter((button) => {
             const text = button.textContent?.trim().toLowerCase() || '';
             return /^view all \d+ items?$/.test(text);
-          }).map(button => {
+          }).map((button) => {
             const text = button.textContent?.trim().toLowerCase() || '';
             const match = text.match(/view all (\d+) items?/);
             const count = match ? parseInt(match[1], 10) : 999999;
-            return { button, count };
+            return {button, count};
           }).sort((a, b) => a.count - b.count);
           
           // Log the buttons sorted by count
           Logger.info('Buttons sorted by count:');
-          buttonsByCount.forEach(({ button, count }) => {
+          buttonsByCount.forEach(({button, count}) => {
             Logger.info(`  "${button.textContent?.trim()}" - count: ${count}`);
           });
           
@@ -2911,13 +2955,13 @@ export class BandcampFacade {
               document.body.offsetHeight,
               document.documentElement.clientHeight,
               document.documentElement.scrollHeight,
-              document.documentElement.offsetHeight
+              document.documentElement.offsetHeight,
             );
             
             window.scrollTo(0, maxScroll);
             
             // Stay at the bottom longer to ensure lazy loading triggers
-            await new Promise(resolve => setTimeout(resolve, 800));
+            await new Promise((resolve) => setTimeout(resolve, 800));
             
             // Check if more items loaded while at bottom
             const itemsAtBottom = this.loadWishlistItems();
@@ -2925,11 +2969,11 @@ export class BandcampFacade {
             
             // Scroll back to top
             window.scrollTo(0, 0);
-            await new Promise(resolve => setTimeout(resolve, 400));
+            await new Promise((resolve) => setTimeout(resolve, 400));
           }
           
           // Wait a bit before checking again
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise((resolve) => setTimeout(resolve, 500));
           
           // Reload wishlist items and check count
           items = this.loadWishlistItems();
@@ -2956,7 +3000,7 @@ export class BandcampFacade {
             Logger.info(`Alternative strategy 1 - incremental scroll ${i + 1}/5`);
             const scrollStep = document.body.scrollHeight / 4;
             window.scrollTo(0, scrollStep * (i + 1));
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise((resolve) => setTimeout(resolve, 1000));
             items = this.loadWishlistItems();
             Logger.info(`After incremental scroll ${i + 1}: Found ${items.length} items`);
           }
@@ -2965,7 +3009,7 @@ export class BandcampFacade {
           if (items.length < wishlistCount) {
             Logger.info('Alternative strategy 2 - extended bottom stay');
             window.scrollTo(0, document.body.scrollHeight);
-            await new Promise(resolve => setTimeout(resolve, 3000)); // Stay 3 seconds
+            await new Promise((resolve) => setTimeout(resolve, 3000)); // Stay 3 seconds
             items = this.loadWishlistItems();
             Logger.info(`After extended bottom stay: Found ${items.length} items`);
           }
@@ -2977,7 +3021,7 @@ export class BandcampFacade {
             // Dispatch scroll events to trigger any lazy loading listeners
             window.dispatchEvent(new Event('scroll'));
             document.dispatchEvent(new Event('scroll'));
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            await new Promise((resolve) => setTimeout(resolve, 2000));
             items = this.loadWishlistItems();
             Logger.info(`After manual scroll events: Found ${items.length} items`);
           }
@@ -2994,7 +3038,7 @@ export class BandcampFacade {
         // Return true if we got at least the expected count
         return items.length >= wishlistCount;
       } catch (clickError) {
-        Logger.warn(`Error clicking wishlist "view all items" button:`, clickError);
+        Logger.warn('Error clicking wishlist "view all items" button:', clickError);
         return false;
       }
     } catch (error) {
@@ -3007,7 +3051,9 @@ export class BandcampFacade {
    * Log Phase 2 performance metrics for monitoring optimization effectiveness
    */
   private static logPhase2Metrics(category: string, timeSavedMs: number): void {
-    if (!this._phase2MetricsEnabled) return;
+    if (!this._phase2MetricsEnabled) {
+      return;
+    }
     
     Logger.info(`[Phase 2 Optimization] ${category}: ${timeSavedMs}ms saved`);
     
@@ -3039,6 +3085,7 @@ export class BandcampFacade {
   /**
    * Verify playback using audio events instead of timeouts for faster response
    * This is Phase 1 of the optimization plan - event-based verification (50% time savings)
+   *
    * @param index The index of the track that should be playing
    * @param verificationStart Timing object for logging
    * @param startTime Overall timing object for the playWishlistTrack method
@@ -3058,7 +3105,9 @@ export class BandcampFacade {
 
     // Set up success handler for when playback starts
     const onPlaybackSuccess = () => {
-      if (verificationComplete) return;
+      if (verificationComplete) {
+        return;
+      }
       verificationComplete = true;
       
       clearTimeout(timeoutId);
@@ -3071,7 +3120,9 @@ export class BandcampFacade {
 
     // Set up failure handler for when playback fails
     const onPlaybackFailure = (reason: string) => {
-      if (verificationComplete) return;
+      if (verificationComplete) {
+        return;
+      }
       verificationComplete = true;
       
       clearTimeout(timeoutId);

@@ -10,7 +10,7 @@ export class Logger {
     WARN: 1,
     INFO: 2,
     DEBUG: 3,
-    TIMING: 4
+    TIMING: 4,
   };
   
   // Current log level - set to ERROR for minimal logging in production

@@ -1,6 +1,6 @@
 /// <reference types="chrome" />
 
-import { Logger } from '../utils/logger';
+import {Logger} from '../utils/logger';
 
 /**
  * Service for handling messages between content scripts and background scripts
@@ -10,6 +10,7 @@ export class MessageService {
 
   /**
    * Add a listener for a specific message type
+   *
    * @param type The message type to listen for
    * @param callback The callback to execute when message is received
    */
@@ -24,6 +25,7 @@ export class MessageService {
 
   /**
    * Remove a listener for a specific message type
+   *
    * @param type The message type to remove listener for
    */
   public static removeListener(type: string): void {
@@ -35,14 +37,13 @@ export class MessageService {
    */
   private static setupGlobalListener(): void {
     if (typeof chrome !== 'undefined' && chrome.runtime) {
-      chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-        return this.handleMessage(message, sender, sendResponse);
-      });
+      chrome.runtime.onMessage.addListener((message, sender, sendResponse) => this.handleMessage(message, sender, sendResponse));
     }
   }
 
   /**
    * Handle an incoming message
+   *
    * @param message The message object
    * @param sender The sender information
    * @param sendResponse The sendResponse callback
@@ -54,7 +55,7 @@ export class MessageService {
       return false;
     }
 
-    const { type, data } = message;
+    const {type, data} = message;
     
     // Check if we have a listener for this message type
     const listener = this.listeners.get(type);
@@ -70,30 +71,31 @@ export class MessageService {
       if (result instanceof Promise) {
         // Handle async response
         result
-          .then(response => {
-            sendResponse({ success: true, data: response });
+          .then((response) => {
+            sendResponse({success: true, data: response});
           })
-          .catch(error => {
+          .catch((error) => {
             Logger.error(`Error handling message ${type}:`, error);
-            sendResponse({ success: false, error: error.message });
+            sendResponse({success: false, error: error.message});
           });
         
         // Return true to indicate that sendResponse will be called asynchronously
         return true;
       } else {
         // Synchronous response
-        sendResponse({ success: true, data: result });
+        sendResponse({success: true, data: result});
         return false;
       }
     } catch (error) {
       Logger.error(`Error handling message ${type}:`, error);
-      sendResponse({ success: false, error: error.message });
+      sendResponse({success: false, error: error.message});
       return false;
     }
   }
 
   /**
    * Send a message and get a response
+   *
    * @param type The message type
    * @param data The message data
    * @returns A promise that resolves with the response
@@ -101,7 +103,7 @@ export class MessageService {
   public static sendMessage(type: string, data?: any): Promise<any> {
     return new Promise((resolve, reject) => {
       if (typeof chrome !== 'undefined' && chrome.runtime) {
-        chrome.runtime.sendMessage({ type, data }, (response) => {
+        chrome.runtime.sendMessage({type, data}, (response) => {
           if (chrome.runtime.lastError) {
             reject(chrome.runtime.lastError);
           } else if (response && response.success === false) {

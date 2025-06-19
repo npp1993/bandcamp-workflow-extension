@@ -6,9 +6,10 @@ import {Logger} from './logger';
 export class AlbumOnlyUtils {
   /**
    * Check if the current track page only allows album purchase
+   *
    * @returns Object with isAlbumOnly boolean and any detected indicators
    */
-  public static checkForAlbumOnlyPurchase(): { isAlbumOnly: boolean; indicators?: string[] } {
+  public static checkForAlbumOnlyPurchase(): {isAlbumOnly: boolean; indicators?: string[];} {
     try {
       const pageText = document.body.textContent || '';
       
@@ -24,11 +25,11 @@ export class AlbumOnlyUtils {
 
       return {
         isAlbumOnly,
-        indicators: isAlbumOnly ? ['Buy Digital Track not found'] : ['Buy Digital Track found']
+        indicators: isAlbumOnly ? ['Buy Digital Track not found'] : ['Buy Digital Track found'],
       };
     } catch (error) {
       Logger.error('Error checking for album-only purchase:', error);
-      return { isAlbumOnly: false };
+      return {isAlbumOnly: false};
     }
   }
 }

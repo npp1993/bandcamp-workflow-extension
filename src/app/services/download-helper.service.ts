@@ -1,4 +1,4 @@
-import { Logger } from '../utils/logger';
+import {Logger} from '../utils/logger';
 
 /**
  * Service for helping download Bandcamp purchased tracks
@@ -6,6 +6,7 @@ import { Logger } from '../utils/logger';
  */
 export class DownloadHelperService {
   private button: HTMLButtonElement;
+
   private observer: MutationObserver;
 
   constructor() {
@@ -22,11 +23,11 @@ export class DownloadHelperService {
     this.checkDownloadLinks();
     
     // Set up observer to watch for download links becoming available
-    const config = { attributes: true, attributeFilter: ['href', 'style'] };
+    const config = {attributes: true, attributeFilter: ['href', 'style']};
     const targetNodes = document.querySelectorAll('.download-title .item-button');
     
     // Convert NodeList to Array before iteration
-    Array.from(targetNodes).forEach(node => {
+    Array.from(targetNodes).forEach((node) => {
       this.observer.observe(node, config);
     });
   }
@@ -35,10 +36,14 @@ export class DownloadHelperService {
    * Create the download button and add it to the page
    */
   private createButton(): void {
-    if (this.button) return;
+    if (this.button) {
+      return;
+    }
 
     const location = document.querySelector('div.download-titles');
-    if (!location) return;
+    if (!location) {
+      return;
+    }
 
     this.button = document.createElement('button');
     this.button.title = "Generates a file for automating downloads using 'cURL'";
@@ -99,10 +104,12 @@ export class DownloadHelperService {
   private mutationCallback(): void {
     const allDownloadLinks = document.querySelectorAll('.download-title .item-button');
     
-    if (allDownloadLinks.length === 0) return;
+    if (allDownloadLinks.length === 0) {
+      return;
+    }
     
     const linksReady = Array.from(allDownloadLinks).every(
-      element => (element as HTMLElement).style.display !== 'none'
+      (element) => (element as HTMLElement).style.display !== 'none',
     );
     
     Logger.info(`Download links ready: ${linksReady}`);
@@ -119,14 +126,16 @@ export class DownloadHelperService {
    */
   private generateDownloadList(): string {
     const urlSet = new Set(
-      Array.from(document.querySelectorAll('a.item-button')).map(item => 
-        item.getAttribute('href')
-      ).filter(href => href)
+      Array.from(document.querySelectorAll('a.item-button')).map((item) => 
+        item.getAttribute('href'),
+      ).filter((href) => href),
     );
     
-    if (urlSet.size === 0) return 'URLS=()\n';
+    if (urlSet.size === 0) {
+      return 'URLS=()\n';
+    }
     
-    const fileList = Array.from(urlSet).map(url => `\t"${url}"`).join('\n');
+    const fileList = Array.from(urlSet).map((url) => `\t"${url}"`).join('\n');
     return 'URLS=(\n' + fileList + '\n)\n';
   }
 
@@ -150,7 +159,7 @@ export class DownloadHelperService {
     
     element.setAttribute(
       'href',
-      'data:text/plain;charset=utf-8,' + encodeURIComponent(text)
+      'data:text/plain;charset=utf-8,' + encodeURIComponent(text),
     );
     element.setAttribute('download', filename);
     

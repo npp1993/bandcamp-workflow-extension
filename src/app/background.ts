@@ -21,9 +21,8 @@ interface WaveformResponse {
 chrome.runtime.onMessage.addListener((
   request: WaveformRequest,
   sender: chrome.runtime.MessageSender,
-  sendResponse: (response: WaveformResponse) => void
+  sendResponse: (response: WaveformResponse) => void,
 ): boolean => {
-  
   console.log('[Background] Received message:', request.contentScriptQuery);
   
   // Only handle waveform buffer requests
@@ -35,7 +34,7 @@ chrome.runtime.onMessage.addListener((
   // Validate the request has a URL
   if (!request.url) {
     console.log('[Background] No URL provided in request');
-    sendResponse({ error: 'No URL provided in request' });
+    sendResponse({error: 'No URL provided in request'});
     return true;
   }
 
@@ -47,21 +46,21 @@ chrome.runtime.onMessage.addListener((
 
   // Fetch the audio buffer from the provided URL
   fetch(audioUrl)
-    .then(response => {
+    .then((response) => {
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       return response.arrayBuffer();
     })
-    .then(arrayBuffer => {
+    .then((arrayBuffer) => {
       // Convert ArrayBuffer to array of numbers for message passing
       const dataArray = Array.from(new Uint8Array(arrayBuffer));
       console.log('[Background] Successfully fetched audio buffer, size:', dataArray.length);
-      sendResponse({ data: dataArray });
+      sendResponse({data: dataArray});
     })
-    .catch(error => {
+    .catch((error) => {
       console.error('[Background] Error fetching audio buffer:', error);
-      sendResponse({ error: error.toString() });
+      sendResponse({error: error.toString()});
     });
 
   // Return true to indicate async response

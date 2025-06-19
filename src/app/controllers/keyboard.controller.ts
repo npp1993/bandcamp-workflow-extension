@@ -8,6 +8,7 @@ import {Logger} from '../utils/logger';
  */
 export class KeyboardController {
   private static controllers: Controllers;
+
   private static currentTrack: TrackController;
 
   public static setCurrentTrack(track: TrackController): void {
@@ -31,9 +32,8 @@ export class KeyboardController {
    */
   private static handleKeyboardEvent = (e: KeyboardEvent): void => {
     // Only process keyboard events when not in input fields
-    if (!["INPUT", "TEXTAREA", "SELECT"].includes((e.target as Element).tagName) && 
+    if (!['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as Element).tagName) && 
         !(e.target as HTMLElement).isContentEditable) {
-      
       // Handle our specific shortcut keys
       switch (e.key.toLowerCase()) {
         case 'q':

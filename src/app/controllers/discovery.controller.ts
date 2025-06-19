@@ -1,6 +1,6 @@
-import { BandcampFacade } from '../facades/bandcamp.facade';
-import { MessageService } from '../services/message.service';
-import { Logger } from '../utils/logger';
+import {BandcampFacade} from '../facades/bandcamp.facade';
+import {MessageService} from '../services/message.service';
+import {Logger} from '../utils/logger';
 
 /**
  * Controller for Bandcamp discovery page functionality
@@ -26,68 +26,68 @@ export class DiscoveryController {
   private static setupMessageHandlers(): void {
     MessageService.addListener('loadMoreDiscoveryItems', async () => {
       const success = await BandcampFacade.loadMoreDiscoveryItems();
-      return { success };
+      return {success};
     });
     
     MessageService.addListener('getDiscoveryItems', () => {
       const items = BandcampFacade.getDiscoveryItems();
-      return { count: items.length, items };
+      return {count: items.length, items};
     });
     
     MessageService.addListener('getFeaturedDiscoveryItems', () => {
       const items = BandcampFacade.getFeaturedDiscoveryItems();
-      return { count: items.length };
+      return {count: items.length};
     });
     
     MessageService.addListener('clickDiscoveryItem', (request) => {
-      const { index } = request;
+      const {index} = request;
       const success = BandcampFacade.clickDiscoveryItem(index);
-      return { success };
+      return {success};
     });
     
     MessageService.addListener('clickFeaturedDiscoveryItem', (request) => {
-      const { index } = request;
+      const {index} = request;
       const success = BandcampFacade.clickFeaturedDiscoveryItem(index);
-      return { success };
+      return {success};
     });
     
     MessageService.addListener('getDiscoveryFilters', () => {
       const filters = BandcampFacade.getDiscoveryFilters();
-      return { filters };
+      return {filters};
     });
     
     MessageService.addListener('applyDiscoveryFilter', (request) => {
-      const { filterType, value } = request;
+      const {filterType, value} = request;
       const success = BandcampFacade.applyDiscoveryFilter(filterType, value);
-      return { success };
+      return {success};
     });
     
     MessageService.addListener('saveDiscoveryPreferences', (request) => {
-      const { name } = request;
+      const {name} = request;
       const success = BandcampFacade.saveDiscoveryPreference(name);
-      return { success };
+      return {success};
     });
     
     MessageService.addListener('loadDiscoveryPreferences', async (request) => {
-      const { name } = request;
+      const {name} = request;
       const success = await BandcampFacade.loadDiscoveryPreference(name);
-      return { success };
+      return {success};
     });
     
     MessageService.addListener('getStoredDiscoveryPreferences', () => {
       const preferences = BandcampFacade.getStoredDiscoveryPreferences();
-      return { preferences };
+      return {preferences};
     });
     
     MessageService.addListener('deleteDiscoveryPreference', (request) => {
-      const { name } = request;
+      const {name} = request;
       const success = BandcampFacade.deleteDiscoveryPreference(name);
-      return { success };
+      return {success};
     });
     
     MessageService.addListener('navigateToDiscovery', () => {
       const success = BandcampFacade.navigateToDiscovery();
-      return { success };
+      return {success};
     });
   }
 }

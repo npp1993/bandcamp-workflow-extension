@@ -1,6 +1,6 @@
-import { SEEK_STEP } from '../constants';
-import { AudioUtils } from './audio-utils';
-import { Logger } from './logger';
+import {SEEK_STEP} from '../constants';
+import {AudioUtils} from './audio-utils';
+import {Logger} from './logger';
 
 /**
  * Utility for audio seeking operations
@@ -9,7 +9,7 @@ export class SeekUtils {
   /**
    * Seek to the beginning of the track
    */
-  public static seekReset(isWishlistPage: boolean = false): void {
+  public static seekReset(isWishlistPage = false): void {
     try {
       const audioElement = isWishlistPage 
         ? AudioUtils.getWishlistAudioElement()
@@ -32,7 +32,7 @@ export class SeekUtils {
   /**
    * Seek forward by the defined step
    */
-  public static seekForward(isWishlistPage: boolean = false): void {
+  public static seekForward(isWishlistPage = false): void {
     try {
       const audioElement = isWishlistPage 
         ? AudioUtils.getWishlistAudioElement()
@@ -53,7 +53,7 @@ export class SeekUtils {
   /**
    * Seek backward by the defined step
    */
-  public static seekBackward(isWishlistPage: boolean = false): void {
+  public static seekBackward(isWishlistPage = false): void {
     try {
       const audioElement = isWishlistPage 
         ? AudioUtils.getWishlistAudioElement()
@@ -73,10 +73,11 @@ export class SeekUtils {
 
   /**
    * Seek to a specific position in the track based on ratio (0-1)
+   *
    * @param ratio Position ratio (0 = start, 1 = end)
    * @param isWishlistPage Whether we're on a wishlist page
    */
-  public static seekToRatio(ratio: number, isWishlistPage: boolean = false): void {
+  public static seekToRatio(ratio: number, isWishlistPage = false): void {
     try {
       const audioElement = isWishlistPage 
         ? AudioUtils.getWishlistAudioElement()

@@ -1,5 +1,5 @@
-import { Logger } from '../utils/logger';
-import { AudioUtils } from '../utils/audio-utils';
+import {Logger} from '../utils/logger';
+import {AudioUtils} from '../utils/audio-utils';
 
 /**
  * Service for generating and rendering waveforms from Bandcamp audio streams
@@ -15,7 +15,7 @@ export class WaveformService {
     canvasWidth: 600,
     canvasHeight: 60,
     color: '#333',
-    cacheTTL: 1000 * 60 * 15 // 15 minutes
+    cacheTTL: 1000 * 60 * 15, // 15 minutes
   };
 
   // Cache expiry tracking
@@ -23,6 +23,7 @@ export class WaveformService {
 
   /**
    * Generate waveform for the currently playing audio
+   *
    * @returns Promise resolving to the waveform canvas element or null if failed
    */
   public static async generateWaveformForCurrentAudio(): Promise<HTMLCanvasElement | null> {
@@ -70,7 +71,6 @@ export class WaveformService {
 
       // Render and return the waveform canvas
       return this.renderWaveformFromData(waveformData);
-
     } catch (error) {
       Logger.error('[WaveformService] Error generating waveform:', error);
       return null;
@@ -79,6 +79,7 @@ export class WaveformService {
 
   /**
    * Extract stream ID from Bandcamp audio source URL
+   *
    * @param src Audio source URL
    * @returns Stream ID or null if not found
    */
@@ -102,6 +103,7 @@ export class WaveformService {
 
   /**
    * Fetch audio buffer from background script via CORS bypass
+   *
    * @param audioUrl Complete audio URL with authentication parameters
    * @returns Promise resolving to audio buffer array or null
    */
@@ -110,9 +112,9 @@ export class WaveformService {
       chrome.runtime.sendMessage(
         {
           contentScriptQuery: 'renderBuffer',
-          url: audioUrl
+          url: audioUrl,
         },
-        (response: { data?: number[]; error?: string }) => {
+        (response: {data?: number[]; error?: string;}) => {
           if (!response || response.error) {
             Logger.error('[WaveformService] Failed to fetch audio buffer:', response?.error || 'No response');
             resolve(null);
@@ -127,13 +129,14 @@ export class WaveformService {
 
           Logger.info('[WaveformService] Successfully fetched audio buffer, size:', response.data.length);
           resolve(response.data);
-        }
+        },
       );
     });
   }
 
   /**
    * Process audio buffer to extract RMS-based amplitude data
+   *
    * @param audioData Raw audio buffer data
    * @returns Promise resolving to normalized amplitude array
    */
@@ -179,11 +182,10 @@ export class WaveformService {
         return new Array(this.CONFIG.datapoints).fill(0);
       }
       
-      const normalizedData = rmsBuffer.map(value => value / max);
+      const normalizedData = rmsBuffer.map((value) => value / max);
       
       Logger.info('[WaveformService] Successfully processed audio buffer into waveform data');
       return normalizedData;
-      
     } catch (error) {
       Logger.error('[WaveformService] Error processing audio buffer:', error);
       return null;
@@ -192,11 +194,12 @@ export class WaveformService {
 
   /**
    * Render waveform canvas from processed amplitude data
+   *
    * @param waveformData Normalized amplitude data
    * @param progress Optional progress ratio (0-1) for rendering played/unplayed portions
    * @returns Canvas element with rendered waveform
    */
-  private static renderWaveformFromData(waveformData: number[], progress: number = 0): HTMLCanvasElement {
+  private static renderWaveformFromData(waveformData: number[], progress = 0): HTMLCanvasElement {
     const canvas = document.createElement('canvas');
     canvas.width = this.CONFIG.canvasWidth;
     canvas.height = this.CONFIG.canvasHeight;
@@ -222,6 +225,7 @@ export class WaveformService {
 
   /**
    * Update existing waveform canvas with new progress
+   *
    * @param canvas Existing canvas element
    * @param waveformData Normalized amplitude data  
    * @param progress Progress ratio (0-1)
@@ -252,6 +256,7 @@ export class WaveformService {
 
   /**
    * Fill individual waveform bar following reference implementation
+   *
    * @param canvas Target canvas element
    * @param amplitude Normalized amplitude (0-1)
    * @param index Bar index
@@ -263,7 +268,7 @@ export class WaveformService {
     amplitude: number,
     index: number,
     numElements: number,
-    colour: string = '#333'
+    colour = '#333',
   ): void {
     const ctx = canvas.getContext('2d')!;
     ctx.globalCompositeOperation = 'source-over';
@@ -278,6 +283,7 @@ export class WaveformService {
 
   /**
    * Generate cache key for stream ID
+   *
    * @param streamId Stream identifier
    * @returns Cache key string
    */
@@ -287,6 +293,7 @@ export class WaveformService {
 
   /**
    * Get cached waveform data if available and not expired
+   *
    * @param streamId Stream identifier
    * @returns Cached waveform data or null
    */
@@ -306,6 +313,7 @@ export class WaveformService {
 
   /**
    * Get cached waveform data for external use
+   *
    * @param streamId Stream identifier  
    * @returns Cached waveform data or null if not available
    */
@@ -315,6 +323,7 @@ export class WaveformService {
 
   /**
    * Cache waveform data with timestamp
+   *
    * @param streamId Stream identifier
    * @param data Waveform data to cache
    */
@@ -353,12 +362,13 @@ export class WaveformService {
 
   /**
    * Get cache statistics for debugging
+   *
    * @returns Object with cache statistics
    */
-  public static getCacheStats(): { size: number; entries: string[] } {
+  public static getCacheStats(): {size: number; entries: string[];} {
     return {
       size: this.cache.size,
-      entries: Array.from(this.cache.keys())
+      entries: Array.from(this.cache.keys()),
     };
   }
 }

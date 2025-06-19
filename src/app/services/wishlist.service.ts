@@ -1,15 +1,15 @@
-import { Logger } from '../utils/logger';
-import { DOMSelectors } from '../utils/dom-selectors';
-import { AudioUtils } from '../utils/audio-utils';
+import {Logger} from '../utils/logger';
+import {DOMSelectors} from '../utils/dom-selectors';
+import {AudioUtils} from '../utils/audio-utils';
 
 /**
  * Centralized service for all wishlist operations
  * Consolidates duplicate wishlist functionality from various controllers
  */
 export class WishlistService {
-  
   /**
    * Toggle wishlist status via API call
+   *
    * @param trackId The track or album ID
    * @param fanId The fan ID
    * @param itemType The type of item ('track' or 'album')
@@ -19,8 +19,8 @@ export class WishlistService {
   static async toggleWishlistViaAPI(
     trackId: string, 
     fanId: string, 
-    itemType: string = 'track',
-    isRemoving: boolean = true
+    itemType = 'track',
+    isRemoving = true,
   ): Promise<boolean> {
     try {
       Logger.info(`Attempting to ${isRemoving ? 'remove from' : 'add to'} wishlist via API: ${trackId}`);
@@ -50,7 +50,7 @@ export class WishlistService {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: payload.toString(),
-        credentials: 'same-origin'
+        credentials: 'same-origin',
       });
       
       const data = await response.json();
@@ -65,6 +65,7 @@ export class WishlistService {
 
   /**
    * Toggle wishlist with pre-built payload method
+   *
    * @param payload The form data payload
    * @param endpoint The API endpoint to use
    * @returns Promise<boolean> indicating success
@@ -79,7 +80,7 @@ export class WishlistService {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: payload.toString(),
-        credentials: 'same-origin'
+        credentials: 'same-origin',
       });
       
       const data = await response.json();
@@ -94,6 +95,7 @@ export class WishlistService {
 
   /**
    * Toggle wishlist using external payloads for both collect and uncollect
+   *
    * @param isCurrentlyWishlisted Whether the item is currently in the wishlist
    * @param collectPayload Payload for adding to wishlist
    * @param uncollectPayload Payload for removing from wishlist
@@ -104,7 +106,7 @@ export class WishlistService {
     isCurrentlyWishlisted: boolean,
     collectPayload: string,
     uncollectPayload: string,
-    fetchFunction: typeof fetch = fetch
+    fetchFunction: typeof fetch = fetch,
   ): Promise<boolean> {
     try {
       const host = window.location.host;
@@ -122,7 +124,6 @@ export class WishlistService {
 
       const response = await request.json();
       return response.ok === true;
-      
     } catch (error) {
       Logger.error('Error in toggleWishlistWithExternalPayload:', error);
       return false;
@@ -131,6 +132,7 @@ export class WishlistService {
 
   /**
    * Fallback method to find and click wishlist button in the UI
+   *
    * @param currentItem The current wishlist item element (optional)
    * @returns boolean indicating if a button was clicked
    */
@@ -195,7 +197,7 @@ export class WishlistService {
         'a[title*="wishlist"]',
         '.collection-btn',
         'button[title*="Add to wishlist"]',
-        'a[title*="Add to wishlist"]'
+        'a[title*="Add to wishlist"]',
       ];
 
       for (const selector of generalWishlistSelectors) {
@@ -212,7 +214,7 @@ export class WishlistService {
         const wishlistButton = currentItem.querySelector(
           '.wishlisted-msg a, .wishlisted-msg.collection-btn a, ' +
           '.item-collection-controls.wishlisted a, ' + 
-          '[title*="Remove this album from your wishlist"], [title*="Remove this track from your wishlist"]'
+          '[title*="Remove this album from your wishlist"], [title*="Remove this track from your wishlist"]',
         );
         
         if (wishlistButton) {
@@ -232,6 +234,7 @@ export class WishlistService {
 
   /**
    * Update wishlist icons and UI state
+   *
    * @param item The wishlist item to update
    * @param isInWishlist Whether the item is in the wishlist or not
    */
@@ -244,7 +247,7 @@ export class WishlistService {
       
       // Update heart icons if any
       if (heartIcons.length > 0) {
-        heartIcons.forEach(icon => {
+        heartIcons.forEach((icon) => {
           // Toggle filled/unfilled classes based on wishlist state
           if (isInWishlist) {
             icon.classList.remove('unfilled', 'empty');
@@ -259,7 +262,6 @@ export class WishlistService {
       
       // Set a custom attribute to track state
       item.setAttribute('data-bcwf-wishlisted', isInWishlist ? 'true' : 'false');
-      
     } catch (error) {
       Logger.error('Error updating wishlist icons:', error);
     }
@@ -267,6 +269,7 @@ export class WishlistService {
 
   /**
    * Extract track information from a wishlist item
+   *
    * @param item The wishlist item element
    * @returns Object with track ID, item type, and other metadata
    */
@@ -300,12 +303,13 @@ export class WishlistService {
       trackId,
       itemType,
       hasLink: trackLink !== null,
-      trackLink
+      trackLink,
     };
   }
 
   /**
    * Navigate to track page for wishlist toggle (fallback method)
+   *
    * @param item The wishlist item element
    * @param currentWishlistIndex The current track index
    * @returns boolean indicating if navigation was initiated

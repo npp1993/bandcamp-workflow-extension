@@ -68,7 +68,7 @@ export class TrackController {
       this.isWishlisted,
       this.meta.collect,
       this.meta.uncollect,
-      fetchFunction
+      fetchFunction,
     );
   }
 

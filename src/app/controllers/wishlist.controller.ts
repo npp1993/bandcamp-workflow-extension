@@ -32,7 +32,7 @@ export class WishlistController {
         
         // First, load all wishlist items by clicking the "view all" button
         Logger.info('Initializing wishlist controller - checking if all items need to be loaded...');
-        BandcampFacade.loadAllWishlistItems().then(success => {
+        BandcampFacade.loadAllWishlistItems().then((success) => {
           if (success) {
             Logger.info('All wishlist items are now loaded');
           } else {
@@ -58,7 +58,7 @@ export class WishlistController {
           }
           
           this.hasInitialized = true;
-        }).catch(error => {
+        }).catch((error) => {
           Logger.error('Error loading all wishlist items:', error);
           
           // Fall back to just loading visible items
@@ -91,7 +91,7 @@ export class WishlistController {
         '.carousel-player-inner .controls-extra',
         '.carousel-player-inner .col-4-15.controls-extra',
         '.col.controls-extra',
-        '.col.col-4-15.controls-extra'
+        '.col.col-4-15.controls-extra',
       ];
       
       let controlsContainer: HTMLElement = null;
@@ -135,7 +135,6 @@ export class WishlistController {
 
       // Add the button to the controls container
       controlsContainer.appendChild(streamButton);
-      
     } catch (error) {
       Logger.error('Error adding wishlist controls:', error);
     }

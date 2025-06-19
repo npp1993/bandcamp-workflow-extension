@@ -1,7 +1,7 @@
-import { BandcampFacade } from '../facades/bandcamp.facade';
-import { AudioUtils } from '../utils/audio-utils';
-import { SeekUtils } from '../utils/seek-utils';
-import { Logger } from '../utils/logger';
+import {BandcampFacade} from '../facades/bandcamp.facade';
+import {AudioUtils} from '../utils/audio-utils';
+import {SeekUtils} from '../utils/seek-utils';
+import {Logger} from '../utils/logger';
 
 /**
  * PlaybarController class for handling playbar interactions
@@ -75,11 +75,12 @@ export class PlaybarController {
     });
 
     // Start observing the document for DOM changes
-    observer.observe(document.body, { childList: true, subtree: true });
+    observer.observe(document.body, {childList: true, subtree: true});
   }
 
   /**
    * Handle a click on the playbar
+   *
    * @param e Click event on playbar
    */
   private static handlePlaybarClick = (e: MouseEvent): void => {

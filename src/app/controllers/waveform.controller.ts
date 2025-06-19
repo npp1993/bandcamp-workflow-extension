@@ -1,8 +1,8 @@
-import { WaveformService } from '../services/waveform.service';
-import { BandcampFacade } from '../facades/bandcamp.facade';
-import { AudioUtils } from '../utils/audio-utils';
-import { SeekUtils } from '../utils/seek-utils';
-import { Logger } from '../utils/logger';
+import {WaveformService} from '../services/waveform.service';
+import {BandcampFacade} from '../facades/bandcamp.facade';
+import {AudioUtils} from '../utils/audio-utils';
+import {SeekUtils} from '../utils/seek-utils';
+import {Logger} from '../utils/logger';
 
 /**
  * Controller for waveform integration with Bandcamp pages
@@ -10,9 +10,13 @@ import { Logger } from '../utils/logger';
  */
 export class WaveformController {
   private static currentWaveformContainer: HTMLElement | null = null;
+
   private static isGenerating = false;
+
   private static lastAudioSrc = '';
+
   private static debounceTimer: number | null = null;
+
   private static generationPromise: Promise<void> | null = null;
 
   /**
@@ -42,6 +46,7 @@ export class WaveformController {
 
   /**
    * Check if the current page supports waveform display
+   *
    * @returns True if page supports waveforms
    */
   private static isPageSupported(): boolean {
@@ -83,7 +88,6 @@ export class WaveformController {
           this.debouncedGenerateWaveform(500);
         }
       }, true);
-
     } catch (error) {
       Logger.error('[WaveformController] Error setting up audio event listeners:', error);
     }
@@ -120,7 +124,6 @@ export class WaveformController {
       this.generationPromise = this.performWaveformGeneration(audio.src);
       await this.generationPromise;
       this.generationPromise = null;
-
     } catch (error) {
       Logger.error('[WaveformController] Error in generateWaveformIfNeeded:', error);
       this.generationPromise = null;
@@ -157,7 +160,6 @@ export class WaveformController {
         Logger.warn('[WaveformController] Failed to generate waveform');
         this.showErrorIndicator();
       }
-
     } catch (error) {
       Logger.error('[WaveformController] Error generating waveform:', error);
       this.removeLoadingIndicator();
@@ -169,6 +171,7 @@ export class WaveformController {
 
   /**
    * Insert waveform canvas into the page using BandcampFacade
+   *
    * @param canvas Waveform canvas element
    */
   private static insertWaveform(canvas: HTMLCanvasElement): void {
@@ -199,6 +202,7 @@ export class WaveformController {
 
   /**
    * Set up click-to-seek functionality for the waveform
+   *
    * @param container Waveform container element
    * @param canvas Waveform canvas element
    */
@@ -225,6 +229,7 @@ export class WaveformController {
 
   /**
    * Set up playhead position tracking for the waveform
+   *
    * @param container Waveform container element
    * @param canvas Waveform canvas element
    */
@@ -271,7 +276,6 @@ export class WaveformController {
 
       // Initial update
       updatePlayhead();
-      
     } catch (error) {
       Logger.error('[WaveformController] Error setting up playhead tracking:', error);
     }
@@ -283,10 +287,10 @@ export class WaveformController {
   private static removeCurrentWaveform(): void {
     // Remove any existing waveform containers (including loading and error states)
     const existingContainers = document.querySelectorAll(
-      '.bandcamp-waveform-container, .bandcamp-waveform-loading, .bandcamp-waveform-error'
+      '.bandcamp-waveform-container, .bandcamp-waveform-loading, .bandcamp-waveform-error',
     );
     
-    existingContainers.forEach(container => {
+    existingContainers.forEach((container) => {
       if (container.parentNode) {
         // Clean up event listeners if this is our tracked container
         if (container === this.currentWaveformContainer) {
@@ -492,21 +496,20 @@ export class WaveformController {
           
           // Preload in background without showing UI
           WaveformService.generateWaveformForCurrentAudio()
-            .then(canvas => {
+            .then((canvas) => {
               if (canvas) {
                 Logger.info('[WaveformController] Successfully preloaded waveform data');
               } else {
                 Logger.info('[WaveformController] Preload completed but no waveform generated (likely cached or error)');
               }
             })
-            .catch(error => {
+            .catch((error) => {
               Logger.warn('[WaveformController] Background preload failed (this is non-critical):', error);
             });
         }
       } else {
         Logger.info('[WaveformController] No audio source available for preloading, will generate on demand');
       }
-
     } catch (error) {
       Logger.warn('[WaveformController] Error during preload attempt (non-critical):', error);
     }
@@ -552,16 +555,17 @@ export class WaveformController {
       pageSupported: this.isPageSupported(),
       cacheStats: WaveformService.getCacheStats(),
       existingContainers: document.querySelectorAll(
-        '.bandcamp-waveform-container, .bandcamp-waveform-loading, .bandcamp-waveform-error'
-      ).length
+        '.bandcamp-waveform-container, .bandcamp-waveform-loading, .bandcamp-waveform-error',
+      ).length,
     };
   }
 
   /**
    * Debounced waveform generation to prevent multiple simultaneous generations
+   *
    * @param delay Optional delay in milliseconds (default: 300ms)
    */
-  private static debouncedGenerateWaveform(delay: number = 300): void {
+  private static debouncedGenerateWaveform(delay = 300): void {
     // Clear any existing timer
     if (this.debounceTimer !== null) {
       clearTimeout(this.debounceTimer);

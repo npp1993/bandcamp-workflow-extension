@@ -5,6 +5,7 @@ import {AlbumOnlyUtils} from './utils/album-only-utils';
 
 /**
  * Checks if the current URL contains the add_to_cart parameter
+ *
  * @returns boolean True if add_to_cart parameter is present and set to 'true'
  */
 function hasAddToCartParameter(): boolean {
@@ -37,7 +38,7 @@ function handleAddToCart() {
         Logger.info('On a track page, using track-specific workflow to handle album-only restrictions');
         // For track pages, we need to check if only album purchase is available
         // and handle it the same way as when hitting 'C' directly on the track page
-        const { isAlbumOnly } = AlbumOnlyUtils.checkForAlbumOnlyPurchase();
+        const {isAlbumOnly} = AlbumOnlyUtils.checkForAlbumOnlyPurchase();
         
         if (isAlbumOnly) {
           Logger.info('Track page only allows album purchase, ignoring add_to_cart parameter as expected');
@@ -47,7 +48,6 @@ function handleAddToCart() {
         // If no album-only restriction detected, proceed with normal track purchase
         Logger.info('No album-only restriction detected, clicking add to cart button');
         BandcampFacade.clickAddToCartButtonOnCurrentPage();
-        
       } else if (BandcampFacade.isAlbum) {
         Logger.info('On an album page, attempting to add to cart');
         BandcampFacade.clickAddToCartButtonOnCurrentPage();
