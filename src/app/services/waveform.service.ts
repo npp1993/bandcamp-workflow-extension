@@ -223,15 +223,23 @@ export class WaveformService {
   /**
    * Update existing waveform canvas with new progress
    * @param canvas Existing canvas element
-   * @param waveformData Normalized amplitude data
+   * @param waveformData Normalized amplitude data  
    * @param progress Progress ratio (0-1)
    */
   public static updateWaveformProgress(canvas: HTMLCanvasElement, waveformData: number[], progress: number): void {
+    // Skip update if progress hasn't changed significantly (reduce unnecessary renders)
+    const progressPoint = progress * waveformData.length;
+    const lastProgressPoint = (canvas as any)._lastProgressPoint || 0;
+    
+    if (Math.abs(progressPoint - lastProgressPoint) < 0.5) {
+      return; // Skip update if less than 0.5 bars difference
+    }
+    
     const canvasCtx = canvas.getContext('2d')!;
     canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Calculate progress point
-    const progressPoint = progress * waveformData.length;
+    // Cache the progress point to avoid recalculation
+    (canvas as any)._lastProgressPoint = progressPoint;
 
     // Render waveform bars with different colors for played/unplayed
     for (let i = 0; i < waveformData.length; i++) {
