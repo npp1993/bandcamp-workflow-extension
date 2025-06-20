@@ -25,19 +25,24 @@ chrome.runtime.onMessage.addListener((
   sender: chrome.runtime.MessageSender,
   sendResponse: (response: WaveformResponse) => void,
 ): boolean => {
+  Logger.debug('[Background] Received message:', request.contentScriptQuery);
+  
   // Only handle waveform buffer requests
   if (request.contentScriptQuery !== 'renderBuffer') {
+    Logger.debug('[Background] Ignoring message with query:', request.contentScriptQuery);
     return false;
   }
 
   // Validate the request has a URL
   if (!request.url) {
+    Logger.debug('[Background] No URL provided in request');
     sendResponse({error: 'No URL provided in request'});
     return true;
   }
 
   // Use the complete URL as provided (it should already include auth parameters)
   const audioUrl = request.url;
+  Logger.debug('[Background] Fetching audio buffer from:', audioUrl);
 
   // Fetch the audio buffer from the provided URL
   fetch(audioUrl)
@@ -50,6 +55,7 @@ chrome.runtime.onMessage.addListener((
     .then((arrayBuffer) => {
       // Convert ArrayBuffer to array of numbers for message passing
       const dataArray = Array.from(new Uint8Array(arrayBuffer));
+      Logger.debug('[Background] Successfully fetched audio buffer, size:', dataArray.length);
       sendResponse({data: dataArray});
     })
     .catch((error) => {
@@ -62,4 +68,4 @@ chrome.runtime.onMessage.addListener((
 });
 
 // Log background script initialization
-Logger.info('[Background] Bandcamp Workflow Extension background script initialized');
+Logger.debug('[Background] Bandcamp Workflow Extension background script initialized');

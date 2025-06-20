@@ -13,8 +13,8 @@ export class Logger {
     TIMING: 4,
   };
   
-  // Current log level - set to ERROR for minimal logging in production
-  private static currentLogLevel = 3; // ERROR level only
+  // Current log level - set to WARN for production (reduces verbose logging)
+  private static currentLogLevel = this.LOG_LEVELS.WARN;
   
   /**
    * Set the current log level

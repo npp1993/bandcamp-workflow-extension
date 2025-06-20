@@ -42,7 +42,7 @@ export class WaveformService {
         return null;
       }
 
-      Logger.info('[WaveformService] Generating waveform for audio URL:', audio.src);
+      Logger.debug('[WaveformService] Generating waveform for audio URL:', audio.src);
 
       // Check cache first
       const cachedData = this.getCachedWaveformData(streamId);
@@ -100,6 +100,25 @@ export class WaveformService {
   }
 
   /**
+   * Check if extension context is still valid
+   *
+   * @returns True if extension context is valid
+   */
+  private static isExtensionContextValid(): boolean {
+    try {
+      // Try to access chrome runtime
+      if (!chrome?.runtime?.id) {
+        return false;
+      }
+      
+      // Check if we can access the extension ID
+      return chrome.runtime.id !== undefined;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
    * Fetch audio buffer from background script via CORS bypass
    *
    * @param audioUrl Complete audio URL with authentication parameters
@@ -107,28 +126,69 @@ export class WaveformService {
    */
   private static async fetchAudioBuffer(audioUrl: string): Promise<number[] | null> {
     return new Promise((resolve) => {
-      chrome.runtime.sendMessage(
-        {
-          contentScriptQuery: 'renderBuffer',
-          url: audioUrl,
-        },
-        (response: {data?: number[]; error?: string;}) => {
-          if (!response || response.error) {
-            Logger.error('[WaveformService] Failed to fetch audio buffer:', response?.error || 'No response');
-            resolve(null);
-            return;
-          }
+      try {
+        // Check if extension context is still valid
+        if (!this.isExtensionContextValid()) {
+          Logger.warn('[WaveformService] Extension context is no longer valid, cannot fetch audio buffer');
+          resolve(null);
+          return;
+        }
 
-          if (!response.data || !Array.isArray(response.data)) {
-            Logger.error('[WaveformService] Invalid audio buffer response');
-            resolve(null);
-            return;
-          }
+        // Check if chrome runtime is available
+        if (!chrome?.runtime?.sendMessage) {
+          Logger.error('[WaveformService] Chrome runtime not available for message sending');
+          resolve(null);
+          return;
+        }
 
-          Logger.info('[WaveformService] Successfully fetched audio buffer, size:', response.data.length);
-          resolve(response.data);
-        },
-      );
+        // Set up a timeout to prevent hanging requests
+        const timeoutId = setTimeout(() => {
+          Logger.warn('[WaveformService] Audio buffer request timed out');
+          resolve(null);
+        }, 30000); // 30 second timeout
+
+        chrome.runtime.sendMessage(
+          {
+            contentScriptQuery: 'renderBuffer',
+            url: audioUrl,
+          },
+          (response: {data?: number[]; error?: string;}) => {
+            clearTimeout(timeoutId);
+
+            // Check for extension context invalidation
+            if (chrome.runtime.lastError) {
+              Logger.warn('[WaveformService] Extension context invalidated during request:', chrome.runtime.lastError.message);
+              resolve(null);
+              return;
+            }
+
+            // Double-check extension context is still valid after response
+            if (!this.isExtensionContextValid()) {
+              Logger.warn('[WaveformService] Extension context became invalid during request');
+              resolve(null);
+              return;
+            }
+
+            if (!response || response.error) {
+              Logger.error('[WaveformService] Failed to fetch audio buffer:', response?.error || 'No response');
+              resolve(null);
+              return;
+            }
+
+            if (!response.data || !Array.isArray(response.data)) {
+              Logger.error('[WaveformService] Invalid audio buffer response');
+              resolve(null);
+              return;
+            }
+
+            Logger.debug('[WaveformService] Successfully received audio buffer data');
+            resolve(response.data);
+          },
+        );
+      } catch (error) {
+        Logger.error('[WaveformService] Error in fetchAudioBuffer:', error);
+        resolve(null);
+      }
     });
   }
 
@@ -182,7 +242,7 @@ export class WaveformService {
       
       const normalizedData = rmsBuffer.map((value) => value / max);
       
-      Logger.info('[WaveformService] Successfully processed audio buffer into waveform data');
+      Logger.debug('[WaveformService] Successfully processed audio buffer into waveform data');
       return normalizedData;
     } catch (error) {
       Logger.error('[WaveformService] Error processing audio buffer:', error);
@@ -217,7 +277,7 @@ export class WaveformService {
       this.fillBar(canvas, amplitude, i, waveformData.length, color);
     }
 
-    Logger.info('[WaveformService] Successfully rendered waveform canvas');
+    Logger.debug('[WaveformService] Successfully rendered waveform canvas');
     return canvas;
   }
 
@@ -330,7 +390,7 @@ export class WaveformService {
     this.cache.set(cacheKey, data);
     this.cacheTimestamps.set(cacheKey, Date.now());
     
-    Logger.info('[WaveformService] Cached waveform data for:', streamId);
+    Logger.debug('[WaveformService] Cached waveform data for:', streamId);
   }
 
   /**
@@ -346,7 +406,7 @@ export class WaveformService {
       }
     }
     
-    Logger.info('[WaveformService] Cleared expired cache entries');
+    Logger.debug('[WaveformService] Cleared expired cache entries');
   }
 
   /**
@@ -355,7 +415,7 @@ export class WaveformService {
   public static clearCache(): void {
     this.cache.clear();
     this.cacheTimestamps.clear();
-    Logger.info('[WaveformService] Cleared all waveform cache');
+    Logger.debug('[WaveformService] Cleared all waveform cache');
   }
 
   /**

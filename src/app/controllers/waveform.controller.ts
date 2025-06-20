@@ -24,7 +24,7 @@ export class WaveformController {
    */
   public static initialize(): void {
     try {
-      Logger.info('[WaveformController] Initializing waveform functionality');
+      Logger.debug('[WaveformController] Initializing waveform functionality');
       
       // Only initialize on supported page types
       if (!this.isPageSupported()) {
@@ -38,7 +38,7 @@ export class WaveformController {
       // Generate initial waveform if audio is already present
       this.generateWaveformIfNeeded();
 
-      Logger.info('[WaveformController] Waveform functionality initialized');
+      Logger.debug('[WaveformController] Waveform functionality initialized');
     } catch (error) {
       Logger.error('[WaveformController] Error initializing waveform functionality:', error);
     }
@@ -59,13 +59,13 @@ export class WaveformController {
    */
   private static setupAudioEventListeners(): void {
     try {
-      Logger.info('[WaveformController] Setting up audio event listeners');
+      Logger.debug('[WaveformController] Setting up audio event listeners');
 
       // Listen for audio source changes with debouncing
       const checkAudioChanges = () => {
         const audio = AudioUtils.getAudioElement();
         if (audio && audio.src && audio.src !== this.lastAudioSrc) {
-          Logger.info('[WaveformController] Audio source changed, scheduling waveform regeneration');
+          Logger.debug('[WaveformController] Audio source changed, scheduling waveform regeneration');
           this.debouncedGenerateWaveform();
         }
       };
@@ -76,7 +76,7 @@ export class WaveformController {
       // Listen for loadstart events on audio elements (existing and future)
       document.addEventListener('loadstart', (event) => {
         if (event.target instanceof HTMLAudioElement) {
-          Logger.info('[WaveformController] Audio loadstart detected');
+          Logger.debug('[WaveformController] Audio loadstart detected');
           this.debouncedGenerateWaveform(1000);
         }
       }, true);
@@ -84,7 +84,7 @@ export class WaveformController {
       // Listen for play events
       document.addEventListener('play', (event) => {
         if (event.target instanceof HTMLAudioElement) {
-          Logger.info('[WaveformController] Audio play detected');
+          Logger.debug('[WaveformController] Audio play detected');
           this.debouncedGenerateWaveform(500);
         }
       }, true);
@@ -94,13 +94,38 @@ export class WaveformController {
   }
 
   /**
+   * Check if extension context is still valid for waveform operations
+   *
+   * @returns True if extension context is valid
+   */
+  private static isExtensionContextValid(): boolean {
+    try {
+      // Try to access chrome runtime
+      if (!chrome?.runtime?.id) {
+        return false;
+      }
+      
+      // Check if we can access the extension ID
+      return chrome.runtime.id !== undefined;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
    * Generate waveform if conditions are met
    */
   private static async generateWaveformIfNeeded(): Promise<void> {
     try {
+      // Check if extension context is still valid before attempting generation
+      if (!this.isExtensionContextValid()) {
+        Logger.debug('[WaveformController] Extension context is no longer valid, skipping waveform generation');
+        return;
+      }
+
       // If a generation is already in progress, wait for it to complete
       if (this.generationPromise) {
-        Logger.info('[WaveformController] Waveform generation already in progress, waiting for completion');
+        Logger.debug('[WaveformController] Waveform generation already in progress, waiting for completion');
         await this.generationPromise;
         return;
       }
@@ -108,7 +133,7 @@ export class WaveformController {
       // Check if audio is available and ready
       const audio = AudioUtils.getAudioElement();
       if (!audio || !audio.src) {
-        Logger.info('[WaveformController] No audio element or source available');
+        Logger.debug('[WaveformController] No audio element or source available');
         return;
       }
 
@@ -116,7 +141,7 @@ export class WaveformController {
       if (audio.src === this.lastAudioSrc && this.currentWaveformContainer && 
           !this.currentWaveformContainer.classList.contains('bandcamp-waveform-loading') &&
           !this.currentWaveformContainer.classList.contains('bandcamp-waveform-error')) {
-        Logger.info('[WaveformController] Waveform already generated for current audio');
+        Logger.debug('[WaveformController] Waveform already generated for current audio');
         return;
       }
 
@@ -138,7 +163,7 @@ export class WaveformController {
       this.isGenerating = true;
       this.lastAudioSrc = audioSrc;
 
-      Logger.info('[WaveformController] Generating waveform for current audio');
+      Logger.debug('[WaveformController] Generating waveform for current audio');
 
       // Remove existing waveform first
       this.removeCurrentWaveform();
@@ -155,7 +180,7 @@ export class WaveformController {
       if (waveformCanvas) {
         // Insert the waveform into the page
         this.insertWaveform(waveformCanvas);
-        Logger.info('[WaveformController] Successfully generated and inserted waveform');
+        Logger.debug('[WaveformController] Successfully generated and inserted waveform');
       } else {
         Logger.warn('[WaveformController] Failed to generate waveform');
         this.showErrorIndicator();
@@ -194,7 +219,7 @@ export class WaveformController {
       
       this.currentWaveformContainer = container;
 
-      Logger.info('[WaveformController] Waveform inserted below player');
+      Logger.debug('[WaveformController] Waveform inserted below player');
     } catch (error) {
       Logger.error('[WaveformController] Error inserting waveform:', error);
     }
@@ -220,7 +245,7 @@ export class WaveformController {
         const isWishlistPage = BandcampFacade.isWishlistPage;
         SeekUtils.seekToRatio(clampedRatio, isWishlistPage);
         
-        Logger.info('[WaveformController] Seeking to position:', clampedRatio);
+        Logger.debug('[WaveformController] Seeking to position:', clampedRatio);
       } catch (error) {
         Logger.error('[WaveformController] Error in click-to-seek:', error);
       }
@@ -574,6 +599,13 @@ export class WaveformController {
     // Set new timer
     this.debounceTimer = window.setTimeout(() => {
       this.debounceTimer = null;
+      
+      // Check extension context validity before proceeding
+      if (!this.isExtensionContextValid()) {
+        Logger.debug('[WaveformController] Extension context no longer valid, skipping debounced generation');
+        return;
+      }
+      
       this.generateWaveformIfNeeded();
     }, delay);
   }
