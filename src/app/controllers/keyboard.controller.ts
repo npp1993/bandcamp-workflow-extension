@@ -24,7 +24,7 @@ export class KeyboardController {
     // Attach our keyboard handler directly to the document
     document.addEventListener('keydown', this.handleKeyboardEvent);
     
-    Logger.info('Keyboard controller started with direct event handling');
+    Logger.info('Keyboard controller started');
   }
   
   /**
@@ -42,11 +42,8 @@ export class KeyboardController {
           // Only works on album/release pages, not on track or wishlist pages
           if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
             if (BandcampFacade.isAlbum) {
-              Logger.debug('Extension shortcut: q (toggle wishlist on album page)');
               e.preventDefault();
               BandcampFacade.toggleWishlist();
-            } else {
-              Logger.debug('q key pressed but not on album page - ignoring');
             }
           }
           break;
@@ -55,7 +52,6 @@ export class KeyboardController {
           // Only trigger wishlist track toggle if no modifier keys are pressed
           // This allows Command+W (close tab), Ctrl+W, etc. to work normally
           if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
-            Logger.debug('Extension shortcut: w (toggle wishlist track)');
             e.preventDefault();
             this.toggleWishlistTrack();
           }
@@ -65,7 +61,6 @@ export class KeyboardController {
           // Only trigger add to cart functionality if no modifier keys are pressed
           // This allows Command+C (copy), Ctrl+C (copy), etc. to work normally
           if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
-            Logger.debug('Extension shortcut: c (add current track to cart)');
             e.preventDefault();
             BandcampFacade.addCurrentTrackToCart();
           }

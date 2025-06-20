@@ -29,24 +29,18 @@ export class PlaybarController {
   private static attachPlaybarClickHandlers(): void {
     // For album and track pages
     if (BandcampFacade.isAlbum || BandcampFacade.isTrack) {
-      Logger.info('Setting up playbar handlers for album/track page');
-      
       // The main progress bar
       const progressBar = document.querySelector('.progbar_empty, .progbar, .progress');
       if (progressBar) {
-        Logger.info('Found album/track page progress bar');
         progressBar.addEventListener('click', this.handlePlaybarClick);
       }
     }
     
     // Add support for wishlist page playbar
     if (BandcampFacade.isWishlistPage) {
-      Logger.info('Setting up playbar handlers for wishlist page');
-      
       // Look for the carousel player progress bar
       const wishlistProgressBar = document.querySelector('.carousel-player-inner .progress-bar, .carousel-player-inner .progress');
       if (wishlistProgressBar) {
-        Logger.info('Found wishlist page progress bar');
         wishlistProgressBar.addEventListener('click', this.handlePlaybarClick);
       }
       
@@ -66,7 +60,6 @@ export class PlaybarController {
           // Check if a new player was added
           const addedProgressBar = document.querySelector('.carousel-player-inner .progress-bar:not(.click-attached), .carousel-player-inner .progress:not(.click-attached)');
           if (addedProgressBar) {
-            Logger.info('Found dynamically added wishlist player progress bar');
             addedProgressBar.addEventListener('click', this.handlePlaybarClick);
             addedProgressBar.classList.add('click-attached');  // Mark it as processed
           }

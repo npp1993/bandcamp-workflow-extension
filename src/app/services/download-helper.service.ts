@@ -17,8 +17,6 @@ export class DownloadHelperService {
    * Initialize the download helper
    */
   public init(): void {
-    Logger.info('Initiating Download Helper');
-    
     this.createButton();
     this.checkDownloadLinks();
     
@@ -58,8 +56,6 @@ export class DownloadHelperService {
    * Enable the download button when all links are ready
    */
   private enableButton(): void {
-    Logger.info('Enabling download button');
-    
     this.button.disabled = false;
     this.button.textContent = 'Download cURL File';
     
@@ -78,8 +74,6 @@ export class DownloadHelperService {
    * Disable the download button when links are not ready
    */
   private disableButton(): void {
-    Logger.info('Disabling download button');
-    
     // Clone the button to remove event listeners
     if (this.button && this.button.parentNode) {
       const newButton = this.button.cloneNode(true) as HTMLButtonElement;
@@ -111,8 +105,6 @@ export class DownloadHelperService {
     const linksReady = Array.from(allDownloadLinks).every(
       (element) => (element as HTMLElement).style.display !== 'none',
     );
-    
-    Logger.info(`Download links ready: ${linksReady}`);
     
     if (linksReady) {
       this.enableButton();

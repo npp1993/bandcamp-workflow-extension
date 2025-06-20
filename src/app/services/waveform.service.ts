@@ -43,12 +43,10 @@ export class WaveformService {
       }
 
       Logger.info('[WaveformService] Generating waveform for audio URL:', audio.src);
-      Logger.info('[WaveformService] Extracted stream ID for caching:', streamId);
 
       // Check cache first
       const cachedData = this.getCachedWaveformData(streamId);
       if (cachedData) {
-        Logger.info('[WaveformService] Using cached waveform data');
         return this.renderWaveformFromData(cachedData);
       }
 

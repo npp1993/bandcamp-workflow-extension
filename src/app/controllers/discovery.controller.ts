@@ -10,8 +10,6 @@ export class DiscoveryController {
    * Initialize the discovery controller
    */
   public static initialize(): void {
-    Logger.info('Initializing DiscoveryController');
-    
     // Only initialize on discovery pages
     if (!window.location.href.includes('/discover')) {
       return;

@@ -23,8 +23,6 @@ export class WishlistService {
     isRemoving = true,
   ): Promise<boolean> {
     try {
-      Logger.info(`Attempting to ${isRemoving ? 'remove from' : 'add to'} wishlist via API: ${trackId}`);
-      
       const endpoint = isRemoving ? 'uncollect_item_cb' : 'collect_item_cb';
       
       // Create the request payload
@@ -54,7 +52,6 @@ export class WishlistService {
       });
       
       const data = await response.json();
-      Logger.info('Wishlist toggle response:', data);
       
       return data.ok === true;
     } catch (error) {
@@ -72,8 +69,6 @@ export class WishlistService {
    */
   static async toggleWishlistWithPayload(payload: URLSearchParams, endpoint: string): Promise<boolean> {
     try {
-      Logger.info(`Making wishlist request to endpoint: ${endpoint}`);
-      
       const response = await fetch(`https://${window.location.host}/${endpoint}`, {
         method: 'POST',
         headers: {
@@ -84,7 +79,6 @@ export class WishlistService {
       });
       
       const data = await response.json();
-      Logger.info('Wishlist toggle response:', data);
       
       return data.ok === true;
     } catch (error) {
@@ -137,8 +131,6 @@ export class WishlistService {
    * @returns boolean indicating if a button was clicked
    */
   static clickWishlistToggleInUI(currentItem?: HTMLElement): boolean {
-    Logger.info('Attempting to click wishlist toggle in UI');
-    
     try {
       // First, try to find the main wishlist button (for album/release pages)
       const collectItemContainer = document.getElementById('collect-item');
