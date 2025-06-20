@@ -22,7 +22,15 @@ export class Colors {
 
     const background = BandcampFacade.colors.body_color;
     const color = BandcampFacade.colors.bg_color;
-    const contrast = Colors.getContrast(this.convertHexToRgb(color), this.convertHexToRgb(background));
+    const colorRgb = this.convertHexToRgb(color);
+    const backgroundRgb = this.convertHexToRgb(background);
+    
+    if (!colorRgb || !backgroundRgb) {
+      this._fillColor = '#000000'; // fallback color
+      return this._fillColor;
+    }
+    
+    const contrast = Colors.getContrast(colorRgb, backgroundRgb);
 
     if (contrast > 1.6) {
       this._fillColor = color;
@@ -37,7 +45,8 @@ export class Colors {
   }
 
   public static getLoadingColor(): Rgb {
-    return this.convertHexToRgb(BandcampFacade.colors.link_color);
+    const color = this.convertHexToRgb(BandcampFacade.colors.link_color);
+    return color ?? { r: 0, g: 0, b: 0 }; // fallback to black
   }
 
   private static getLuminance(
@@ -67,7 +76,7 @@ export class Colors {
     return (brightest + 0.05) / (darkest + 0.05);
   }
 
-  private static convertHexToRgb(hex: string): Rgb {
+  private static convertHexToRgb(hex: string): Rgb | null {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result ? {
       r: parseInt(result[1], 16),

@@ -94,7 +94,7 @@ export class WishlistController {
         '.col.col-4-15.controls-extra',
       ];
       
-      let controlsContainer: HTMLElement = null;
+      let controlsContainer: HTMLElement | null = null;
       
       // Try to find the player controls
       for (const selector of playerSelectors) {

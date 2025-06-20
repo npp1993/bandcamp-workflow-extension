@@ -1,7 +1,7 @@
 import {PageController} from './controllers/page.controller';
 import {BandcampFacade} from './facades/bandcamp.facade';
-import {Logger} from './utils/logger';
 import {AlbumOnlyUtils} from './utils/album-only-utils';
+import {Logger} from './utils/logger';
 
 /**
  * Checks if the current URL contains the add_to_cart parameter
@@ -16,7 +16,7 @@ function hasAddToCartParameter(): boolean {
 /**
  * Handle add-to-cart functionality when navigating to a release page
  */
-function handleAddToCart() {
+function handleAddToCart(): void {
   Logger.info('Checking for add_to_cart parameter in URL');
   
   // Check for add_to_cart parameter in URL

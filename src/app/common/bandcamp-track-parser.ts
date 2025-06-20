@@ -51,16 +51,31 @@ export class BandcampTrackParser {
   public constructor(doc: Document) {
     this.document = doc;
 
-    this.pageData = this.document.querySelector('#pagedata');
-    this.string = this.pageData.dataset.blob;
+    this.pageData = this.document.querySelector('#pagedata')!;
+    if (!this.pageData) {
+      throw new Error('Page data element not found');
+    }
+    this.string = this.pageData.dataset.blob!;
+    if (!this.string) {
+      throw new Error('Page data blob not found');
+    }
     this.json = JSON.parse(this.string);
 
-    this.meta = this.document.querySelector('meta[name="bc-page-properties"]');
+    this.meta = this.document.querySelector('meta[name="bc-page-properties"]')!;
+    if (!this.meta || !this.meta.content) {
+      throw new Error('Page properties meta tag not found');
+    }
     this.metaContent = JSON.parse(this.meta.content);
 
-    this.script = this.document.querySelector('script[data-referrer-token]');
+    this.script = this.document.querySelector('script[data-referrer-token]')!;
+    if (!this.script) {
+      throw new Error('Referrer token script not found');
+    }
 
-    this.crumbs = this.document.querySelector('#js-crumbs-data');
+    this.crumbs = this.document.querySelector('#js-crumbs-data')!;
+    if (!this.crumbs || !this.crumbs.dataset.crumbs) {
+      throw new Error('Crumbs data element not found');
+    }
     this.crumbsData = JSON.parse(this.crumbs.dataset.crumbs);
 
     this.is_wishlisted = this.json.fan_tralbum_data.is_wishlisted;
@@ -68,11 +83,22 @@ export class BandcampTrackParser {
     this.band_id = this.json.fan_tralbum_data.band_id;
     this.item_id = this.metaContent.item_id;
     this.item_type = 'track';
+    if (!this.script.dataset.referrerToken) {
+      throw new Error('Referrer token not found');
+    }
     this.data_referrer_token = JSON.parse(this.script.dataset.referrerToken);
     this.collectCrumb = this.crumbsData.collect_item_cb;
     this.uncollectCrumb = this.crumbsData.uncollect_item_cb;
 
-    const token = JSON.parse(document.querySelector('script[data-referrer-token]').getAttribute('data-referrer-token'));
+    const tokenScript = document.querySelector('script[data-referrer-token]')!;
+    if (!tokenScript) {
+      throw new Error('Token script element not found');
+    }
+    const tokenAttr = tokenScript.getAttribute('data-referrer-token')!;
+    if (!tokenAttr) {
+      throw new Error('Token attribute not found');
+    }
+    const token = JSON.parse(tokenAttr);
 
     this.collect = new URLSearchParams({
       fan_id: this.fan_id.toString(),

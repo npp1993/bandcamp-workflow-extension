@@ -4,6 +4,8 @@
  */
 
 // Type definitions for background script messaging
+import {Logger} from './utils/logger';
+
 interface WaveformRequest {
   contentScriptQuery: 'renderBuffer';
   url: string; // Complete audio URL with authentication parameters
@@ -23,17 +25,17 @@ chrome.runtime.onMessage.addListener((
   sender: chrome.runtime.MessageSender,
   sendResponse: (response: WaveformResponse) => void,
 ): boolean => {
-  console.log('[Background] Received message:', request.contentScriptQuery);
+  Logger.info('[Background] Received message:', request.contentScriptQuery);
   
   // Only handle waveform buffer requests
   if (request.contentScriptQuery !== 'renderBuffer') {
-    console.log('[Background] Ignoring message with query:', request.contentScriptQuery);
+    Logger.info('[Background] Ignoring message with query:', request.contentScriptQuery);
     return false;
   }
 
   // Validate the request has a URL
   if (!request.url) {
-    console.log('[Background] No URL provided in request');
+    Logger.info('[Background] No URL provided in request');
     sendResponse({error: 'No URL provided in request'});
     return true;
   }
@@ -41,8 +43,8 @@ chrome.runtime.onMessage.addListener((
   // Use the complete URL as provided (it should already include auth parameters)
   const audioUrl = request.url;
   
-  console.log('[Background] Fetching audio buffer from:', audioUrl);
-  console.log('[Background] URL includes auth params:', audioUrl.includes('?'));
+  Logger.info('[Background] Fetching audio buffer from:', audioUrl);
+  Logger.info('[Background] URL includes auth params:', audioUrl.includes('?'));
 
   // Fetch the audio buffer from the provided URL
   fetch(audioUrl)
@@ -55,11 +57,11 @@ chrome.runtime.onMessage.addListener((
     .then((arrayBuffer) => {
       // Convert ArrayBuffer to array of numbers for message passing
       const dataArray = Array.from(new Uint8Array(arrayBuffer));
-      console.log('[Background] Successfully fetched audio buffer, size:', dataArray.length);
+      Logger.info('[Background] Successfully fetched audio buffer, size:', dataArray.length);
       sendResponse({data: dataArray});
     })
     .catch((error) => {
-      console.error('[Background] Error fetching audio buffer:', error);
+      Logger.error('[Background] Error fetching audio buffer:', error);
       sendResponse({error: error.toString()});
     });
 
@@ -68,4 +70,4 @@ chrome.runtime.onMessage.addListener((
 });
 
 // Log background script initialization
-console.log('[Background] Bandcamp Workflow Extension background script initialized');
+Logger.info('[Background] Bandcamp Workflow Extension background script initialized');

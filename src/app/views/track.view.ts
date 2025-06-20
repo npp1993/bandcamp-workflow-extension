@@ -13,8 +13,18 @@ export class TrackView {
 
   constructor(node: HTMLTableRowElement) {
     this.node = node;
-    this.target = this.node.querySelector('.info-col');
-    this.infoLink = this.target.querySelector('.info_link');
+    
+    const targetElement = this.node.querySelector('.info-col');
+    if (!targetElement) {
+      throw new Error('Track info column not found');
+    }
+    this.target = targetElement as HTMLTableRowElement;
+    
+    const infoLinkElement = this.target.querySelector('.info_link');
+    if (!infoLinkElement) {
+      throw new Error('Track info link not found');
+    }
+    this.infoLink = infoLinkElement as HTMLDivElement;
 
     this.applyTargetStyles();
 

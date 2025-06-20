@@ -10,12 +10,12 @@ import {DownloadHelperController} from './download-helper.controller';
 import {WaveformController} from './waveform.controller';
 
 export interface Controllers {
-  speed: SpeedController;
-  copyInfo: CopyInfoController;
-  album: AlbumController;
-  wishlist?: WishlistController;
-  downloadHelper?: DownloadHelperController;
-  waveform?: WaveformController;
+  speed: SpeedController | null;
+  copyInfo: CopyInfoController | null;
+  album: AlbumController | null;
+  wishlist?: WishlistController | null;
+  downloadHelper?: DownloadHelperController | null;
+  waveform?: WaveformController | null;
 }
 
 /**
@@ -76,7 +76,11 @@ export class PageController {
     return new PageController();
   }
 
-  private createSpeedRow() {
+  private createSpeedRow(): void {
+    if (!this.controllers.speed) {
+      return;
+    }
+    
     const grid = new GridLayout();
     grid.populate({
       leftButton: this.controllers.speed.resetButton.node.getNode(),

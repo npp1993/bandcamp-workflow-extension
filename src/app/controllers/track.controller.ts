@@ -27,11 +27,11 @@ export class TrackController {
     this.view = new TrackView(node);
     this.album = album;
 
-    this.anchor = this.view.node.querySelector('.title a');
-
-    if (!this.anchor) {
-      return;
+    const anchorElement = this.view.node.querySelector('.title a');
+    if (!anchorElement) {
+      throw new Error('Track anchor element not found');
     }
+    this.anchor = anchorElement as HTMLAnchorElement;
 
     this.href = this.anchor.href;
 
