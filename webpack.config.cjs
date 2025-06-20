@@ -40,6 +40,13 @@ module.exports = (env) => {
             from: './src/assets',
             to: 'assets',
           },
+          {
+            from: './src/icons',
+            to: 'icons',
+            globOptions: {
+              ignore: ['**/*.sh', '**/*.py'],
+            },
+          },
         ],
       }),
     ],
