@@ -14,6 +14,40 @@ function hasAddToCartParameter(): boolean {
 }
 
 /**
+ * Checks if the current URL contains the wishlist parameter
+ *
+ * @returns boolean True if wishlist parameter is present and set to 'true'
+ */
+function hasWishlistParameter(): boolean {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get('wishlist') === 'true';
+}
+
+/**
+ * Handle wishlist functionality when navigating to a track page
+ */
+function handleWishlist(): void {
+  // Check for wishlist parameter in URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const wishlist = urlParams.get('wishlist');
+  
+  if (wishlist === 'true') {
+    Logger.info('Wishlist parameter detected, will attempt to toggle wishlist for track');
+    
+    // Wait for the page to fully load before attempting to toggle wishlist
+    setTimeout(() => {
+      // Check if we're on a track page
+      if (BandcampFacade.isTrack) {
+        Logger.info('On track page, toggling wishlist');
+        BandcampFacade.toggleWishlist();
+      } else {
+        Logger.info('Not on a track page, skipping wishlist toggle');
+      }
+    }, 2000); // Wait 2 seconds for the page to fully load
+  }
+}
+
+/**
  * Handle add-to-cart functionality when navigating to a release page
  */
 function handleAddToCart(): void {
@@ -55,6 +89,11 @@ window.addEventListener('load', () => {
   // Only call add-to-cart handler if the parameter is detected in the URL
   if (hasAddToCartParameter()) {
     handleAddToCart();
+  }
+  
+  // Only call wishlist handler if the parameter is detected in the URL
+  if (hasWishlistParameter()) {
+    handleWishlist();
   }
   
   Logger.info('Extension initialization completed');

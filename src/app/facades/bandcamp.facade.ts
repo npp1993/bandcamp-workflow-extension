@@ -617,7 +617,12 @@ export class BandcampFacade {
       const success = WishlistService.clickWishlistToggleInUI();
       
       if (!success) {
-        Logger.warn('Could not find appropriate wishlist button to click');
+        Logger.warn('Could not find appropriate wishlist button to click - trying fallback navigation');
+        
+        // If we can't find a wishlist button on the current page, 
+        // try to navigate to the track page with wishlist parameter
+        const currentUrl = window.location.href;
+        AddToCartUtils.openWishlistLinkWithWishlist(currentUrl);
       }
     } catch (error) {
       ErrorHandler.withErrorHandling(() => {

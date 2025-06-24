@@ -1,6 +1,7 @@
 import {Logger} from '../utils/logger';
 import {DOMSelectors} from '../utils/dom-selectors';
 import {AudioUtils} from '../utils/audio-utils';
+import {AddToCartUtils} from '../utils/add-to-cart-utils';
 
 /**
  * Centralized service for all wishlist operations
@@ -51,11 +52,36 @@ export class WishlistService {
         credentials: 'same-origin',
       });
       
+      // Check for 403 Forbidden error indicating insufficient permissions
+      if (response.status === 403) {
+        Logger.warn('403 Forbidden error detected in API call - likely a custom domain permission issue. Falling back to track page navigation with wishlist parameter.');
+        
+        // Get track URL from the current page and open with wishlist parameter
+        const currentUrl = window.location.href;
+        AddToCartUtils.openWishlistLinkWithWishlist(currentUrl);
+        
+        return false; // Return false since we couldn't complete the operation directly
+      }
+      
       const data = await response.json();
       
       return data.ok === true;
     } catch (error) {
       Logger.error('Error toggling wishlist via API:', error);
+      
+      // Check if this is a network error that might indicate permission issues
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        Logger.warn('Network error detected in API call - likely a permission issue. Falling back to track page navigation with wishlist parameter.');
+        
+        try {
+          // Get track URL from the current page and open with wishlist parameter
+          const currentUrl = window.location.href;
+          AddToCartUtils.openWishlistLinkWithWishlist(currentUrl);
+        } catch (fallbackError) {
+          Logger.error('Error in wishlist API fallback:', fallbackError);
+        }
+      }
+      
       return false;
     }
   }
@@ -78,11 +104,36 @@ export class WishlistService {
         credentials: 'same-origin',
       });
       
+      // Check for 403 Forbidden error indicating insufficient permissions
+      if (response.status === 403) {
+        Logger.warn('403 Forbidden error detected in payload call - likely a custom domain permission issue. Falling back to track page navigation with wishlist parameter.');
+        
+        // Get track URL from the current page and open with wishlist parameter
+        const currentUrl = window.location.href;
+        AddToCartUtils.openWishlistLinkWithWishlist(currentUrl);
+        
+        return false; // Return false since we couldn't complete the operation directly
+      }
+      
       const data = await response.json();
       
       return data.ok === true;
     } catch (error) {
       Logger.error('Error toggling wishlist with payload:', error);
+      
+      // Check if this is a network error that might indicate permission issues
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        Logger.warn('Network error detected in payload call - likely a permission issue. Falling back to track page navigation with wishlist parameter.');
+        
+        try {
+          // Get track URL from the current page and open with wishlist parameter
+          const currentUrl = window.location.href;
+          AddToCartUtils.openWishlistLinkWithWishlist(currentUrl);
+        } catch (fallbackError) {
+          Logger.error('Error in wishlist payload fallback:', fallbackError);
+        }
+      }
+      
       return false;
     }
   }
@@ -116,10 +167,35 @@ export class WishlistService {
         body,
       });
 
+      // Check for 403 Forbidden error indicating insufficient permissions
+      if (request.status === 403) {
+        Logger.warn('403 Forbidden error detected - likely a custom domain permission issue. Falling back to track page navigation with wishlist parameter.');
+        
+        // Get track URL from the current page and open with wishlist parameter
+        const currentUrl = window.location.href;
+        AddToCartUtils.openWishlistLinkWithWishlist(currentUrl);
+        
+        return false; // Return false since we couldn't complete the operation directly
+      }
+
       const response = await request.json();
       return response.ok === true;
     } catch (error) {
       Logger.error('Error in toggleWishlistWithExternalPayload:', error);
+      
+      // Check if this is a network error that might indicate permission issues
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        Logger.warn('Network error detected - likely a permission issue. Falling back to track page navigation with wishlist parameter.');
+        
+        try {
+          // Get track URL from the current page and open with wishlist parameter
+          const currentUrl = window.location.href;
+          AddToCartUtils.openWishlistLinkWithWishlist(currentUrl);
+        } catch (fallbackError) {
+          Logger.error('Error in wishlist fallback:', fallbackError);
+        }
+      }
+      
       return false;
     }
   }
@@ -315,7 +391,7 @@ export class WishlistService {
         return false;
       }
       
-      Logger.info('No direct wishlist button found, navigating to track page:', trackInfo.trackLink);
+      Logger.info('No direct wishlist button found, navigating to track page with wishlist parameter:', trackInfo.trackLink);
       
       // Save current position before navigating away
       const audio = AudioUtils.getAudioElement();
@@ -325,8 +401,9 @@ export class WishlistService {
       sessionStorage.setItem('bandcampPlus_lastTrackIndex', currentWishlistIndex.toString());
       sessionStorage.setItem('bandcampPlus_lastTrackTime', currentTime.toString());
       
-      // Navigate to the track page where wishlist toggle will be available
-      window.location.href = trackInfo.trackLink;
+      // Navigate to the track page with wishlist parameter where wishlist toggle will be available
+      const wishlistUrl = AddToCartUtils.addWishlistParameterToUrl(trackInfo.trackLink);
+      window.location.href = wishlistUrl;
       return true;
     } catch (error) {
       Logger.error('Error navigating to track for wishlist toggle:', error);
