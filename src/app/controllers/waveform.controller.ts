@@ -50,8 +50,8 @@ export class WaveformController {
    * @returns True if page supports waveforms
    */
   private static isPageSupported(): boolean {
-    // Support track, album, and wishlist pages
-    return BandcampFacade.isTrack || BandcampFacade.isAlbum || BandcampFacade.isWishlistPage;
+    // Support track and album pages only (not wishlist pages)
+    return BandcampFacade.isTrack || BandcampFacade.isAlbum;
   }
 
   /**
@@ -117,6 +117,12 @@ export class WaveformController {
    */
   private static async generateWaveformIfNeeded(): Promise<void> {
     try {
+      // Double-check that we're not on a wishlist page (additional safety check)
+      if (BandcampFacade.isWishlistPage) {
+        Logger.debug('[WaveformController] Skipping waveform generation on wishlist page');
+        return;
+      }
+
       // Check if extension context is still valid before attempting generation
       if (!this.isExtensionContextValid()) {
         Logger.debug('[WaveformController] Extension context is no longer valid, skipping waveform generation');
