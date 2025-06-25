@@ -20,6 +20,7 @@ Beyond that, it was completely built with VS Code Copilot's Agent Mode.
 - Playback speed adjustment with vinyl and stretched modes
 - Add-to-Cart functionality for quickly adding tracks and albums from your wishlist to your cart from the wishlist, release pages, or track pages
 - Automatic loading of all wishlist items
+- Always play first track on release page (as opposed to a featured track)
 
 ## Keyboard Shortcuts
 

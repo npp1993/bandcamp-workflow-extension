@@ -583,30 +583,75 @@ export class BandcampFacade {
   }
 
   public static playFirstTrack(): void {
-    const tracks = BandcampFacade.trackTable;
+    try {
+      Logger.info('=== PLAY FIRST TRACK ANALYSIS START ===');
+      
+      const tracks = BandcampFacade.trackTable;
 
-    if (!tracks) {
-      return;
+      if (!tracks) {
+        Logger.warn('No track table found for playFirstTrack');
+        Logger.info('=== PLAY FIRST TRACK ANALYSIS END (no track table) ===');
+        return;
+      }
+
+      Logger.info(`Track table found with ${tracks.children.length} children`);
+      const firstRow = tracks?.children[0]?.children[0] as HTMLTableRowElement;
+
+      if (!firstRow) {
+        Logger.warn('No first track row found');
+        Logger.info('=== PLAY FIRST TRACK ANALYSIS END (no first row) ===');
+        return;
+      }
+
+      Logger.info(`First row found: ${firstRow.className}`);
+      const firstPlayButton = firstRow?.children[0]?.children[0]
+        ?.children[0] as HTMLDivElement;
+
+      if (!firstPlayButton) {
+        Logger.warn('No first track play button found');
+        Logger.info(`First row structure: children[0]=${firstRow.children[0]?.tagName}, children[0].children[0]=${firstRow.children[0]?.children[0]?.tagName}`);
+        Logger.info('=== PLAY FIRST TRACK ANALYSIS END (no play button found - will use fallback) ===');
+        
+        // Fallback: try to click the main play button
+        try {
+          const mainPlayButton = this.getPlay();
+          if (mainPlayButton) {
+            Logger.warn('FALLBACK: clicking main play button instead of first track button');
+            mainPlayButton.click();
+          }
+        } catch (fallbackError) {
+          Logger.error('Error in playFirstTrack fallback:', fallbackError);
+        }
+        return;
+      }
+
+      Logger.info(`First track play button found: ${firstPlayButton.className}`);
+      
+      // If the first track is already playing, don't click it again
+      if (firstPlayButton.classList.contains('playing')) {
+        Logger.info('First track is already playing');
+        Logger.info('=== PLAY FIRST TRACK ANALYSIS END (already playing) ===');
+        return;
+      }
+
+      Logger.info('Clicking FIRST TRACK play button (not main play button)');
+      firstPlayButton.click();
+      Logger.info('=== PLAY FIRST TRACK ANALYSIS END (success) ===');
+    } catch (error) {
+      Logger.error('Error in playFirstTrack:', error);
+      
+      // Fallback: try to click the main play button
+      try {
+        const mainPlayButton = this.getPlay();
+        if (mainPlayButton) {
+          Logger.warn('FALLBACK: clicking main play button due to error');
+          mainPlayButton.click();
+        }
+      } catch (fallbackError) {
+        Logger.error('Error in playFirstTrack fallback:', fallbackError);
+      }
+      Logger.info('=== PLAY FIRST TRACK ANALYSIS END (error fallback) ===');
     }
-
-    const firstRow = tracks?.children[0]?.children[0] as HTMLTableRowElement;
-
-    if (!firstRow) {
-      return;
-    }
-
-    const firstPlayButton = firstRow?.children[0]?.children[0]
-      ?.children[0] as HTMLDivElement;
-
-    if (!firstPlayButton) {
-      return;
-    }
-
-    if (firstPlayButton.classList.contains('playing')) {
-      return;
-    }
-
-    firstPlayButton.click();
   }
 
   public static toggleWishlist(): void {
@@ -2094,8 +2139,60 @@ export class BandcampFacade {
       // Set the flag to indicate a toggle is in progress
       this._playPauseInProgress = true;
 
+      // Add comprehensive logging for release page behavior analysis
+      Logger.info('=== PLAY BUTTON ANALYSIS START ===');
+      Logger.info(`Page type - isAlbum: ${this.isAlbum}, isTrack: ${this.isTrack}, isWishlistPage: ${this.isWishlistPage}`);
+      Logger.info(`Current URL: ${window.location.href}`);
+      
+      // Log audio element state
+      const audio = this.audio || AudioUtils.getAudioElement();
+      if (audio) {
+        Logger.info(`Audio element found - paused: ${audio.paused}, currentTime: ${audio.currentTime}, src: ${audio.src}`);
+      } else {
+        Logger.info('No audio element found');
+      }
+      
+      // Log current track state
+      const hasCurrentTrack = this.hasCurrentlyPlayingTrack();
+      Logger.info(`Has currently playing track: ${hasCurrentTrack}`);
+      
+      // Log track table and current track info
+      const trackTable = this.trackTable;
+      if (trackTable) {
+        const tracks = this.tracks;
+        Logger.info(`Track table found with ${tracks.length} tracks`);
+        
+        // Find which track (if any) has the 'current_track' class
+        const currentTrackRow = trackTable.querySelector('.track_row_view.current_track');
+        if (currentTrackRow) {
+          const trackIndex = Array.from(tracks).indexOf(currentTrackRow as HTMLTableRowElement);
+          const trackTitle = currentTrackRow.querySelector('.title')?.textContent?.trim();
+          Logger.info(`Current track row found at index ${trackIndex}: "${trackTitle}"`);
+        } else {
+          Logger.info('No current track row found (.track_row_view.current_track)');
+        }
+        
+        // Log first track info for comparison
+        if (tracks.length > 0) {
+          const firstTrack = tracks[0];
+          const firstTrackTitle = firstTrack.querySelector('.title')?.textContent?.trim();
+          Logger.info(`First track in table: "${firstTrackTitle}"`);
+        }
+      } else {
+        Logger.info('No track table found');
+      }
+      
+      // Log play button state
+      const loggedPlayButton = this.getPlay();
+      if (loggedPlayButton) {
+        Logger.info(`Play button found - classes: ${loggedPlayButton.className}, onclick: ${loggedPlayButton.getAttribute('onclick')}`);
+      } else {
+        Logger.info('No play button found');
+      }
+
       // Special handling for wishlist pages
       if (this.isWishlistPage) {
+        Logger.info('=== WISHLIST PAGE HANDLING ===');
         // Check if we need to start playback for the first time (no track selected yet)
         if (this._currentWishlistIndex < 0 && this._wishlistItems.length === 0) {
           Logger.info('Loading wishlist items for first-time playback');
@@ -2140,12 +2237,12 @@ export class BandcampFacade {
           }
           
           // Also try to find and update UI play button if it exists
-          const playButton = document.querySelector('.carousel-player-inner .playbutton, .play-button');
-          if (playButton && playButton.classList) {
+          const wishlistPlayButton = document.querySelector('.carousel-player-inner .playbutton, .play-button');
+          if (wishlistPlayButton && wishlistPlayButton.classList) {
             if ((wishlistAudio as HTMLAudioElement).paused) {
-              playButton.classList.remove('playing');
+              wishlistPlayButton.classList.remove('playing');
             } else {
-              playButton.classList.add('playing');
+              wishlistPlayButton.classList.add('playing');
             }
           }
           
@@ -2154,9 +2251,49 @@ export class BandcampFacade {
       }
       
       // Standard handling for regular Bandcamp pages
+      Logger.info('=== STANDARD PAGE HANDLING ===');
       const playButton = this.getPlay();
       if (playButton) {
+        // Check if we're on album page and no track is currently playing
+        if (this.isAlbum) {
+          Logger.info('=== ALBUM PAGE ANALYSIS ===');
+          
+          // If audio is paused and there's no current track, start from the first track
+          if (audio && audio.paused && !this.hasCurrentlyPlayingTrack()) {
+            Logger.info('No track currently playing on album page, calling playFirstTrack()');
+            this.playFirstTrack();
+            // Clear the flag after starting first track
+            setTimeout(() => {
+              this._playPauseInProgress = false;
+            }, 300);
+            Logger.info('=== PLAY BUTTON ANALYSIS END (playFirstTrack called) ===');
+            return;
+          } else {
+            Logger.info(`Audio state - paused: ${audio?.paused}, hasCurrentTrack: ${this.hasCurrentlyPlayingTrack()}`);
+          }
+        }
+        
         Logger.info('Clicking play button to toggle play/pause');
+        
+        // Log what will happen after clicking the play button
+        setTimeout(() => {
+          const audioAfterClick = this.audio || AudioUtils.getAudioElement();
+          if (audioAfterClick) {
+            Logger.info(`AFTER PLAY BUTTON CLICK - Audio paused: ${audioAfterClick.paused}, currentTime: ${audioAfterClick.currentTime}, src: ${audioAfterClick.src}`);
+          }
+          
+          // Check which track is now current
+          const currentTrackRowAfter = document.querySelector('.track_row_view.current_track');
+          if (currentTrackRowAfter && trackTable) {
+            const trackIndexAfter = Array.from(this.tracks).indexOf(currentTrackRowAfter as HTMLTableRowElement);
+            const trackTitleAfter = currentTrackRowAfter.querySelector('.title')?.textContent?.trim();
+            Logger.info(`AFTER PLAY BUTTON CLICK - Current track is now at index ${trackIndexAfter}: "${trackTitleAfter}"`);
+          } else {
+            Logger.info('AFTER PLAY BUTTON CLICK - No current track found');
+          }
+          Logger.info('=== PLAY BUTTON ANALYSIS END ===');
+        }, 500);
+        
         playButton.click();
         // Clear the flag after a short delay for button click
         setTimeout(() => {
@@ -2164,6 +2301,7 @@ export class BandcampFacade {
         }, 300);
       } else {
         // Try direct audio control as fallback
+        Logger.info('=== FALLBACK AUDIO CONTROL ===');
         const audio = this.audio || AudioUtils.getAudioElement();
         if (audio) {
           if (audio.paused) {
@@ -2193,6 +2331,7 @@ export class BandcampFacade {
           // Clear the flag immediately if we couldn't find anything to toggle
           this._playPauseInProgress = false;
         }
+        Logger.info('=== PLAY BUTTON ANALYSIS END (fallback used) ===');
       }
     } catch (error) {
       Logger.error('Error in togglePlayPause:', error);
@@ -3221,5 +3360,36 @@ export class BandcampFacade {
         }
       }
     }, 350); // Phase 2: Reduced from 500ms to 350ms
+  }
+
+  /**
+   * Check if there's a track currently playing or selected
+   * @returns boolean indicating if a track is currently active
+   */
+  private static hasCurrentlyPlayingTrack(): boolean {
+    try {
+      // Check if there's a track marked as currently playing
+      const currentTrackRow = document.querySelector('.track_row_view.current_track, .track_row_view.playing');
+      if (currentTrackRow) {
+        return true;
+      }
+      
+      // Check if any play button is in playing state
+      const playingButton = document.querySelector('.playbutton.playing');
+      if (playingButton) {
+        return true;
+      }
+      
+      // Check if audio has a valid source and has been played
+      const audio = this.audio || AudioUtils.getAudioElement();
+      if (audio && audio.src && !audio.src.includes('blob:') && audio.currentTime > 0) {
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      Logger.error('Error checking for currently playing track:', error);
+      return false;
+    }
   }
 }
