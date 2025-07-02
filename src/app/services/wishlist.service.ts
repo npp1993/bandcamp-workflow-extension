@@ -2,6 +2,7 @@ import {Logger} from '../utils/logger';
 import {DOMSelectors} from '../utils/dom-selectors';
 import {AudioUtils} from '../utils/audio-utils';
 import {AddToCartUtils} from '../utils/add-to-cart-utils';
+import {NotificationService} from './notification.service';
 
 /**
  * Centralized service for all wishlist operations
@@ -9,191 +10,99 @@ import {AddToCartUtils} from '../utils/add-to-cart-utils';
  */
 export class WishlistService {
   /**
-   * Toggle wishlist status via API call
+   * Unified method to toggle wishlist status via API call
+   * Supports multiple input formats for maximum flexibility
    *
-   * @param trackId The track or album ID
-   * @param fanId The fan ID
-   * @param itemType The type of item ('track' or 'album')
-   * @param isRemoving Whether we're removing (true) or adding (false) the item
+   * @param options Configuration object with one of the following formats:
+   *   - { trackId, fanId, itemType?, isRemoving? } - Build payload from individual parameters
+   *   - { isCurrentlyWishlisted, collectPayload, uncollectPayload, fetchFunction? } - Use string payloads
    * @returns Promise<boolean> indicating success
    */
-  static async toggleWishlistViaAPI(
-    trackId: string, 
-    fanId: string, 
-    itemType = 'track',
-    isRemoving = true,
-  ): Promise<boolean> {
+  static async toggleWishlist(options: {
+    // Format 1: Individual parameters (builds payload internally)
+    trackId?: string;
+    fanId?: string;
+    itemType?: string;
+    isRemoving?: boolean;
+  } | {
+    // Format 2: External string payloads
+    isCurrentlyWishlisted: boolean;
+    collectPayload: string;
+    uncollectPayload: string;
+    fetchFunction?: typeof fetch;
+  }): Promise<boolean> {
     try {
-      const endpoint = isRemoving ? 'uncollect_item_cb' : 'collect_item_cb';
-      
-      // Create the request payload
-      const payload = new URLSearchParams();
-      payload.append('fan_id', fanId.toString());
-      payload.append('item_id', trackId);
-      payload.append('item_type', itemType);
-      payload.append('platform', 'desktop');
-      
-      // Get a CSRF token if available
-      const csrfTokenElement = document.querySelector('meta[name="csrf-token"]');
-      if (csrfTokenElement) {
-        const csrfToken = csrfTokenElement.getAttribute('content');
-        if (csrfToken) {
-          payload.append('csrf_token', csrfToken);
+      const fetchFunction = 'fetchFunction' in options ? options.fetchFunction || fetch : fetch;
+      let url: string;
+      let body: string;
+
+      // Determine which format we're using and prepare the request
+      if ('trackId' in options && options.trackId && 'fanId' in options && options.fanId) {
+        // Format 1: Build payload from individual parameters
+        const { trackId, fanId, itemType = 'track', isRemoving = true } = options;
+        const endpoint = isRemoving ? 'uncollect_item_cb' : 'collect_item_cb';
+        
+        const payload = new URLSearchParams();
+        payload.append('fan_id', fanId.toString());
+        payload.append('item_id', trackId);
+        payload.append('item_type', itemType);
+        payload.append('platform', 'desktop');
+        
+        // Get a CSRF token if available
+        const csrfTokenElement = document.querySelector('meta[name="csrf-token"]');
+        if (csrfTokenElement) {
+          const csrfToken = csrfTokenElement.getAttribute('content');
+          if (csrfToken) {
+            payload.append('csrf_token', csrfToken);
+          }
         }
+        
+        url = `https://${window.location.host}/${endpoint}`;
+        body = payload.toString();
+      } else if ('isCurrentlyWishlisted' in options && 'collectPayload' in options && 'uncollectPayload' in options) {
+        // Format 2: Use external string payloads
+        const { isCurrentlyWishlisted, collectPayload, uncollectPayload } = options;
+        const endpoint = isCurrentlyWishlisted ? 'uncollect_item_cb' : 'collect_item_cb';
+        url = `https://${window.location.host}/${endpoint}`;
+        body = isCurrentlyWishlisted ? uncollectPayload : collectPayload;
+      } else {
+        throw new Error('Invalid options provided to toggleWishlist');
       }
-      
+
       // Make the request
-      const response = await fetch(`https://${window.location.host}/${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: payload.toString(),
-        credentials: 'same-origin',
-      });
-      
-      // Check for 403 Forbidden error indicating insufficient permissions
-      if (response.status === 403) {
-        Logger.warn('403 Forbidden error detected in API call - likely a custom domain permission issue. Falling back to track page navigation with wishlist parameter.');
-        
-        // Get track URL from the current page and open with wishlist parameter
-        const currentUrl = window.location.href;
-        AddToCartUtils.openWishlistLinkWithWishlist(currentUrl);
-        
-        return false; // Return false since we couldn't complete the operation directly
-      }
-      
-      const data = await response.json();
-      
-      return data.ok === true;
-    } catch (error) {
-      Logger.error('Error toggling wishlist via API:', error);
-      
-      // Check if this is a network error that might indicate permission issues
-      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-        Logger.warn('Network error detected in API call - likely a permission issue. Falling back to track page navigation with wishlist parameter.');
-        
-        try {
-          // Get track URL from the current page and open with wishlist parameter
-          const currentUrl = window.location.href;
-          AddToCartUtils.openWishlistLinkWithWishlist(currentUrl);
-        } catch (fallbackError) {
-          Logger.error('Error in wishlist API fallback:', fallbackError);
-        }
-      }
-      
-      return false;
-    }
-  }
-
-  /**
-   * Toggle wishlist with pre-built payload method
-   *
-   * @param payload The form data payload
-   * @param endpoint The API endpoint to use
-   * @returns Promise<boolean> indicating success
-   */
-  static async toggleWishlistWithPayload(payload: URLSearchParams, endpoint: string): Promise<boolean> {
-    try {
-      const response = await fetch(`https://${window.location.host}/${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: payload.toString(),
-        credentials: 'same-origin',
-      });
-      
-      // Check for 403 Forbidden error indicating insufficient permissions
-      if (response.status === 403) {
-        Logger.warn('403 Forbidden error detected in payload call - likely a custom domain permission issue. Falling back to track page navigation with wishlist parameter.');
-        
-        // Get track URL from the current page and open with wishlist parameter
-        const currentUrl = window.location.href;
-        AddToCartUtils.openWishlistLinkWithWishlist(currentUrl);
-        
-        return false; // Return false since we couldn't complete the operation directly
-      }
-      
-      const data = await response.json();
-      
-      return data.ok === true;
-    } catch (error) {
-      Logger.error('Error toggling wishlist with payload:', error);
-      
-      // Check if this is a network error that might indicate permission issues
-      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-        Logger.warn('Network error detected in payload call - likely a permission issue. Falling back to track page navigation with wishlist parameter.');
-        
-        try {
-          // Get track URL from the current page and open with wishlist parameter
-          const currentUrl = window.location.href;
-          AddToCartUtils.openWishlistLinkWithWishlist(currentUrl);
-        } catch (fallbackError) {
-          Logger.error('Error in wishlist payload fallback:', fallbackError);
-        }
-      }
-      
-      return false;
-    }
-  }
-
-  /**
-   * Toggle wishlist using external payloads for both collect and uncollect
-   *
-   * @param isCurrentlyWishlisted Whether the item is currently in the wishlist
-   * @param collectPayload Payload for adding to wishlist
-   * @param uncollectPayload Payload for removing from wishlist
-   * @param fetchFunction Optional custom fetch function (defaults to global fetch)
-   * @returns Promise<boolean> indicating success
-   */
-  static async toggleWishlistWithExternalPayload(
-    isCurrentlyWishlisted: boolean,
-    collectPayload: string,
-    uncollectPayload: string,
-    fetchFunction: typeof fetch = fetch,
-  ): Promise<boolean> {
-    try {
-      const host = window.location.host;
-      const endpoint = isCurrentlyWishlisted ? 'uncollect_item_cb' : 'collect_item_cb';
-      const url = `https://${host}/${endpoint}`;
-      const body = isCurrentlyWishlisted ? uncollectPayload : collectPayload;
-
-      const request = await fetchFunction(url, {
+      const response = await fetchFunction(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body,
+        credentials: 'same-origin',
       });
-
+      
       // Check for 403 Forbidden error indicating insufficient permissions
-      if (request.status === 403) {
-        Logger.warn('403 Forbidden error detected - likely a custom domain permission issue. Falling back to track page navigation with wishlist parameter.');
+      if (response.status === 403) {
+        Logger.warn('403 Forbidden error detected - likely a custom domain permission issue.');
         
-        // Get track URL from the current page and open with wishlist parameter
-        const currentUrl = window.location.href;
-        AddToCartUtils.openWishlistLinkWithWishlist(currentUrl);
+        // Show notification to user suggesting page reload
+        NotificationService.error('Unable to toggle wishlist due to permission restrictions. Please reload the page and try again.');
         
         return false; // Return false since we couldn't complete the operation directly
       }
-
-      const response = await request.json();
-      return response.ok === true;
+      
+      const data = await response.json();
+      return data.ok === true;
     } catch (error) {
-      Logger.error('Error in toggleWishlistWithExternalPayload:', error);
+      Logger.error('Error toggling wishlist:', error);
       
       // Check if this is a network error that might indicate permission issues
       if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-        Logger.warn('Network error detected - likely a permission issue. Falling back to track page navigation with wishlist parameter.');
+        Logger.warn('Network error detected - likely a permission issue.');
         
-        try {
-          // Get track URL from the current page and open with wishlist parameter
-          const currentUrl = window.location.href;
-          AddToCartUtils.openWishlistLinkWithWishlist(currentUrl);
-        } catch (fallbackError) {
-          Logger.error('Error in wishlist fallback:', fallbackError);
-        }
+        // Show notification to user suggesting page reload
+        NotificationService.error('Network error occurred while toggling wishlist. Please reload the page and try again.');
+      } else {
+        // Show generic error notification for other types of errors
+        NotificationService.error('An error occurred while toggling wishlist. Please reload the page and try again.');
       }
       
       return false;

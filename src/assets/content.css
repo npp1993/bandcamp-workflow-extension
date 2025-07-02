@@ -232,3 +232,34 @@
     font-size: 11px;
   }
 }
+
+/**
+ * ------------------------------------------------------------
+ * Toast Notifications
+ * ------------------------------------------------------------
+ */
+#bandcamp-workflow-notifications {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+}
+
+.bandcamp-workflow-notification {
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+}
+
+.bandcamp-workflow-notification:hover {
+  transform: translateX(0) scale(1.02) !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Ensure notifications appear above all Bandcamp content */
+#bandcamp-workflow-notifications * {
+  z-index: 10001 !important;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .bandcamp-workflow-notification {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6) !important;
+  }
+}

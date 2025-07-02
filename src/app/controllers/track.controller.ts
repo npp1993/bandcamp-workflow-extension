@@ -64,12 +64,12 @@ export class TrackController {
     // @ts-expect-error TS2693
     const fetchFunction = typeof content !== 'undefined' ? content?.fetch : fetch;
     
-    return WishlistService.toggleWishlistWithExternalPayload(
-      this.isWishlisted,
-      this.meta.collect,
-      this.meta.uncollect,
+    return WishlistService.toggleWishlist({
+      isCurrentlyWishlisted: this.isWishlisted,
+      collectPayload: this.meta.collect,
+      uncollectPayload: this.meta.uncollect,
       fetchFunction,
-    );
+    });
   }
 
   private render(): void {

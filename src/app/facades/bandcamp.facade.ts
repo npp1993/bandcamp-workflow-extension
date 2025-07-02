@@ -8,6 +8,7 @@ import {ErrorHandler} from '../utils/error-handler';
 import {DOMSelectors} from '../utils/dom-selectors';
 import {AddToCartUtils} from '../utils/add-to-cart-utils';
 import {WishlistService} from '../services/wishlist.service';
+import {NotificationService} from '../services/notification.service';
 
 // Add type definition for window.TralbumData
 declare global {
@@ -662,12 +663,10 @@ export class BandcampFacade {
       const success = WishlistService.clickWishlistToggleInUI();
       
       if (!success) {
-        Logger.warn('Could not find appropriate wishlist button to click - trying fallback navigation');
+        Logger.warn('Could not find appropriate wishlist button to click');
         
-        // If we can't find a wishlist button on the current page, 
-        // try to navigate to the track page with wishlist parameter
-        const currentUrl = window.location.href;
-        AddToCartUtils.openWishlistLinkWithWishlist(currentUrl);
+        // Show notification to user suggesting page reload
+        NotificationService.warning('Unable to find wishlist button on this page.');
       }
     } catch (error) {
       ErrorHandler.withErrorHandling(() => {
@@ -2376,7 +2375,12 @@ export class BandcampFacade {
                 Logger.info(`Found fan ID: ${fanId}, attempting to toggle wishlist via API`);
                 
                 // Use centralized API method - since we're on wishlist page, we want to remove
-                WishlistService.toggleWishlistViaAPI(trackInfo.trackId, fanId.toString(), trackInfo.itemType, true)
+                WishlistService.toggleWishlist({
+                  trackId: trackInfo.trackId,
+                  fanId: fanId.toString(),
+                  itemType: trackInfo.itemType,
+                  isRemoving: true
+                })
                   .then((success: boolean) => {
                     if (success) {
                       Logger.info('Successfully toggled wishlist status via API!');
