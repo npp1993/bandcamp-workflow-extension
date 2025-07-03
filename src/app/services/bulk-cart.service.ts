@@ -293,17 +293,20 @@ export class BulkCartService {
   }
 
   /**
-   * Ensure item is visible on screen, accounting for sticky header
+   * Ensure item is visible on screen, accounting for sticky header and footer
    */
   private static ensureItemVisible(item: HTMLElement): void {
     const itemRect = item.getBoundingClientRect();
     const headerHeight = this.getHeaderHeight();
+    const footerHeight = this.getFooterHeight();
     const viewportHeight = window.innerHeight;
     
-    // Add some padding to ensure item is comfortably visible
-    const padding = 20;
-    const topBoundary = headerHeight + padding;
-    const bottomBoundary = viewportHeight - padding;
+    // Add extra padding when footer is present
+    const headerPadding = 20;
+    const footerPadding = footerHeight > 0 ? 30 : 20; // More padding when footer is visible
+    
+    const topBoundary = headerHeight + headerPadding;
+    const bottomBoundary = viewportHeight - footerHeight - footerPadding;
     
     // Only scroll if item is not fully visible
     let scrollNeeded = false;
@@ -314,7 +317,7 @@ export class BulkCartService {
       scrollOffset = itemRect.top - topBoundary;
       scrollNeeded = true;
     } else if (itemRect.bottom > bottomBoundary) {
-      // Item is below viewport or too close to bottom
+      // Item is below viewport or too close to bottom/footer
       scrollOffset = itemRect.bottom - bottomBoundary;
       scrollNeeded = true;
     }
@@ -353,6 +356,78 @@ export class BulkCartService {
     
     // Use fixed fallback value if we can't find any headers
     return totalHeight > 0 ? totalHeight : 60;
+  }
+
+  /**
+   * Get the height of the bottom footer/player
+   */
+  private static getFooterHeight(): number {
+    // Check for our custom fixed footer first (only if it's visible)
+    const customFooter = document.querySelector('.bandcamp-plus-controls-footer') as HTMLElement;
+    if (customFooter && customFooter.style.display !== 'none') {
+      const rect = customFooter.getBoundingClientRect();
+      if (rect.height > 0) {
+        Logger.info(`Footer detected: custom footer, height: ${rect.height}`);
+        return rect.height;
+      }
+    }
+    
+    // Check for the main carousel player (when music is playing)
+    const carouselPlayer = document.querySelector('.carousel-player') as HTMLElement;
+    if (carouselPlayer) {
+      const rect = carouselPlayer.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      if (rect.bottom >= viewportHeight - 20 && rect.height > 0) {
+        Logger.info(`Footer detected: carousel-player, height: ${rect.height}`);
+        return rect.height;
+      }
+    }
+    
+    // Check for the carousel player inner container
+    const carouselPlayerInner = document.querySelector('.carousel-player-inner') as HTMLElement;
+    if (carouselPlayerInner) {
+      const rect = carouselPlayerInner.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      if (rect.bottom >= viewportHeight - 20 && rect.height > 0) {
+        Logger.info(`Footer detected: carousel-player-inner, height: ${rect.height}`);
+        return rect.height;
+      }
+    }
+    
+    // Check for the Bandcamp player at the bottom of the page
+    const player = document.querySelector('#player') as HTMLElement;
+    if (player) {
+      const playerRect = player.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      if (playerRect.bottom >= viewportHeight - 20 && playerRect.height > 0) {
+        Logger.info(`Footer detected: #player, height: ${playerRect.height}`);
+        return playerRect.height;
+      }
+    }
+    
+    // Check for any sticky footer elements
+    const footerElements = [
+      '.footer.fixed',
+      '.footer.sticky',
+      '.bottom-bar',
+      '.music-player.fixed',
+      '.playbar.fixed'
+    ];
+    
+    for (const selector of footerElements) {
+      const footer = document.querySelector(selector) as HTMLElement;
+      if (footer) {
+        const footerRect = footer.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        if (footerRect.bottom >= viewportHeight - 20 && footerRect.height > 0) {
+          Logger.info(`Footer detected: ${selector}, height: ${footerRect.height}`);
+          return footerRect.height;
+        }
+      }
+    }
+    
+    Logger.info('No footer detected');
+    return 0;
   }
 
   /**

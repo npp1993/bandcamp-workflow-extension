@@ -276,6 +276,32 @@ export class AddToCartUtils {
     // Wait a bit for the dialog to fully render
     setTimeout(() => {
       try {
+        // First check if this is a fixed-price item (no price input needed)
+        const fixedPriceElements = [
+          '.display-price.fixed-price',
+          '.fixed-price',
+          'span.display-price:contains("$")',
+          '[class*="fixed-price"]'
+        ];
+        
+        let isFixedPrice = false;
+        for (const selector of fixedPriceElements) {
+          const element = document.querySelector(selector);
+          if (element && element.textContent?.includes('$')) {
+            isFixedPrice = true;
+            Logger.info('Detected fixed-price item, no price input needed');
+            break;
+          }
+        }
+        
+        // If it's a fixed price item, just click add to cart
+        if (isFixedPrice) {
+          setTimeout(() => {
+            AddToCartUtils.clickAddToCartButton();
+          }, 300);
+          return;
+        }
+        
         // Look for the price input field with multiple possible selectors
         const priceInputSelectors = [
           'input[type="text"][placeholder*="amount"]',
@@ -377,7 +403,11 @@ export class AddToCartUtils {
             AddToCartUtils.clickAddToCartButton();
           }, 300);
         } else {
-          Logger.warn('Could not find price input field in add to cart dialog');
+          Logger.warn('Could not find price input field in add to cart dialog - this might be a fixed-price item or the dialog structure has changed');
+          // Try to click add to cart anyway in case it's a fixed-price item we didn't detect
+          setTimeout(() => {
+            AddToCartUtils.clickAddToCartButton();
+          }, 300);
         }
       } catch (error) {
         ErrorHandler.withErrorHandling(() => {

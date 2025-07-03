@@ -25,6 +25,9 @@ export class WishlistController {
       return;
     }
 
+    // Show the controls footer when on wishlist pages (it will auto-hide if main player is visible)
+    // The footer visibility will be managed by the observer
+
     // Wait for the page to fully load
     setTimeout(() => {
       try {
@@ -95,39 +98,43 @@ export class WishlistController {
         '.col.col-4-15.controls-extra',
       ];
       
-      let controlsContainer: HTMLElement | null = null;
+      // Create a fixed footer for our controls that matches the carousel player styling
+      let controlsContainer = document.querySelector('.bandcamp-plus-controls-footer') as HTMLElement;
       
-      // Try to find the player controls
-      for (const selector of playerSelectors) {
-        const element = document.querySelector(selector) as HTMLElement;
-        if (element) {
-          controlsContainer = element;
-          break;
-        }
-      }
-      
-      // If we couldn't find the player controls, try to find the player itself
       if (!controlsContainer) {
-        const playerElement = document.querySelector('.carousel-player-inner') as HTMLElement;
-        if (playerElement) {
-          // Create a new div to add to the player
-          controlsContainer = document.createElement('div');
-          controlsContainer.className = 'col col-4-15 bandcamp-plus-controls';
-          controlsContainer.style.cssText = 'display: flex; align-items: center; justify-content: center;';
-          
-          // Add it to the player
-          playerElement.appendChild(controlsContainer);
-        } else {
-          Logger.warn('Could not find player element to add controls');
-          return;
-        }
+        // Create a footer that shows only when the main player is not visible
+        controlsContainer = document.createElement('div');
+        controlsContainer.className = 'bandcamp-plus-controls-footer';
+        controlsContainer.style.cssText = `
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          z-index: 999;
+          background-color: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(10px);
+          border-top: 1px solid #d3d3d3;
+          padding: 10px 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          height: 60px;
+          box-sizing: border-box;
+          box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+        `;
+        
+        // Add it to the body
+        document.body.appendChild(controlsContainer);
+        
+        // Set up observer to hide/show footer based on main player visibility
+        this.setupFooterVisibilityObserver(controlsContainer);
       }
 
       // Create our stream button
       const streamButton = document.createElement('button');
       streamButton.className = 'bandcamp-plus-stream-button';
       streamButton.textContent = 'Stream Wishlist';
-      streamButton.style.cssText = 'padding: 8px 15px; margin: 0 5px; cursor: pointer; background-color: #1da0c3; color: white; border: none; border-radius: 4px; font-size: 13px; font-weight: bold;';
+      streamButton.style.cssText = 'padding: 6px 12px; margin: 0 8px; cursor: pointer; background-color: #1da0c3; color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: bold;';
       streamButton.title = 'Stream your wishlist - Press spacebar to play/pause, left/right arrows to navigate';
       
       streamButton.addEventListener('click', () => {
@@ -138,7 +145,7 @@ export class WishlistController {
       const bulkCartButton = document.createElement('button');
       bulkCartButton.className = 'bandcamp-plus-bulk-cart-button';
       bulkCartButton.textContent = 'Bulk Add to Cart';
-      bulkCartButton.style.cssText = 'padding: 8px 15px; margin: 0 5px; cursor: pointer; background-color: #1da0c3; color: white; border: none; border-radius: 4px; font-size: 13px; font-weight: bold;';
+      bulkCartButton.style.cssText = 'padding: 6px 12px; margin: 0 8px; cursor: pointer; background-color: #1da0c3; color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: bold;';
       bulkCartButton.title = 'Add multiple items to cart - Press B key to enter bulk mode';
       
       bulkCartButton.addEventListener('click', () => {
@@ -152,7 +159,7 @@ export class WishlistController {
       const selectAllButton = document.createElement('button');
       selectAllButton.className = 'bandcamp-plus-select-all-button';
       selectAllButton.textContent = 'Select All';
-      selectAllButton.style.cssText = 'padding: 8px 15px; margin: 0 5px; cursor: pointer; background-color: #28a745; color: white; border: none; border-radius: 4px; font-size: 13px; font-weight: bold; display: none;';
+      selectAllButton.style.cssText = 'padding: 6px 12px; margin: 0 8px; cursor: pointer; background-color: #28a745; color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: bold; display: none;';
       selectAllButton.title = 'Select all items - Press A key';
       
       selectAllButton.addEventListener('click', () => {
@@ -163,7 +170,7 @@ export class WishlistController {
       const deselectAllButton = document.createElement('button');
       deselectAllButton.className = 'bandcamp-plus-deselect-all-button';
       deselectAllButton.textContent = 'Deselect All';
-      deselectAllButton.style.cssText = 'padding: 8px 15px; margin: 0 5px; cursor: pointer; background-color: #dc3545; color: white; border: none; border-radius: 4px; font-size: 13px; font-weight: bold; display: none;';
+      deselectAllButton.style.cssText = 'padding: 6px 12px; margin: 0 8px; cursor: pointer; background-color: #dc3545; color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: bold; display: none;';
       deselectAllButton.title = 'Deselect all items - Press D key';
       
       deselectAllButton.addEventListener('click', () => {
@@ -312,5 +319,62 @@ export class WishlistController {
     }
 
     return false;
+  }
+
+  /**
+   * Setup observer to manage footer visibility based on main player state
+   */
+  private setupFooterVisibilityObserver(footer: HTMLElement): void {
+    // Check initial state
+    this.updateFooterVisibility(footer);
+    
+    // Set up a mutation observer to watch for changes in the DOM
+    const observer = new MutationObserver(() => {
+      this.updateFooterVisibility(footer);
+    });
+    
+    // Observe changes to the body and its children
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'style']
+    });
+    
+    // Also check periodically in case the observer misses something
+    setInterval(() => {
+      this.updateFooterVisibility(footer);
+    }, 2000);
+  }
+
+  /**
+   * Update footer visibility based on main player state
+   */
+  private updateFooterVisibility(footer: HTMLElement): void {
+    const mainPlayer = document.querySelector('.carousel-player') as HTMLElement;
+    const playerInner = document.querySelector('.carousel-player-inner') as HTMLElement;
+    
+    // Check if the main player is visible and at the bottom
+    let mainPlayerVisible = false;
+    
+    if (mainPlayer && playerInner) {
+      const rect = mainPlayer.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      
+      // Check if player is visible and positioned at the bottom
+      if (rect.height > 0 && rect.bottom >= viewportHeight - 50) {
+        mainPlayerVisible = true;
+      }
+    }
+    
+    if (mainPlayerVisible) {
+      // Hide our footer when main player is visible
+      footer.style.display = 'none';
+      document.body.style.paddingBottom = '0';
+    } else {
+      // Show our footer when main player is not visible
+      footer.style.display = 'flex';
+      document.body.style.paddingBottom = '60px';
+    }
   }
 }
