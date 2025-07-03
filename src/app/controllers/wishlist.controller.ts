@@ -1,5 +1,6 @@
 import {BandcampFacade} from '../facades/bandcamp.facade';
 import {Logger} from '../utils/logger';
+import {BulkCartService} from '../services/bulk-cart.service';
 
 /**
  * Controller for the wishlist page
@@ -126,15 +127,58 @@ export class WishlistController {
       const streamButton = document.createElement('button');
       streamButton.className = 'bandcamp-plus-stream-button';
       streamButton.textContent = 'Stream Wishlist';
-      streamButton.style.cssText = 'padding: 8px 15px; margin: 0 10px; cursor: pointer; background-color: #1da0c3; color: white; border: none; border-radius: 4px; font-size: 13px; font-weight: bold;';
+      streamButton.style.cssText = 'padding: 8px 15px; margin: 0 5px; cursor: pointer; background-color: #1da0c3; color: white; border: none; border-radius: 4px; font-size: 13px; font-weight: bold;';
       streamButton.title = 'Stream your wishlist - Press spacebar to play/pause, left/right arrows to navigate';
       
       streamButton.addEventListener('click', () => {
         BandcampFacade.startWishlistPlayback();
       });
 
-      // Add the button to the controls container
+      // Create our bulk cart button
+      const bulkCartButton = document.createElement('button');
+      bulkCartButton.className = 'bandcamp-plus-bulk-cart-button';
+      bulkCartButton.textContent = 'Bulk Add to Cart';
+      bulkCartButton.style.cssText = 'padding: 8px 15px; margin: 0 5px; cursor: pointer; background-color: #1da0c3; color: white; border: none; border-radius: 4px; font-size: 13px; font-weight: bold;';
+      bulkCartButton.title = 'Add multiple items to cart - Press B key to enter bulk mode';
+      
+      bulkCartButton.addEventListener('click', () => {
+        this.handleBulkCartAction();
+      });
+
+      // Set the button reference for the service
+      BulkCartService.setBulkButton(bulkCartButton);
+
+      // Create select all button
+      const selectAllButton = document.createElement('button');
+      selectAllButton.className = 'bandcamp-plus-select-all-button';
+      selectAllButton.textContent = 'Select All';
+      selectAllButton.style.cssText = 'padding: 8px 15px; margin: 0 5px; cursor: pointer; background-color: #28a745; color: white; border: none; border-radius: 4px; font-size: 13px; font-weight: bold; display: none;';
+      selectAllButton.title = 'Select all items - Press A key';
+      
+      selectAllButton.addEventListener('click', () => {
+        BulkCartService.selectAllItems();
+      });
+
+      // Create deselect all button
+      const deselectAllButton = document.createElement('button');
+      deselectAllButton.className = 'bandcamp-plus-deselect-all-button';
+      deselectAllButton.textContent = 'Deselect All';
+      deselectAllButton.style.cssText = 'padding: 8px 15px; margin: 0 5px; cursor: pointer; background-color: #dc3545; color: white; border: none; border-radius: 4px; font-size: 13px; font-weight: bold; display: none;';
+      deselectAllButton.title = 'Deselect all items - Press D key';
+      
+      deselectAllButton.addEventListener('click', () => {
+        BulkCartService.deselectAllItems();
+      });
+
+      // Set the additional button references for the service
+      BulkCartService.setSelectAllButton(selectAllButton);
+      BulkCartService.setDeselectAllButton(deselectAllButton);
+
+      // Add the buttons to the controls container
       controlsContainer.appendChild(streamButton);
+      controlsContainer.appendChild(bulkCartButton);
+      controlsContainer.appendChild(selectAllButton);
+      controlsContainer.appendChild(deselectAllButton);
     } catch (error) {
       Logger.error('Error adding wishlist controls:', error);
     }
@@ -182,5 +226,91 @@ export class WishlistController {
     } catch (error) {
       Logger.error('Error hiding loading indicator:', error);
     }
+  }
+
+  /**
+   * Handle bulk cart button action
+   */
+  private handleBulkCartAction(): void {
+    if (BulkCartService.isInBulkMode) {
+      if (BulkCartService.isProcessing) {
+        return; // Already processing
+      }
+      // In bulk mode, start processing selected items
+      BulkCartService.processSelectedItems();
+    } else {
+      // Enter bulk mode
+      const wishlistItems = BandcampFacade.loadWishlistItems();
+      if (wishlistItems.length > 0) {
+        BulkCartService.enterBulkMode(wishlistItems);
+      } else {
+        Logger.warn('No wishlist items found for bulk cart mode');
+      }
+    }
+  }
+
+  /**
+   * Handle keyboard navigation in bulk mode
+   */
+  public static handleBulkModeKeyboard(event: KeyboardEvent): boolean {
+    if (!BulkCartService.isInBulkMode) {
+      return false;
+    }
+
+    switch (event.key.toLowerCase()) {
+      case 'n':
+        event.preventDefault();
+        BulkCartService.navigateNext();
+        return true;
+      case 'p':
+        event.preventDefault();
+        BulkCartService.navigatePrevious();
+        return true;
+      case 'f':
+        event.preventDefault();
+        if (event.type === 'keydown' && !event.repeat) {
+          // F key pressed down - enable continuous selection mode
+          BulkCartService.setFKeyHeld(true);
+          BulkCartService.toggleCurrentSelection();
+        }
+        return true;
+      case 'a':
+        event.preventDefault();
+        BulkCartService.selectAllItems();
+        return true;
+      case 'd':
+        event.preventDefault();
+        BulkCartService.deselectAllItems();
+        return true;
+      case 'escape':
+        event.preventDefault();
+        BulkCartService.exitBulkMode();
+        return true;
+      case 'b':
+        event.preventDefault();
+        if (!BulkCartService.isProcessing) {
+          BulkCartService.processSelectedItems();
+        }
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * Handle keyboard key up events in bulk mode
+   */
+  public static handleBulkModeKeyUp(event: KeyboardEvent): boolean {
+    if (!BulkCartService.isInBulkMode) {
+      return false;
+    }
+
+    if (event.key.toLowerCase() === 'f') {
+      // F key released - disable continuous selection mode
+      BulkCartService.setFKeyHeld(false);
+      return true;
+    }
+
+    return false;
   }
 }

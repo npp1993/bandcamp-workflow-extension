@@ -1,7 +1,9 @@
 import {BandcampFacade} from '../facades/bandcamp.facade';
 import {TrackController} from './track.controller';
+import {WishlistController} from './wishlist.controller';
 import {Controllers} from './page.controller';
 import {Logger} from '../utils/logger';
+import {BulkCartService} from '../services/bulk-cart.service';
 
 /**
  * KeyboardController class handles keyboard shortcuts for the extension
@@ -20,9 +22,11 @@ export class KeyboardController {
     
     // Clear any existing event listeners (in case there are duplicates)
     document.removeEventListener('keydown', this.handleKeyboardEvent);
+    document.removeEventListener('keyup', this.handleKeyUpEvent);
     
-    // Attach our keyboard handler directly to the document
+    // Attach our keyboard handlers directly to the document
     document.addEventListener('keydown', this.handleKeyboardEvent);
+    document.addEventListener('keyup', this.handleKeyUpEvent);
     
     Logger.info('Keyboard controller started');
   }
@@ -34,8 +38,27 @@ export class KeyboardController {
     // Only process keyboard events when not in input fields
     if (!['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as Element).tagName) && 
         !(e.target as HTMLElement).isContentEditable) {
+      
+      // First check if we're in bulk mode and handle bulk mode navigation
+      if (BulkCartService.isInBulkMode) {
+        const handled = WishlistController.handleBulkModeKeyboard(e);
+        if (handled) {
+          return;
+        }
+      }
+      
       // Handle our specific shortcut keys
       switch (e.key.toLowerCase()) {
+        case 'b':
+          // Only trigger bulk mode if no modifier keys are pressed and we're on wishlist page
+          if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+            if (BandcampFacade.isWishlistPage) {
+              e.preventDefault();
+              this.handleBulkMode();
+            }
+          }
+          break;
+          
         case 'q':
           // Only trigger wishlist toggle if no modifier keys are pressed
           // This allows Command+Q (quit), Ctrl+Q, etc. to work normally
@@ -86,7 +109,8 @@ export class KeyboardController {
         case 'p':
           // Check for shift modifier for first track functionality
           // Only trigger if no Command/Ctrl keys are pressed (allow Command+P for print)
-          if (!e.metaKey && !e.ctrlKey && !e.altKey) {
+          // Skip if in bulk mode (bulk mode handles 'p' for navigation)
+          if (!e.metaKey && !e.ctrlKey && !e.altKey && !BulkCartService.isInBulkMode) {
             e.preventDefault();
             if (e.shiftKey) {
               BandcampFacade.playFirstTrack();
@@ -99,7 +123,8 @@ export class KeyboardController {
         case 'n':
           // Only trigger next track if no modifier keys are pressed
           // This allows Command+N (new window), Ctrl+N, etc. to work normally
-          if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+          // Skip if in bulk mode (bulk mode handles 'n' for navigation)
+          if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey && !BulkCartService.isInBulkMode) {
             e.preventDefault();
             this.handleNextTrack();
           }
@@ -154,6 +179,21 @@ export class KeyboardController {
             }
           }
           break;
+      }
+    }
+  }
+
+  /**
+   * Main keyboard keyup event handler
+   */
+  private static handleKeyUpEvent = (e: KeyboardEvent): void => {
+    // Only process keyboard events when not in input fields
+    if (!['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as Element).tagName) && 
+        !(e.target as HTMLElement).isContentEditable) {
+      
+      // Handle bulk mode keyup events (specifically for F key release)
+      if (BulkCartService.isInBulkMode) {
+        WishlistController.handleBulkModeKeyUp(e);
       }
     }
   }
@@ -221,6 +261,26 @@ export class KeyboardController {
       // Use optimized release page navigation with Phase 2 improvements
       BandcampFacade.playNextReleaseTrack();
       Logger.timing('Next track navigation initiated', startTime);
+    }
+  }
+
+  /**
+   * Handle bulk mode toggle
+   */
+  private static handleBulkMode() {
+    if (BulkCartService.isInBulkMode) {
+      if (!BulkCartService.isProcessing) {
+        // Start processing selected items
+        BulkCartService.processSelectedItems();
+      }
+    } else {
+      // Enter bulk mode
+      const wishlistItems = BandcampFacade.loadWishlistItems();
+      if (wishlistItems.length > 0) {
+        BulkCartService.enterBulkMode(wishlistItems);
+      } else {
+        Logger.warn('No wishlist items found for bulk cart mode');
+      }
     }
   }
 }

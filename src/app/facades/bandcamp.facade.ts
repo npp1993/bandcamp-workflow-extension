@@ -3207,7 +3207,7 @@ export class BandcampFacade {
       return;
     }
     
-    Logger.info(`[Phase 2 Optimization] ${category}: ${timeSavedMs}ms saved`);
+    Logger.timing(`[Phase 2 Optimization] ${category}: ${timeSavedMs}ms saved`);
     
     // Accumulate metrics by category
     switch (category) {
