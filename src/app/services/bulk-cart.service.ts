@@ -162,7 +162,7 @@ export class BulkCartService {
 
       // Small delay between items to avoid overwhelming the browser
       if (i < selectedArray.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
     }
 
