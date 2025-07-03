@@ -1000,7 +1000,6 @@ export class BandcampFacade {
       // Store the track ID as a data attribute on the item element
       if (trackId) {
         item.setAttribute('data-track-id', trackId);
-        Logger.info(`Successfully extracted track ID for item ${index}: ${trackId}`);
       } else {
         // Generate a fallback ID
         const uniqueId = `generated-${index}-${Date.now()}`;
@@ -1972,13 +1971,6 @@ export class BandcampFacade {
   }
   
   /**
-   * Click the add to cart button on the current page
-   */
-  public static clickAddToCartButtonOnCurrentPage(): void {
-    AddToCartUtils.clickAddToCartButtonOnCurrentPage();
-  }
-
-  /**
    * Add the current track to cart
    */
   public static addCurrentTrackToCart(): void {
@@ -1997,77 +1989,15 @@ export class BandcampFacade {
         if (currentItem) {
           Logger.info('c key detected - adding current track to cart from wishlist');
           
-          // First priority: Check the now-playing section which has accurate links for the current track
-          const nowPlaying = document.querySelector('.now-playing');
-          if (nowPlaying) {
-            Logger.info('Found now-playing section, checking for direct add to cart links');
-            
-            // Look for the add-to-cart link in the now-playing section which should point to the individual track
-            const nowPlayingAddToCartLink = AddToCartUtils.findAddToCartLinkInContainer(nowPlaying as HTMLElement);
-            if (nowPlayingAddToCartLink) {
-              Logger.info('Found add to cart link in now-playing section, using this');
-              const href = (nowPlayingAddToCartLink as HTMLAnchorElement).href;
-              AddToCartUtils.openAddToCartLinkWithCart(href);
-              return;
-            }
-            
-            // If no add to cart link, try the track URL from the title
-            const nowPlayingTrackLink = nowPlaying.querySelector('.title');
-            if (nowPlayingTrackLink) {
-              const trackLinkParent = nowPlayingTrackLink.closest('a');
-              if (trackLinkParent) {
-                Logger.info('Found track link in now-playing section, using this instead');
-                const href = (trackLinkParent as HTMLAnchorElement).href;
-                AddToCartUtils.openAddToCartLinkWithCart(href);
-                return;
-              }
-            }
-          }
-          
-          // Look for add to cart links in the current item
-          const addToCartLink = AddToCartUtils.findAddToCartLinkInContainer(currentItem);
-          
-          if (addToCartLink) {
-            Logger.info('Found add to cart link, opening it in new tab');
-            const href = (addToCartLink as HTMLAnchorElement).href;
-            AddToCartUtils.openAddToCartLinkWithCart(href);
-            return;
-          }
-          
-          // If no direct add to cart link in the item, try to find the track/album URL
-          // Prioritize track links over album links
-          const trackLink = DOMSelectors.findOneWithSelectors<HTMLAnchorElement>(DOMSelectors.ALBUM_TRACK_LINKS, currentItem);
-          
-          if (trackLink) {
-            // Get the href and add add_to_cart parameter
-            const href = (trackLink as HTMLAnchorElement).href;
-            Logger.info('Opening track page with add_to_cart parameter in new tab:', href);
-            AddToCartUtils.openAddToCartLinkWithCart(href);
-            return;
-          }
-          
-          // If we can't find a track/album link, try to extract it from data attributes
-          const trackUrl = currentItem.getAttribute('data-track-url') || 
-                          currentItem.getAttribute('data-album-url') || 
-                          currentItem.getAttribute('data-track-href');
-          if (trackUrl) {
-            Logger.info('Opening track URL from data attribute with add_to_cart parameter in new tab:', trackUrl);
-            AddToCartUtils.openAddToCartLinkWithCart(trackUrl);
-            return;
-          }
-          
-          // Last attempt - look for any link that might lead to the track page
-          const anyLink = currentItem.querySelector('a:not([href*="javascript"])');
-          if (anyLink) {
-            const href = (anyLink as HTMLAnchorElement).href;
-            if (href && (href.includes('bandcamp.com') || href.startsWith('/'))) {
-              Logger.info('Opening potentially related page with add_to_cart parameter in new tab:', href);
-              AddToCartUtils.openAddToCartLinkWithCart(href);
-              return;
-            }
-          }
-          
-          Logger.warn('Could not find any suitable link to the track page in the current wishlist item');
+          // Use the shared method with now-playing check enabled for the current track
+          AddToCartUtils.addWishlistItemToCart(currentItem, {
+            checkNowPlaying: true,
+            logPrefix: 'c key detected - adding current track to cart from wishlist',
+            closeTabAfterAdd: false
+          }).catch((error) => {
+            Logger.error('Failed to add current track to cart:', error);
+          });
+          return;
         } else {
           Logger.warn('Current wishlist item not found');
         }
@@ -2099,7 +2029,7 @@ export class BandcampFacade {
       }
       
       // Fallback: add the entire album to cart if no specific track is playing
-      this.clickAddToCartButtonOnCurrentPage();
+      AddToCartUtils.clickAddToCartButtonOnCurrentPage();
     } else if (this.isTrack) {
       // For individual track pages, first check if only album purchase is available
       Logger.info('c key detected on track page - checking purchase options');
@@ -2113,11 +2043,11 @@ export class BandcampFacade {
       
       // If no album-only indicator found, proceed with normal track purchase
       Logger.info('No album-only restriction detected, clicking add to cart button to open dialog');
-      this.clickAddToCartButtonOnCurrentPage();
+      AddToCartUtils.clickAddToCartButtonOnCurrentPage();
     } else {
       // Fallback for other page types
       Logger.info('c key detected on unsupported page type - attempting default add to cart action');
-      this.clickAddToCartButtonOnCurrentPage();
+      AddToCartUtils.clickAddToCartButtonOnCurrentPage();
     }
   }
 

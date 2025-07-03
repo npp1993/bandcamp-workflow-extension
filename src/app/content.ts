@@ -2,6 +2,17 @@ import {PageController} from './controllers/page.controller';
 import {BandcampFacade} from './facades/bandcamp.facade';
 import {AlbumOnlyUtils} from './utils/album-only-utils';
 import {Logger} from './utils/logger';
+import {AddToCartUtils} from './utils/add-to-cart-utils';
+
+/**
+ * Checks if the current URL contains the close_tab_after_add parameter
+ *
+ * @returns boolean True if close_tab_after_add parameter is present and set to 'true'
+ */
+function hasCloseTabAfterAddParameter(): boolean {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get('close_tab_after_add') === 'true';
+}
 
 /**
  * Checks if the current URL contains the add_to_cart parameter
@@ -54,6 +65,7 @@ function handleAddToCart(): void {
   // Check for add_to_cart parameter in URL
   const urlParams = new URLSearchParams(window.location.search);
   const addToCart = urlParams.get('add_to_cart');
+  const closeTabAfterAdd = hasCloseTabAfterAddParameter();
   
   if (addToCart === 'true') {
     Logger.info('Add-to-cart parameter detected, will attempt to purchase track/album');
@@ -68,15 +80,41 @@ function handleAddToCart(): void {
         
         if (isAlbumOnly) {
           Logger.info('Track page only allows album purchase, ignoring add_to_cart parameter as expected');
+          if (closeTabAfterAdd) {
+            Logger.info('Closing tab due to close_tab_after_add parameter');
+            window.close();
+          }
           return;
         }
         
         // If no album-only restriction detected, proceed with normal track purchase
-        BandcampFacade.clickAddToCartButtonOnCurrentPage();
+        AddToCartUtils.clickAddToCartButtonOnCurrentPage();
+        
+        // Close tab after add to cart if requested
+        if (closeTabAfterAdd) {
+          // Wait a bit for the add to cart action to complete
+          setTimeout(() => {
+            Logger.info('Closing tab due to close_tab_after_add parameter');
+            window.close();
+          }, 3000); // Wait 3 seconds for add to cart to process
+        }
       } else if (BandcampFacade.isAlbum) {
-        BandcampFacade.clickAddToCartButtonOnCurrentPage();
+        AddToCartUtils.clickAddToCartButtonOnCurrentPage();
+        
+        // Close tab after add to cart if requested
+        if (closeTabAfterAdd) {
+          // Wait a bit for the add to cart action to complete
+          setTimeout(() => {
+            Logger.info('Closing tab due to close_tab_after_add parameter');
+            window.close();
+          }, 3000); // Wait 3 seconds for add to cart to process
+        }
       } else {
         Logger.info('Not on a release page, skipping add to cart button click');
+        if (closeTabAfterAdd) {
+          Logger.info('Closing tab due to close_tab_after_add parameter');
+          window.close();
+        }
       }
     }, 2000); // Wait 2 seconds for the page to fully load
   }

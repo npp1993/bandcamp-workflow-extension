@@ -1,6 +1,5 @@
 import {Logger} from '../utils/logger';
 import {AddToCartUtils} from '../utils/add-to-cart-utils';
-import {DOMSelectors} from '../utils/dom-selectors';
 
 /**
  * Service for handling bulk cart operations on wishlist items
@@ -431,27 +430,14 @@ export class BulkCartService {
   }
 
   /**
-   * Add item to cart using existing functionality
+   * Add item to cart using the shared AddToCartUtils method
+   * This ensures consistency with the 'c' key functionality
    */
   private static async addItemToCart(item: HTMLElement): Promise<void> {
-    return new Promise((resolve, reject) => {
-      try {
-        // Find the track/album link
-        const trackLink = DOMSelectors.findOneWithSelectors<HTMLAnchorElement>(
-          DOMSelectors.ALBUM_TRACK_LINKS, 
-          item
-        );
-
-        if (trackLink && trackLink.href) {
-          Logger.info('Opening item for cart addition:', trackLink.href);
-          AddToCartUtils.openAddToCartLinkWithCart(trackLink.href);
-          resolve();
-        } else {
-          reject(new Error('No track link found for item'));
-        }
-      } catch (error) {
-        reject(error);
-      }
+    return AddToCartUtils.addWishlistItemToCart(item, {
+      checkNowPlaying: false,
+      logPrefix: 'Adding item to cart via bulk mode',
+      closeTabAfterAdd: true
     });
   }
 

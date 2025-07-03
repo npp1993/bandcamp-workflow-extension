@@ -1,6 +1,6 @@
 # Bandcamp Workflow Extension
 
-A browser extension for [Bandcamp](https://www.bandcamp.com/) that adds numerous features and keyboard shortcuts to improve your music browsing workflow.
+A browser extension for [Bandcamp](https://www.bandcamp.com/) that adds numerous features and vim-style keybindings to improve your music browsing workflow.
 
 ## Acknowledgments
 
@@ -14,8 +14,8 @@ Beyond that, it was completely built with VS Code Copilot's Agent Mode.
 
 ## Features
 
+- Vim-style keybindings to greatly enhance browsing and purchasing workflow while using Bandcamp
 - Wishlist individual tracks directly from release pages
-- Intuitive keyboard shortcuts for navigating within and between tracks
 - Streamlined wishlist management
 - Playback speed adjustment with vinyl and stretched modes
 - Add-to-Cart functionality for quickly adding tracks and albums from your wishlist to your cart from the wishlist, release pages, or track pages
