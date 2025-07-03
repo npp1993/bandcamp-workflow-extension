@@ -277,20 +277,89 @@ export class AddToCartUtils {
     setTimeout(() => {
       try {
         // First check if this is a fixed-price item (no price input needed)
-        const fixedPriceElements = [
+        let isFixedPrice = false;
+        
+        // Check for explicit fixed-price indicators
+        const fixedPriceSelectors = [
           '.display-price.fixed-price',
           '.fixed-price',
-          'span.display-price:contains("$")',
           '[class*="fixed-price"]'
         ];
         
-        let isFixedPrice = false;
-        for (const selector of fixedPriceElements) {
+        for (const selector of fixedPriceSelectors) {
           const element = document.querySelector(selector);
-          if (element && element.textContent?.includes('$')) {
+          if (element) {
             isFixedPrice = true;
-            Logger.info('Detected fixed-price item, no price input needed');
+            Logger.info('Detected fixed-price item by fixed-price class');
             break;
+          }
+        }
+        
+        // Check for NYP (name-your-price) indicators - these are NOT fixed price
+        if (!isFixedPrice) {
+          const nypIndicators = [
+            '.nyp-symbol',
+            '.nyp-wrapper',
+            '.nyp-summary',
+            '[class*="nyp"]',
+            'label[for*="userPrice"]',
+            'input[id*="userPrice"]'
+          ];
+          
+          let isNYP = false;
+          for (const selector of nypIndicators) {
+            const element = document.querySelector(selector);
+            if (element) {
+              isNYP = true;
+              Logger.info('Detected name-your-price (NYP) item - will fill minimum price');
+              break;
+            }
+          }
+          
+          // Also check for text indicators of NYP
+          if (!isNYP) {
+            const pageText = document.body.textContent || '';
+            const nypTextPatterns = [
+              'or more',
+              'minimum',
+              'Enter amount',
+              'name your price',
+              'pay what you want'
+            ];
+            
+            for (const pattern of nypTextPatterns) {
+              if (pageText.toLowerCase().includes(pattern.toLowerCase())) {
+                isNYP = true;
+                Logger.info(`Detected NYP item by text pattern: "${pattern}"`);
+                break;
+              }
+            }
+          }
+          
+          // If we found NYP indicators, this is definitely NOT a fixed price item
+          if (isNYP) {
+            isFixedPrice = false;
+          } else {
+            // Only check for display-price elements if we haven't found NYP indicators
+            // and look for elements that actually contain full prices, not just symbols
+            const displayPriceElements = Array.from(document.querySelectorAll('span.display-price'));
+            for (const element of displayPriceElements) {
+              const text = element.textContent || '';
+              const className = element.className || '';
+              
+              // Skip if this is clearly a NYP symbol (just currency symbol)
+              if (className.includes('nyp') || text.trim().length <= 2) {
+                continue;
+              }
+              
+              // Look for actual price values (e.g., "$5.99", "€12.00")
+              const priceRegex = /[\$€£¥]\s*\d+(\.\d{2})?/;
+              if (priceRegex.test(text)) {
+                isFixedPrice = true;
+                Logger.info('Detected fixed-price item by full price in display-price');
+                break;
+              }
+            }
           }
         }
         
@@ -519,7 +588,6 @@ export class AddToCartUtils {
     try {
       // Look for the "Add to cart" button with multiple possible selectors
       const addToCartSelectors = [
-        'button:contains("Add to cart")',
         'button[title*="Add to cart"]',
         '.add-to-cart-button',
         '.cart-button',
@@ -528,8 +596,6 @@ export class AddToCartUtils {
         'button[value*="Add to cart"]',
         // Based on the screenshot, look for blue button with cart icon
         '.buynow-btn', // Common Bandcamp buy button class
-        'button:has(.icon-cart)', // Button with cart icon
-        'button:has(svg)', // Button with SVG (likely cart icon)
         'button[style*="background-color: rgb(27, 129, 229)"]', // Blue color from screenshot
         'button[style*="background-color: #1b81e5"]', // Blue color hex
       ];
@@ -553,11 +619,6 @@ export class AddToCartUtils {
       // If not found by text, try the selectors
       if (!addToCartButton) {
         for (const selector of addToCartSelectors) {
-          // Skip jQuery-style selectors for now
-          if (selector.includes(':contains') || selector.includes(':has')) {
-            continue;
-          }
-          
           const button = document.querySelector(selector) as HTMLElement;
           if (button && button.offsetParent !== null) { // Check if visible
             addToCartButton = button;

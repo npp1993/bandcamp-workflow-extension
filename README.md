@@ -39,7 +39,7 @@ Beyond that, it was completely built with VS Code Copilot's Agent Mode.
 | `↑` | Increase playback speed |
 | `↓` | Decrease playback speed |
 | `r` | Reset playback speed to normal |
-| `c` | Add current track to cart |
+| `c` | Add current track/album to cart |
 | `b` | Enter/exit bulk selection mode (wishlist page only) |
 
 ## Bulk Selection Mode

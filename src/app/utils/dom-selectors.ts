@@ -144,7 +144,6 @@ export class DOMSelectors {
     '.commerce-button',
     'button[class*="buy"]',
     '.buyItemOrMerch',
-    'button:contains("Buy")',
     '.buynowlater',
     '.purchase-item',
   ];
