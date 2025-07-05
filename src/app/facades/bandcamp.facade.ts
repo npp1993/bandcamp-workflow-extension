@@ -1972,8 +1972,9 @@ export class BandcampFacade {
   
   /**
    * Add the current track to cart
+   * @param closeTabAfterAdd Whether to close the tab after adding to cart (only applies to wishlist pages)
    */
-  public static addCurrentTrackToCart(): void {
+  public static addCurrentTrackToCart(closeTabAfterAdd = false): void {
     // Special handling for wishlist pages
     if (this.isWishlistPage) {
       // If we have wishlist items but no track is currently playing (index is -1)
@@ -1992,8 +1993,8 @@ export class BandcampFacade {
           // Use the shared method with now-playing check enabled for the current track
           AddToCartUtils.addWishlistItemToCart(currentItem, {
             checkNowPlaying: true,
-            logPrefix: 'c key detected - adding current track to cart from wishlist',
-            closeTabAfterAdd: false
+            logPrefix: closeTabAfterAdd ? 'Shift+c key detected - adding current track to cart from wishlist and closing tab' : 'c key detected - adding current track to cart from wishlist',
+            closeTabAfterAdd: closeTabAfterAdd
           }).catch((error) => {
             Logger.error('Failed to add current track to cart:', error);
           });

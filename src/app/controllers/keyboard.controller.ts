@@ -81,11 +81,21 @@ export class KeyboardController {
           break;
           
         case 'c':
-          // Only trigger add to cart functionality if no modifier keys are pressed
-          // This allows Command+C (copy), Ctrl+C (copy), etc. to work normally
-          if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+          // Handle add to cart functionality with special handling for Shift+C
+          if (!e.metaKey && !e.ctrlKey && !e.altKey) {
             e.preventDefault();
-            BandcampFacade.addCurrentTrackToCart();
+            if (e.shiftKey) {
+              // Shift+C: Add to cart and close tab (only on wishlist pages)
+              if (BandcampFacade.isWishlistPage) {
+                BandcampFacade.addCurrentTrackToCart(true); // closeTabAfterAdd = true
+              } else {
+                // On non-wishlist pages, Shift+C behaves the same as C
+                BandcampFacade.addCurrentTrackToCart();
+              }
+            } else {
+              // Regular C: Add to cart without closing tab
+              BandcampFacade.addCurrentTrackToCart();
+            }
           }
           break;
           

@@ -43,6 +43,7 @@ Icons were created by [Dharu Ghazi](https://www.fiverr.com/dghzdesign).
 | `↓` | Decrease playback speed |
 | `r` | Reset playback speed to normal |
 | `c` | Add current track/album to cart |
+| `Shift + c` | Add current track to cart and close tab (wishlist page only) |
 | `b` | Enter/exit bulk selection mode (wishlist page only) |
 
 ## Bulk Selection Mode
