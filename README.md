@@ -12,6 +12,8 @@ This extension builds upon the work of three projects:
 
 Beyond that, it was completely built with VS Code Copilot's Agent Mode.
 
+Icons were created by [Dharu Ghazi](https://www.fiverr.com/dghzdesign).
+
 ## Features
 
 - Vim-style keybindings to greatly enhance browsing and purchasing workflow while using Bandcamp
