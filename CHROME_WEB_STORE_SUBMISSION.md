@@ -64,7 +64,6 @@ This extension adds Vim-style keyboard shortcuts and enhanced features to Bandca
 • Visual waveform generation for audio tracks
 • Bulk wishlist management and cart operations
 • Playback speed controls with vinyl and stretched audio modes
-• Enhanced wishlist streaming capabilities
 
 All processing occurs locally in your browser. No data is collected or transmitted to external servers.
 ```

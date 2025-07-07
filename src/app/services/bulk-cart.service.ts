@@ -14,6 +14,10 @@ export class BulkCartService {
   private static _isFKeyHeld = false;
   private static _selectAllButton: HTMLElement | null = null;
   private static _deselectAllButton: HTMLElement | null = null;
+  private static _prevButton: HTMLElement | null = null;
+  private static _nextButton: HTMLElement | null = null;
+  private static _toggleSelectionButton: HTMLElement | null = null;
+  private static _exitBulkButton: HTMLElement | null = null;
 
   /**
    * Check if currently in bulk selection mode
@@ -193,6 +197,34 @@ export class BulkCartService {
   }
 
   /**
+   * Set the previous button reference
+   */
+  public static setPrevButton(button: HTMLElement): void {
+    this._prevButton = button;
+  }
+
+  /**
+   * Set the next button reference
+   */
+  public static setNextButton(button: HTMLElement): void {
+    this._nextButton = button;
+  }
+
+  /**
+   * Set the toggle selection button reference
+   */
+  public static setToggleSelectionButton(button: HTMLElement): void {
+    this._toggleSelectionButton = button;
+  }
+
+  /**
+   * Set the exit bulk mode button reference
+   */
+  public static setExitBulkButton(button: HTMLElement): void {
+    this._exitBulkButton = button;
+  }
+
+  /**
    * Set F key held state
    */
   public static setFKeyHeld(isHeld: boolean): void {
@@ -239,19 +271,31 @@ export class BulkCartService {
   }
 
   /**
-   * Show bulk mode buttons (select all, deselect all)
+   * Show bulk mode buttons (select all, deselect all, navigation, etc.)
    */
   private static showBulkModeButtons(): void {
     if (this._selectAllButton) {
-      this._selectAllButton.style.display = 'inline-block';
+      this._selectAllButton.style.display = 'block';
     }
     if (this._deselectAllButton) {
-      this._deselectAllButton.style.display = 'inline-block';
+      this._deselectAllButton.style.display = 'block';
+    }
+    if (this._prevButton) {
+      this._prevButton.style.display = 'block';
+    }
+    if (this._nextButton) {
+      this._nextButton.style.display = 'block';
+    }
+    if (this._toggleSelectionButton) {
+      this._toggleSelectionButton.style.display = 'block';
+    }
+    if (this._exitBulkButton) {
+      this._exitBulkButton.style.display = 'block';
     }
   }
 
   /**
-   * Hide bulk mode buttons (select all, deselect all)
+   * Hide bulk mode buttons (select all, deselect all, navigation, etc.)
    */
   private static hideBulkModeButtons(): void {
     if (this._selectAllButton) {
@@ -259,6 +303,18 @@ export class BulkCartService {
     }
     if (this._deselectAllButton) {
       this._deselectAllButton.style.display = 'none';
+    }
+    if (this._prevButton) {
+      this._prevButton.style.display = 'none';
+    }
+    if (this._nextButton) {
+      this._nextButton.style.display = 'none';
+    }
+    if (this._toggleSelectionButton) {
+      this._toggleSelectionButton.style.display = 'none';
+    }
+    if (this._exitBulkButton) {
+      this._exitBulkButton.style.display = 'none';
     }
   }
 
@@ -358,19 +414,9 @@ export class BulkCartService {
   }
 
   /**
-   * Get the height of the bottom footer/player
+   * Get the height of the bottom footer/player (no longer needed for sidebar)
    */
   private static getFooterHeight(): number {
-    // Check for our custom fixed footer first (only if it's visible)
-    const customFooter = document.querySelector('.bandcamp-plus-controls-footer') as HTMLElement;
-    if (customFooter && customFooter.style.display !== 'none') {
-      const rect = customFooter.getBoundingClientRect();
-      if (rect.height > 0) {
-        Logger.info(`Footer detected: custom footer, height: ${rect.height}`);
-        return rect.height;
-      }
-    }
-    
     // Check for the main carousel player (when music is playing)
     const carouselPlayer = document.querySelector('.carousel-player') as HTMLElement;
     if (carouselPlayer) {
@@ -506,9 +552,9 @@ export class BulkCartService {
 
     if (this._isInBulkMode) {
       const selectedCount = this._selectedItems.size;
-      this._bulkButton.textContent = `Add Selected to Cart (${selectedCount} items)`;
+      this._bulkButton.textContent = `Add to Cart (${selectedCount})`;
     } else {
-      this._bulkButton.textContent = 'Bulk Add to Cart';
+      this._bulkButton.textContent = 'Bulk Add to Cart (B)';
     }
   }
 }

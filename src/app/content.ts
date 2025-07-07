@@ -1,8 +1,8 @@
 import {PageController} from './controllers/page.controller';
 import {BandcampFacade} from './facades/bandcamp.facade';
+import {AddToCartUtils} from './utils/add-to-cart-utils';
 import {AlbumOnlyUtils} from './utils/album-only-utils';
 import {Logger} from './utils/logger';
-import {AddToCartUtils} from './utils/add-to-cart-utils';
 
 /**
  * Checks if the current URL contains the close_tab_after_add parameter

@@ -263,3 +263,66 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6) !important;
   }
 }
+
+/**
+ * ------------------------------------------------------------
+ * Sidebar Controls
+ * ------------------------------------------------------------
+ */
+.bandcamp-plus-controls-sidebar {
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  width: 200px; /* Fixed width to prevent resizing */
+  padding: 15px 10px; /* Add horizontal padding for equal margins */
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Center all children horizontally */
+}
+
+.bandcamp-plus-controls-sidebar button {
+  transition: all 0.2s ease;
+  font-family: inherit;
+  width: 180px; /* Fixed button width, smaller than container for margins */
+  box-sizing: border-box;
+  text-align: center !important; /* Force center alignment */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0; /* Remove margin, let flex handle centering */
+  display: block;
+}
+
+.bandcamp-plus-controls-sidebar button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.bandcamp-plus-controls-sidebar button:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 768px) {
+  .bandcamp-plus-controls-sidebar {
+    right: 10px !important;
+    top: 10px !important;
+    width: 180px !important; /* Smaller fixed width for mobile */
+    padding: 12px 8px !important; /* Adjusted padding for mobile */
+  }
+  
+  .bandcamp-plus-controls-sidebar button {
+    font-size: 11px !important;
+    padding: 6px 10px !important;
+    width: 160px !important; /* Adjusted button width for mobile */
+  }
+}
+
+/* Dark mode support for sidebar */
+@media (prefers-color-scheme: dark) {
+  .bandcamp-plus-controls-sidebar {
+    background-color: rgba(40, 40, 40, 0.95) !important;
+    border-color: #555 !important;
+    color: white;
+  }
+}
