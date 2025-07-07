@@ -85,34 +85,11 @@ export class WishlistController {
    */
   private addWishlistControls(): void {
     try {
-      // Create a fixed sidebar for our controls
-      let controlsContainer = document.querySelector('.bandcamp-plus-controls-sidebar') as HTMLElement;
+      // Get the existing sidebar container (created during loading)
+      const controlsContainer = this.createSidebarContainer();
       
-      if (!controlsContainer) {
-        controlsContainer = document.createElement('div');
-        controlsContainer.className = 'bandcamp-plus-controls-sidebar';
-        controlsContainer.style.cssText = `
-          position: fixed;
-          top: 20px;
-          right: 20px;
-          z-index: 1000;
-          background-color: rgba(255, 255, 255, 0.95);
-          backdrop-filter: blur(10px);
-          border: 1px solid #d3d3d3;
-          border-radius: 8px;
-          padding: 15px;
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-          box-sizing: border-box;
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-          max-height: calc(100vh - 40px);
-          overflow-y: auto;
-        `;
-        
-        // Add it to the body
-        document.body.appendChild(controlsContainer);
-      }
+      // Clear any loading content
+      controlsContainer.innerHTML = '';
 
       // Create our bulk cart button
       const bulkCartButton = document.createElement('button');
@@ -215,43 +192,79 @@ export class WishlistController {
   }
 
   /**
-   * Show a loading indicator while wishlist items are being loaded
+   * Create or get the sidebar container
+   */
+  private createSidebarContainer(): HTMLElement {
+    let controlsContainer = document.querySelector('.bandcamp-plus-controls-sidebar') as HTMLElement;
+    
+    if (!controlsContainer) {
+      controlsContainer = document.createElement('div');
+      controlsContainer.className = 'bandcamp-plus-controls-sidebar';
+      controlsContainer.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        background-color: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border: 1px solid #d3d3d3;
+        border-radius: 8px;
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        box-sizing: border-box;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        max-height: calc(100vh - 40px);
+        overflow-y: auto;
+      `;
+      
+      // Add it to the body
+      document.body.appendChild(controlsContainer);
+    }
+    
+    return controlsContainer;
+  }
+
+  /**
+   * Show a loading message in the sidebar
    */
   private showLoadingIndicator(): void {
     try {
-      // Create a subtle loading indicator
-      const indicator = document.createElement('div');
-      indicator.id = 'bandcamp-plus-loading';
-      indicator.innerHTML = `
-        <div style="
-          position: fixed;
-          top: 20px;
-          right: 20px;
-          background: rgba(29, 160, 195, 0.9);
-          color: white;
-          padding: 10px 15px;
-          border-radius: 4px;
-          font-size: 13px;
-          z-index: 10000;
-          box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        ">
-          <span>Loading wishlist items...</span>
-        </div>
-      `;
-      document.body.appendChild(indicator);
+      const sidebar = this.createSidebarContainer();
+      
+      // Clear any existing content
+      sidebar.innerHTML = '';
+      
+      // Create loading message
+      const loadingMessage = document.createElement('div');
+      loadingMessage.id = 'bandcamp-plus-loading-message';
+      loadingMessage.textContent = 'Loading wishlist items...';
+      
+      sidebar.appendChild(loadingMessage);
     } catch (error) {
       Logger.error('Error showing loading indicator:', error);
     }
   }
 
   /**
-   * Hide the loading indicator
+   * Hide the loading indicator and prepare sidebar for controls
    */
   private hideLoadingIndicator(): void {
     try {
-      const indicator = document.getElementById('bandcamp-plus-loading');
-      if (indicator) {
-        indicator.remove();
+      const sidebar = document.querySelector('.bandcamp-plus-controls-sidebar') as HTMLElement;
+      if (sidebar) {
+        // Clear the loading message
+        const loadingMessage = document.getElementById('bandcamp-plus-loading-message');
+        if (loadingMessage) {
+          loadingMessage.remove();
+        }
+      }
+      
+      // Remove the old separate loading indicator if it still exists
+      const oldIndicator = document.getElementById('bandcamp-plus-loading');
+      if (oldIndicator) {
+        oldIndicator.remove();
       }
     } catch (error) {
       Logger.error('Error hiding loading indicator:', error);
