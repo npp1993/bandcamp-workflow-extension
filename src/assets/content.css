@@ -3,7 +3,7 @@
  * Inputs
  * ------------------------------------------------------------
  */
-.bandcamp-plus__input {
+.bandcamp-workflow__input {
   margin: 0;
   width: 250px;
   background: transparent;
@@ -21,7 +21,7 @@
   --borderColor: rgba(190, 190, 190, .5);
 }
 
-.bandcamp-plus__input, .bandcamp-plus__input::-webkit-slider-thumb {
+.bandcamp-workflow__input, .bandcamp-workflow__input::-webkit-slider-thumb {
   -webkit-appearance: none;
 }
 
@@ -44,7 +44,7 @@
 /**
  * Chrome
  */
-.bandcamp-plus__input::-webkit-slider-runnable-track {
+.bandcamp-workflow__input::-webkit-slider-runnable-track {
   box-sizing: border-box;
   height: var(--trackHeight);
   border: 1px solid var(--borderColor);
@@ -55,7 +55,7 @@
 /**
  * Firefox
  */
-.bandcamp-plus__input::-moz-range-track {
+.bandcamp-workflow__input::-moz-range-track {
   box-sizing: border-box;
   height: var(--trackHeight);
   background: var(--backgroundColor);
@@ -71,7 +71,7 @@
 /**
  * Firefox
  */
-.bandcamp-plus__input::-moz-range-progress {
+.bandcamp-workflow__input::-moz-range-progress {
   height: var(--trackHeight);
   background: var(--highlightColor);
 }
@@ -85,7 +85,7 @@
 /**
  * Chrome
  */
-.bandcamp-plus__input::-webkit-slider-thumb {
+.bandcamp-workflow__input::-webkit-slider-thumb {
   box-sizing: border-box;
   width: var(--thumbWidth);
   height: var(--thumbHeight);
@@ -99,7 +99,7 @@
 /**
  * Firefox
  */
-.bandcamp-plus__input::-moz-range-thumb {
+.bandcamp-workflow__input::-moz-range-thumb {
   box-sizing: border-box;
   width: var(--thumbWidth);
   height: var(--thumbHeight);
@@ -269,7 +269,7 @@
  * Sidebar Controls
  * ------------------------------------------------------------
  */
-.bandcamp-plus-controls-sidebar {
+.bandcamp-workflow-controls-sidebar {
   font-family: 'Helvetica Neue', Arial, sans-serif;
   width: 200px; /* Fixed width to prevent resizing */
   padding: 15px 10px; /* Add horizontal padding for equal margins */
@@ -279,7 +279,7 @@
   align-items: center; /* Center all children horizontally */
 }
 
-.bandcamp-plus-controls-sidebar button {
+.bandcamp-workflow-controls-sidebar button {
   transition: all 0.2s ease;
   font-family: inherit;
   width: 180px; /* Fixed button width, smaller than container for margins */
@@ -292,18 +292,18 @@
   display: block;
 }
 
-.bandcamp-plus-controls-sidebar button:hover {
+.bandcamp-workflow-controls-sidebar button:hover {
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-.bandcamp-plus-controls-sidebar button:active {
+.bandcamp-workflow-controls-sidebar button:active {
   transform: translateY(0);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
 /* Loading message styling within sidebar */
-#bandcamp-plus-loading-message {
+#bandcamp-workflow-loading-message {
   transition: all 0.2s ease;
   font-family: inherit;
   width: 180px; /* Same width as buttons */
@@ -326,20 +326,20 @@
 
 /* Responsive adjustments for smaller screens */
 @media (max-width: 768px) {
-  .bandcamp-plus-controls-sidebar {
+  .bandcamp-workflow-controls-sidebar {
     right: 10px !important;
     top: 10px !important;
     width: 180px !important; /* Smaller fixed width for mobile */
     padding: 12px 8px !important; /* Adjusted padding for mobile */
   }
   
-  .bandcamp-plus-controls-sidebar button {
+  .bandcamp-workflow-controls-sidebar button {
     font-size: 11px !important;
     padding: 6px 10px !important;
     width: 160px !important; /* Adjusted button width for mobile */
   }
   
-  #bandcamp-plus-loading-message {
+  #bandcamp-workflow-loading-message {
     font-size: 11px !important;
     padding: 6px 10px !important;
     width: 160px !important; /* Same as buttons on mobile */
@@ -348,7 +348,7 @@
 
 /* Dark mode support for sidebar */
 @media (prefers-color-scheme: dark) {
-  .bandcamp-plus-controls-sidebar {
+  .bandcamp-workflow-controls-sidebar {
     background-color: rgba(40, 40, 40, 0.95) !important;
     border-color: #555 !important;
     color: white;

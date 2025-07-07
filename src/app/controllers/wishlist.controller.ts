@@ -93,7 +93,7 @@ export class WishlistController {
 
       // Create our bulk cart button
       const bulkCartButton = document.createElement('button');
-      bulkCartButton.className = 'bandcamp-plus-bulk-cart-button';
+      bulkCartButton.className = 'bandcamp-workflow-bulk-cart-button';
       bulkCartButton.textContent = 'Bulk Add to Cart (B)';
       bulkCartButton.style.cssText = 'padding: 8px 12px; cursor: pointer; background-color: #1da0c3; color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: bold;';
       bulkCartButton.title = 'Add multiple items to cart - Press B key to enter bulk mode';
@@ -107,7 +107,7 @@ export class WishlistController {
 
       // Create navigation buttons (hidden by default, shown in bulk mode)
       const prevButton = document.createElement('button');
-      prevButton.className = 'bandcamp-plus-prev-button';
+      prevButton.className = 'bandcamp-workflow-prev-button';
       prevButton.textContent = 'Previous (P)';
       prevButton.style.cssText = 'padding: 8px 12px; cursor: pointer; background-color: #6c757d; color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: bold; display: none;';
       prevButton.title = 'Navigate to previous item - Press P key';
@@ -117,7 +117,7 @@ export class WishlistController {
       });
 
       const nextButton = document.createElement('button');
-      nextButton.className = 'bandcamp-plus-next-button';
+      nextButton.className = 'bandcamp-workflow-next-button';
       nextButton.textContent = 'Next (N)';
       nextButton.style.cssText = 'padding: 8px 12px; cursor: pointer; background-color: #6c757d; color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: bold; display: none;';
       nextButton.title = 'Navigate to next item - Press N key';
@@ -128,7 +128,7 @@ export class WishlistController {
 
       // Create toggle selection button (hidden by default, shown in bulk mode)
       const toggleSelectionButton = document.createElement('button');
-      toggleSelectionButton.className = 'bandcamp-plus-toggle-selection-button';
+      toggleSelectionButton.className = 'bandcamp-workflow-toggle-selection-button';
       toggleSelectionButton.textContent = 'Toggle Selection (F)';
       toggleSelectionButton.style.cssText = 'padding: 8px 12px; cursor: pointer; background-color: #fd7e14; color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: bold; display: none;';
       toggleSelectionButton.title = 'Toggle selection of current item - Press F key';
@@ -139,7 +139,7 @@ export class WishlistController {
 
       // Create select all button
       const selectAllButton = document.createElement('button');
-      selectAllButton.className = 'bandcamp-plus-select-all-button';
+      selectAllButton.className = 'bandcamp-workflow-select-all-button';
       selectAllButton.textContent = 'Select All (A)';
       selectAllButton.style.cssText = 'padding: 8px 12px; cursor: pointer; background-color: #28a745; color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: bold; display: none;';
       selectAllButton.title = 'Select all items - Press A key';
@@ -150,7 +150,7 @@ export class WishlistController {
 
       // Create deselect all button
       const deselectAllButton = document.createElement('button');
-      deselectAllButton.className = 'bandcamp-plus-deselect-all-button';
+      deselectAllButton.className = 'bandcamp-workflow-deselect-all-button';
       deselectAllButton.textContent = 'Deselect All (D)';
       deselectAllButton.style.cssText = 'padding: 8px 12px; cursor: pointer; background-color: #dc3545; color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: bold; display: none;';
       deselectAllButton.title = 'Deselect all items - Press D key';
@@ -161,7 +161,7 @@ export class WishlistController {
 
       // Create exit bulk mode button (hidden by default, shown in bulk mode)
       const exitBulkButton = document.createElement('button');
-      exitBulkButton.className = 'bandcamp-plus-exit-bulk-button';
+      exitBulkButton.className = 'bandcamp-workflow-exit-bulk-button';
       exitBulkButton.textContent = 'Exit Bulk Mode (Esc)';
       exitBulkButton.style.cssText = 'padding: 8px 12px; cursor: pointer; background-color: #6f42c1; color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: bold; display: none;';
       exitBulkButton.title = 'Exit bulk selection mode - Press Esc key';
@@ -195,11 +195,11 @@ export class WishlistController {
    * Create or get the sidebar container
    */
   private createSidebarContainer(): HTMLElement {
-    let controlsContainer = document.querySelector('.bandcamp-plus-controls-sidebar') as HTMLElement;
+    let controlsContainer = document.querySelector('.bandcamp-workflow-controls-sidebar') as HTMLElement;
     
     if (!controlsContainer) {
       controlsContainer = document.createElement('div');
-      controlsContainer.className = 'bandcamp-plus-controls-sidebar';
+      controlsContainer.className = 'bandcamp-workflow-controls-sidebar';
       controlsContainer.style.cssText = `
         position: fixed;
         top: 20px;
@@ -238,7 +238,7 @@ export class WishlistController {
       
       // Create loading message
       const loadingMessage = document.createElement('div');
-      loadingMessage.id = 'bandcamp-plus-loading-message';
+      loadingMessage.id = 'bandcamp-workflow-loading-message';
       loadingMessage.textContent = 'Loading wishlist items...';
       
       sidebar.appendChild(loadingMessage);
@@ -252,17 +252,17 @@ export class WishlistController {
    */
   private hideLoadingIndicator(): void {
     try {
-      const sidebar = document.querySelector('.bandcamp-plus-controls-sidebar') as HTMLElement;
+      const sidebar = document.querySelector('.bandcamp-workflow-controls-sidebar') as HTMLElement;
       if (sidebar) {
         // Clear the loading message
-        const loadingMessage = document.getElementById('bandcamp-plus-loading-message');
+        const loadingMessage = document.getElementById('bandcamp-workflow-loading-message');
         if (loadingMessage) {
           loadingMessage.remove();
         }
       }
       
       // Remove the old separate loading indicator if it still exists
-      const oldIndicator = document.getElementById('bandcamp-plus-loading');
+      const oldIndicator = document.getElementById('bandcamp-workflow-loading');
       if (oldIndicator) {
         oldIndicator.remove();
       }
