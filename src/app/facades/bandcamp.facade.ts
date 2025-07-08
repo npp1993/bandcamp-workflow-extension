@@ -1271,6 +1271,9 @@ export class BandcampFacade {
         playButton.click();
         Logger.timing('Play button clicked', playClickStart);
         
+        // Ensure the track item is visible on screen
+        this.ensureTrackVisible(item);
+        
         // For the first track, give a small delay to allow audio initialization
         const isFirstTrack = index === 0;
         const startVerification = () => {
@@ -1311,6 +1314,9 @@ export class BandcampFacade {
             Logger.timing('Element clicked', elementClickStart);
             clicked = true;
             Logger.timing('Element selection completed', elementSelectionStart);
+            
+            // Ensure the track item is visible on screen
+            this.ensureTrackVisible(item);
             
             // Phase 2: Smart delay reduction - try immediate and fallback with minimal delay
             const isFirstTrack = index === 0;
@@ -3615,5 +3621,111 @@ export class BandcampFacade {
       Logger.error('Error checking for currently playing track:', error);
       return false;
     }
+  }
+
+  /**
+   * Ensure the currently playing track item is visible on screen, accounting for sticky headers and footers
+   */
+  private static ensureTrackVisible(item: HTMLElement): void {
+    if (!item) return;
+    
+    const itemRect = item.getBoundingClientRect();
+    const headerHeight = this.getHeaderHeight();
+    const footerHeight = this.getFooterHeight();
+    const viewportHeight = window.innerHeight;
+    
+    // Add extra padding when footer is present
+    const headerPadding = 20;
+    const footerPadding = footerHeight > 0 ? 30 : 20; // More padding when footer is visible
+    
+    const topBoundary = headerHeight + headerPadding;
+    const bottomBoundary = viewportHeight - footerHeight - footerPadding;
+    
+    // Only scroll if item is not fully visible
+    let scrollNeeded = false;
+    let scrollOffset = 0;
+    
+    if (itemRect.top < topBoundary) {
+      // Item is hidden behind header or too close to it
+      scrollOffset = itemRect.top - topBoundary;
+      scrollNeeded = true;
+    } else if (itemRect.bottom > bottomBoundary) {
+      // Item is below viewport or too close to bottom/footer
+      scrollOffset = itemRect.bottom - bottomBoundary;
+      scrollNeeded = true;
+    }
+    
+    if (scrollNeeded) {
+      Logger.info(`Scrolling to keep track in view: ${scrollOffset > 0 ? 'down' : 'up'} by ${Math.abs(scrollOffset)}px`);
+      window.scrollBy({
+        top: scrollOffset,
+        behavior: 'smooth'
+      });
+    }
+  }
+
+  /**
+   * Get the height of sticky headers
+   */
+  private static getHeaderHeight(): number {
+    let totalHeight = 0;
+    
+    // Check for the main Bandcamp menubar (appears/disappears on scroll)
+    const menubar = document.querySelector('#menubar-vm.fixed') as HTMLElement;
+    if (menubar) {
+      const menubarRect = menubar.getBoundingClientRect();
+      if (menubarRect.top <= 10 && menubarRect.height > 0) {
+        totalHeight += menubarRect.height;
+      }
+    }
+    
+    // Check for the wishlist/collection page sticky header
+    const gridHeader = document.querySelector('#grid-tabs-sticky.fixed') as HTMLElement;
+    if (gridHeader) {
+      const headerRect = gridHeader.getBoundingClientRect();
+      if (headerRect.top <= 10 && headerRect.height > 0) {
+        totalHeight += headerRect.height;
+      }
+    }
+    
+    // Use fixed fallback value if we can't find any headers
+    return totalHeight > 0 ? totalHeight : 60;
+  }
+
+  /**
+   * Get the height of the bottom footer/player
+   */
+  private static getFooterHeight(): number {
+    // Check for the main carousel player (when music is playing)
+    const carouselPlayer = document.querySelector('.carousel-player') as HTMLElement;
+    if (carouselPlayer) {
+      const rect = carouselPlayer.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      if (rect.bottom >= viewportHeight - 20 && rect.height > 0) {
+        return rect.height;
+      }
+    }
+    
+    // Check for the carousel player inner container
+    const carouselPlayerInner = document.querySelector('.carousel-player-inner') as HTMLElement;
+    if (carouselPlayerInner) {
+      const rect = carouselPlayerInner.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      if (rect.bottom >= viewportHeight - 20 && rect.height > 0) {
+        return rect.height;
+      }
+    }
+    
+    // Check for the Bandcamp player at the bottom of the page
+    const player = document.querySelector('#player') as HTMLElement;
+    if (player) {
+      const playerRect = player.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      if (playerRect.bottom >= viewportHeight - 20 && playerRect.height > 0) {
+        return playerRect.height;
+      }
+    }
+    
+    return 0; // No footer detected
   }
 }

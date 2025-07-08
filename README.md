@@ -16,35 +16,53 @@ Icons were created by [Dharu Ghazi](https://www.fiverr.com/dghzdesign).
 
 ## Features
 
-- Vim-style keybindings to greatly enhance browsing and purchasing workflow while using Bandcamp
+- Vim-style keybindings to greatly enhance music browsing and purchasing workflow while using Bandcamp
 - Wishlist individual tracks directly from release pages
-- Streamlined wishlist management
 - Playback speed adjustment with vinyl and stretched modes
-- Add-to-Cart functionality for quickly adding tracks and albums from your wishlist to your cart from the wishlist, release pages, or track pages
-- Bulk add-to-cart functionality for adding multiple wishlist items to cart at once
+- Add-to-Cart functionality for quickly adding tracks and albums to your cart from the wishlist, release pages, or track pages
+- Bulk add-to-cart functionality for adding multiple wishlist items to your cart at once
 - Automatic loading of all wishlist items
 - Always play the first track on a release page (instead of a featured track)
 - Generate a ready-to-use `curl` script for bulk downloading your purchased items, including automatic extraction of downloaded ZIP files
 
 ## Keyboard Shortcuts
 
-| Shortcut | Function |
-|----------|----------|
-| `Space` | Play/pause current track |
-| `w` | Add current track to wishlist |
-| `q` | Add entire release to wishlist |
-| `n` | Play next track |
-| `p` | Play previous track |
-| `Shift + p` | Play first track in album |
-| `l` or `→` | Seek 10 seconds forward |
-| `h` or `←` | Seek 10 seconds backward |
-| `i` | Seek to start of track |
-| `↑` | Increase playback speed |
-| `↓` | Decrease playback speed |
-| `r` | Reset playback speed to normal |
-| `c` | Add current track/album to cart |
-| `Shift + c` | Add current track to cart and close tab (wishlist page only) |
-| `b` | Enter/exit bulk selection mode (wishlist page only) |
+| Shortcut | Function | Available On |
+|----------|----------|--------------|
+| `Space` | Play/pause current track | All pages |
+| `w` | Add current track to wishlist | All pages |
+| `q` | Add entire release to wishlist | Album pages only |
+| `n` | Play next track | All pages |
+| `p` | Play previous track | All pages |
+| `l` or `→` | Seek 10 seconds forward | All pages |
+| `h` or `←` | Seek 10 seconds backward | All pages |
+| `i` | Seek to start of track | All pages |
+| `↑` | Increase playback speed | Album/track pages only |
+| `↓` | Decrease playback speed | Album/track pages only |
+| `r` | Reset playback speed to normal | Album/track pages only |
+| `c` | Add current track/album to cart | Album/track/wishlist pages only |
+| `Shift + c` | Add current track to cart and close tab | Wishlist pages only |
+| `b` | Enter/exit bulk selection mode | Wishlist pages only |
+
+### Page Types
+
+The extension recognizes different page types and enables different features accordingly:
+
+- **Album/Track Pages**: Individual release pages with track listings and playback controls
+  - Speed controls (↑/↓/r) are available
+  - Add to cart (c) is available
+  - Transport controls (space/n/p/h/l/i) work with the album's tracks
+
+- **Wishlist Pages**: Your personal wishlist (bandcamp.com/username/wishlist)
+  - Bulk selection mode (b) is available
+  - Shift+C to add to cart and close tab is available
+  - Transport controls work with wishlist items
+  - Auto-scrolling keeps the currently playing track visible when using n/p navigation
+
+- **Collection Pages**: Your music collection (bandcamp.com/username)
+  - Transport controls (space/n/p/h/l/i) work with collection items
+  - Auto-scrolling keeps the currently playing track visible when using n/p navigation
+  - Speed controls and add to cart features are disabled
 
 ## Bulk Selection Mode
 
