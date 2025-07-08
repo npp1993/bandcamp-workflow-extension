@@ -59,7 +59,7 @@ chrome.runtime.onMessage.addListener((
       sendResponse({data: dataArray});
     })
     .catch((error) => {
-      Logger.error('[Background] Error fetching audio buffer:', error);
+      Logger.error('Error fetching audio buffer:', error);
       sendResponse({error: error.toString()});
     });
 

@@ -166,7 +166,11 @@ export class BandcampFacade {
       return this._isWishlistPage;
     }
 
-    this._isWishlistPage = window.location.href.includes('/wishlist');
+    // Only activate wishlist controls when URL matches the specific format: bandcamp.com/username/wishlist
+    // This excludes collection pages (bandcamp.com/username) and other pages
+    const url = window.location.href;
+    const wishlistRegex = /^https?:\/\/[^\/]*bandcamp\.com\/[^\/]+\/wishlist(?:[?#].*)?$/;
+    this._isWishlistPage = wishlistRegex.test(url);
 
     return this._isWishlistPage;
   }
@@ -709,15 +713,116 @@ export class BandcampFacade {
     try {
       Logger.info('Loading wishlist items...');
       
-      // Try different selectors for collection items - in most recent Bandcamp design
-      let items: HTMLElement[] = DOMSelectors.findWithSelectors<HTMLElement>(DOMSelectors.WISHLIST_ITEMS);
+      // First, try to find items only within the currently active wishlist container
+      // This helps avoid double-counting items from other tabs (like collection)
+      let items: HTMLElement[] = [];
       
-      if (items.length > 0) {
-        Logger.info(`Found ${items.length} wishlist items`);
+      // Look for a wishlist-specific container first (optimized based on effectiveness data)
+      const wishlistContainers = [
+        '#wishlist-grid',              // Primary container - consistently found
+        '[data-grid-id="wishlist-grid"]', // Alternative attribute-based selector
+        '.wishlist-content',           // Generic content container
+      ];
+      
+      for (const containerSelector of wishlistContainers) {
+        const container = document.querySelector(containerSelector);
+        if (container) {
+          Logger.debug(`Found wishlist container: ${containerSelector}`);
+          
+          // Log detailed selector effectiveness for this container (only in debug mode)
+          if (Logger.isDebugEnabled()) {
+            const selectorResults: string[] = [];
+            DOMSelectors.WISHLIST_ITEMS.forEach(selector => {
+              const selectorItems = container.querySelectorAll(selector);
+              if (selectorItems.length > 0) {
+                selectorResults.push(`${selector}: ${selectorItems.length} items`);
+              }
+            });
+            
+            if (selectorResults.length > 0) {
+              Logger.debug(`Selector effectiveness in ${containerSelector}:`, selectorResults.join(', '));
+            }
+          }
+          
+          items = DOMSelectors.findWithSelectors<HTMLElement>(DOMSelectors.WISHLIST_ITEMS, container as HTMLElement);
+          if (items.length > 0) {
+            Logger.info(`Found ${items.length} wishlist items in specific container`);
+            
+            // Log the actual structure of first few items for analysis
+            if (items.length > 0 && Logger.isDebugEnabled()) {
+              const firstItem = items[0];
+              const itemClasses = firstItem.className;
+              const itemTag = firstItem.tagName.toLowerCase();
+              const hasPlayButton = DOMSelectors.findOneWithSelectors<HTMLElement>(DOMSelectors.PLAY_BUTTONS, firstItem) !== null;
+              const hasDataId = firstItem.hasAttribute('data-item-id') || firstItem.hasAttribute('data-tralbum-id');
+              Logger.debug(`Sample item structure: ${itemTag}.${itemClasses.replace(/\s+/g, '.')}, hasPlayButton: ${hasPlayButton}, hasDataId: ${hasDataId}`);
+            }
+            
+            break;
+          }
+        }
+      }
+      
+      // If no items found in specific containers, fall back to general search
+      // but ensure we're only getting items that are currently visible
+      if (items.length === 0) {
+        Logger.debug('No items found in specific containers, falling back to general search');
+        
+        // Log which selectors work globally
+        if (Logger.isDebugEnabled()) {
+          const globalSelectorResults: string[] = [];
+          DOMSelectors.WISHLIST_ITEMS.forEach(selector => {
+            const globalItems = document.querySelectorAll(selector);
+            if (globalItems.length > 0) {
+              globalSelectorResults.push(`${selector}: ${globalItems.length} items`);
+            }
+          });
+          
+          if (globalSelectorResults.length > 0) {
+            Logger.debug('Global selector effectiveness:', globalSelectorResults.join(', '));
+          }
+        }
+        
+        const allItems = DOMSelectors.findWithSelectors<HTMLElement>(DOMSelectors.WISHLIST_ITEMS);
+        
+        // Filter to only include items that are currently visible and likely part of wishlist
+        items = allItems.filter(item => {
+          // Check if the item is visible
+          const rect = item.getBoundingClientRect();
+          const isVisible = rect.width > 0 && rect.height > 0;
+          
+          // Check if the item is not hidden by display:none or visibility:hidden
+          const style = window.getComputedStyle(item);
+          const isDisplayed = style.display !== 'none' && style.visibility !== 'hidden';
+          
+          return isVisible && isDisplayed;
+        });
+        
+        Logger.info(`Found ${items.length} visible wishlist items`);
+        
+        // Log filtering results in debug mode
+        if (Logger.isDebugEnabled() && allItems.length !== items.length) {
+          Logger.debug(`Filtered ${allItems.length} → ${items.length} items (removed ${allItems.length - items.length} hidden/invisible items)`);
+        }
       }
       
       if (!items || items.length === 0) {
         Logger.warn('No wishlist items found with any selector, trying more general selectors');
+        
+        // Log fallback selector effectiveness
+        if (Logger.isDebugEnabled()) {
+          const fallbackSelectorResults: string[] = [];
+          DOMSelectors.WISHLIST_ITEMS_FALLBACK.forEach(selector => {
+            const fallbackItems = document.querySelectorAll(selector);
+            if (fallbackItems.length > 0) {
+              fallbackSelectorResults.push(`${selector}: ${fallbackItems.length} items`);
+            }
+          });
+          
+          if (fallbackSelectorResults.length > 0) {
+            Logger.debug('Fallback selector effectiveness:', fallbackSelectorResults.join(', '));
+          }
+        }
         
         // Try more general selectors as a fallback
         items = DOMSelectors.findWithSelectors<HTMLElement>(DOMSelectors.WISHLIST_ITEMS_FALLBACK);
@@ -728,6 +833,21 @@ export class BandcampFacade {
         
         if (!items || items.length === 0) {
           Logger.warn('No wishlist items found with any selector');
+          
+          // Log DOM structure for debugging when no items are found
+          if (Logger.isDebugEnabled()) {
+            const potentialContainers = document.querySelectorAll('[class*="collection"], [class*="wishlist"], [class*="grid"], [class*="item"]');
+            if (potentialContainers.length > 0) {
+              Logger.debug(`Found ${potentialContainers.length} potential container elements for analysis`);
+              
+              // Log first few container classes for debugging
+              for (let i = 0; i < Math.min(5, potentialContainers.length); i++) {
+                const container = potentialContainers[i] as HTMLElement;
+                Logger.debug(`Container ${i + 1}: ${container.tagName.toLowerCase()}.${container.className.replace(/\s+/g, '.')}`);
+              }
+            }
+          }
+          
           return [];
         }
       }
@@ -1062,9 +1182,18 @@ export class BandcampFacade {
         playButton.click();
         Logger.timing('Play button clicked', playClickStart);
         
-        // Use event-based verification instead of timeout-based
-        const verificationStart = Logger.startTiming('Event-based playback verification');
-        this.verifyPlaybackWithEvents(index, verificationStart, startTime);
+        // For the first track, give a small delay to allow audio initialization
+        const isFirstTrack = index === 0;
+        const startVerification = () => {
+          const verificationStart = Logger.startTiming('Event-based playback verification');
+          this.verifyPlaybackWithEvents(index, verificationStart, startTime);
+        };
+        
+        if (isFirstTrack) {
+          setTimeout(startVerification, 50);
+        } else {
+          startVerification();
+        }
         
         return;
       }
@@ -1095,6 +1224,7 @@ export class BandcampFacade {
             Logger.timing('Element selection completed', elementSelectionStart);
             
             // Phase 2: Smart delay reduction - try immediate and fallback with minimal delay
+            const isFirstTrack = index === 0;
             const tryFocusedPlayButton = () => {
               const focusedPlaySearchStart = Logger.startTiming('Finding focused play button');
               const playButton = document.querySelector('.carousel-player-inner .playbutton, .play-button');
@@ -1106,9 +1236,17 @@ export class BandcampFacade {
                 (playButton as HTMLElement).click();
                 Logger.timing('Focused play button clicked', focusedPlayClickStart);
                 
-                // Use event-based verification instead of timeout-based
-                const focusedVerificationStart = Logger.startTiming('Focused event-based playback verification');
-                this.verifyPlaybackWithEvents(index, focusedVerificationStart, startTime);
+                // For the first track, give a small delay to allow audio initialization
+                const startFocusedVerification = () => {
+                  const focusedVerificationStart = Logger.startTiming('Focused event-based playback verification');
+                  this.verifyPlaybackWithEvents(index, focusedVerificationStart, startTime);
+                };
+                
+                if (isFirstTrack) {
+                  setTimeout(startFocusedVerification, 50);
+                } else {
+                  startFocusedVerification();
+                }
                 return true;
               }
               return false;
@@ -1465,7 +1603,7 @@ export class BandcampFacade {
       
       // If we have a track ID, add it to the problem list
       if (trackId && trackId !== '') {
-        Logger.info(`[Bandcamp+] Adding track ID ${trackId} to problem list due to playback error`);
+        Logger.info(`Adding track ID ${trackId} to problem list due to playback error`);
         BandcampFacade._problemTrackIds.add(trackId);
       }
       
@@ -1786,8 +1924,8 @@ export class BandcampFacade {
           if (currentItem) {
             const trackId = currentItem.getAttribute('data-track-id');
             if (trackId) {
-              Logger.info(`[Bandcamp+] Detected stream URL with missing track ID: ${audio.src}`);
-              Logger.info(`[Bandcamp+] Found track ID from collection item: ${trackId}`);
+              Logger.info(`Detected stream URL with missing track ID: ${audio.src}`);
+              Logger.info(`Found track ID from collection item: ${trackId}`);
               
               // Update the URL with the track ID
               try {
@@ -1802,13 +1940,13 @@ export class BandcampFacade {
                 
                 // Create the fixed URL
                 const fixedUrl = `${baseUrl}?${params.toString()}`;
-                Logger.info(`[Bandcamp+] Fixed stream URL: ${fixedUrl}`);
+                Logger.info(`Fixed stream URL: ${fixedUrl}`);
                 
                 // Set the new URL and try to play
                 audio.src = fixedUrl;
                 audio.load();
                 audio.play().catch((e) => {
-                  Logger.warn(`[Bandcamp+] Error playing fixed audio: ${e.message}`);
+                  Logger.warn(`Error playing audio: ${e.message}`);
                   // If it still fails, skip to next track (reduced from 1000ms to 500ms for Phase 1)
                   setTimeout(() => {
                     this.playNextWishlistTrack();
@@ -1855,7 +1993,7 @@ export class BandcampFacade {
         BandcampFacade._currentWishlistIndex >= 0 &&
         audio.src && 
         (audio.src.includes('track_id=&') || !audio.src.includes('track_id='))) {
-      Logger.info('[Bandcamp+] Detected stream URL with missing track ID:', audio.src);
+      Logger.info('Detected stream URL with missing track ID:', audio.src);
       
       // Get the current item
       const currentItem = BandcampFacade._wishlistItems[BandcampFacade._currentWishlistIndex];
@@ -1865,7 +2003,7 @@ export class BandcampFacade {
         if (trackId) {
           // Check if it's a known problematic track ID (like 3302866485)
           if (BandcampFacade._problemTrackIds.has(trackId) || trackId === '3302866485') {
-            Logger.info(`[Bandcamp+] Detected known problematic track ID: ${trackId}, skipping track`);
+            Logger.info(`Detected known problematic track ID: ${trackId}, skipping track`);
             // Add to problem track IDs if not already there
             if (!BandcampFacade._problemTrackIds.has(trackId)) {
               BandcampFacade._problemTrackIds.add(trackId);
@@ -1888,7 +2026,7 @@ export class BandcampFacade {
             return;
           }
           
-          Logger.info('[Bandcamp+] Found track ID from collection item:', trackId);
+          Logger.info('Found track ID from collection item:', trackId);
           
           // Update the URL with the track ID
           try {
@@ -1903,18 +2041,18 @@ export class BandcampFacade {
             
             // Create the fixed URL
             const fixedUrl = `${baseUrl}?${params.toString()}`;
-            Logger.info('[Bandcamp+] Fixed stream URL:', fixedUrl);
+            Logger.info('Fixed stream URL:', fixedUrl);
             
             // Set the new URL and try to play
             audio.src = fixedUrl;
             audio.load();
             audio.play().catch((e) => {
-              Logger.warn('[Bandcamp+] Error playing fixed audio:', e);
+              Logger.warn('Error playing fixed audio:', e);
               
               // Check if this is a 404 error or media format error
               if (e.name === 'NotSupportedError' || 
                  (typeof e === 'object' && e.message && e.message.includes('404'))) {
-                Logger.info('[Bandcamp+] Track may be unavailable (404/NotSupported), adding to problem list');
+                Logger.info('Track may be unavailable (404/NotSupported), adding to problem list');
                 BandcampFacade._problemTrackIds.add(trackId);
                 
                 // Move to next track directly
@@ -1925,12 +2063,12 @@ export class BandcampFacade {
                 // For other errors, try a completely different URL format as last resort
                 try {
                   const directStreamUrl = `https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=${trackId}&ts=${timestamp}`;
-                  Logger.info('[Bandcamp+] Trying direct stream URL as last resort:', directStreamUrl);
+                  Logger.info('Trying direct stream URL as last resort:', directStreamUrl);
                   
                   audio.src = directStreamUrl;
                   audio.load();
                   audio.play().catch((directError) => {
-                    Logger.warn('[Bandcamp+] Direct stream URL also failed:', directError);
+                    Logger.warn('Direct stream URL also failed:', directError);
                     
                     // Give up and move to next track
                     setTimeout(() => {
@@ -1938,7 +2076,7 @@ export class BandcampFacade {
                     }, 500);
                   });
                 } catch (directUrlError) {
-                  Logger.error('[Bandcamp+] Error creating direct stream URL:', directUrlError);
+                  Logger.error('Error creating direct stream URL:', directUrlError);
                   setTimeout(() => {
                     BandcampFacade.playNextWishlistTrack();
                   }, 500);
@@ -1956,13 +2094,13 @@ export class BandcampFacade {
             }, 500);
           }
         } else {
-          Logger.warn('[Bandcamp+] No track ID available for current item, trying next track');
+          Logger.warn('No track ID available for current item, trying next track');
           setTimeout(() => {
             BandcampFacade.playNextWishlistTrack();
           }, 500);
         }
       } else {
-        Logger.warn('[Bandcamp+] No current wishlist item found, trying next track');
+        Logger.warn('No current wishlist item found, trying next track');
         setTimeout(() => {
           BandcampFacade.playNextWishlistTrack();
         }, 500);
@@ -2900,28 +3038,44 @@ export class BandcampFacade {
     try {
       Logger.info('Checking if all wishlist items need to be loaded...');
       
-      // Try to get the number of items expected from the tab counts
+      // Focus only on collection and wishlist tabs
       const tabCounts: Record<string, number> = {};
       const tabs = DOMSelectors.findWithSelectors<HTMLElement>(DOMSelectors.TABS);
       
+      let activeTabName = '';
+      let wishlistTabIsActive = false;
+      
       tabs.forEach((tab) => {
+        const tabName = tab.getAttribute('data-tab');
         const countElement = tab.querySelector('.count');
-        if (countElement) {
-          const tabName = tab.getAttribute('data-tab') || 
-                         tab.className.toLowerCase().replace('active', '').trim() ||
-                         tab.textContent?.toLowerCase().trim().replace(/[^a-z]/g, '');
-          
+        const isActive = tab.classList.contains('active');
+        
+        // Only process collection and wishlist tabs
+        if ((tabName === 'collection' || tabName === 'wishlist') && countElement) {
           const count = parseInt(countElement.textContent || '0', 10);
           if (!isNaN(count)) {
             tabCounts[tabName] = count;
-            Logger.info(`Tab "${tabName}" has count: ${count}`);
+            
+            if (isActive) {
+              activeTabName = tabName;
+              if (tabName === 'wishlist') {
+                wishlistTabIsActive = true;
+              }
+            }
           }
         }
       });
       
+      Logger.info(`Found tabs - collection: ${tabCounts.collection || 0}, wishlist: ${tabCounts.wishlist || 0}, active: ${activeTabName || 'unknown'}`);
+      
+      // Only proceed with "view all items" logic if wishlist tab is active
+      if (!wishlistTabIsActive) {
+        Logger.info('Wishlist tab is not active, skipping "view all items" logic');
+        return false;
+      }
+      
       // Get the expected wishlist count
       const wishlistCount = tabCounts['wishlist'] || 0;
-      Logger.info(`Expected wishlist count: ${wishlistCount}`);
       
       // Check if we already have all items loaded
       const currentItems = this.loadWishlistItems();
@@ -2938,9 +3092,7 @@ export class BandcampFacade {
       const showMoreButtons = Array.from(document.getElementsByClassName('show-more')) as HTMLElement[];
       Logger.info(`Found ${showMoreButtons.length} buttons with class="show-more"`);
       
-      // First check if we're already on the wishlist tab
-      const isWishlistTabActive = DOMSelectors.findOneWithSelectors<HTMLElement>(DOMSelectors.ACTIVE_WISHLIST_TAB) !== null;
-      Logger.info(`Wishlist tab active: ${isWishlistTabActive}`);
+      Logger.info(`Wishlist tab active: ${wishlistTabIsActive}`);
       
       // Find buttons with "view all X items" text
       const itemButtons = showMoreButtons.filter((button) => {
@@ -3131,6 +3283,37 @@ export class BandcampFacade {
   }
 
   /**
+   * Reset all cached values and flags for SPA navigation
+   */
+  public static reset(): void {
+    Logger.info('BandcampFacade: Resetting cached values for SPA navigation');
+    
+    // Clear cached page type flags
+    BandcampFacade._isTrack = undefined;
+    BandcampFacade._isAlbum = undefined;
+    BandcampFacade._isWishlistPage = undefined;
+    
+    // Clear cached data and colors
+    BandcampFacade._data = undefined;
+    BandcampFacade._colors = undefined;
+    BandcampFacade._audio = undefined;
+    
+    // Reset wishlist navigation state
+    BandcampFacade._wishlistItems = [];
+    BandcampFacade._currentWishlistIndex = -1;
+    
+    // Reset error and navigation flags
+    BandcampFacade._pendingNextTrackRequest = false;
+    BandcampFacade._errorRecoveryInProgress = false;
+    BandcampFacade._skipInProgress = false;
+    BandcampFacade._consecutiveErrors = 0;
+    BandcampFacade._errorLogSuppressed = false;
+    BandcampFacade._releaseNavigationInProgress = false;
+    
+    Logger.info('BandcampFacade: Reset completed');
+  }
+
+  /**
    * Log Phase 2 performance metrics for monitoring optimization effectiveness
    */
   private static logPhase2Metrics(category: string, timeSavedMs: number): void {
@@ -3185,6 +3368,10 @@ export class BandcampFacade {
 
     let verificationComplete = false;
     let timeoutId: NodeJS.Timeout;
+    
+    // First track needs more time to initialize audio system
+    const isFirstTrack = index === 0;
+    const timeoutMs = isFirstTrack ? 800 : 350; // Give first track more time
 
     // Set up success handler for when playback starts
     const onPlaybackSuccess = () => {
@@ -3211,13 +3398,18 @@ export class BandcampFacade {
       clearTimeout(timeoutId);
       cleanup();
       
+      // Enhanced logging for debugging first track issues
+      if (Logger.isDebugEnabled() && isFirstTrack) {
+        Logger.debug(`Audio state at failure - paused: ${audio.paused}, readyState: ${audio.readyState}, currentTime: ${audio.currentTime}, src: ${audio.src ? 'present' : 'missing'}`);
+      }
+      
       Logger.info(`Track ${index + 1} failed to play: ${reason}`);
       Logger.timing('Event-based verification failed', verificationStart);
       Logger.timing('playWishlistTrack failed - playback failed', startTime);
       this.playNextWishlistTrack();
     };
 
-    // Event handlers
+    // Event handlers for track verification
     const onPlay = () => {
       // Audio element fired 'play' event, but let's wait for actual data
       if (!audio.paused && audio.readyState >= 2) {
@@ -3284,7 +3476,7 @@ export class BandcampFacade {
       return;
     }
 
-    // Phase 2: Optimized fallback timeout (reduced from 500ms to 350ms for faster feedback)
+    // Dynamic timeout based on track position - first track gets more time
     timeoutId = setTimeout(() => {
       if (!verificationComplete) {
         // Check one more time before giving up
@@ -3294,7 +3486,7 @@ export class BandcampFacade {
           onPlaybackFailure('timeout - no events received');
         }
       }
-    }, 350); // Phase 2: Reduced from 500ms to 350ms
+    }, timeoutMs);
   }
 
   /**

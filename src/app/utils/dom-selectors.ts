@@ -24,27 +24,22 @@ export class DOMSelectors {
   ];
 
   /**
-   * Wishlist item selectors
+   * Wishlist item selectors (optimized based on effectiveness analysis)
    */
   public static readonly WISHLIST_ITEMS = [
-    '.collection-item-container',
-    '.collection-item-gallery',
-    '.collection-item',
-    '.collection-items .item',
-    '.collection-items > li',
-    '[data-item-id]',
-    '.collection-title-details',
+    '.collection-item-container',  // Primary selector - consistently finds all items
+    '.collection-title-details',   // Backup selector - also effective but likely redundant
+    '.collection-item',            // General fallback
+    '[data-item-id]',             // Data attribute fallback (rarely present)
   ];
 
   /**
-   * Wishlist item fallback selectors
+   * Wishlist item fallback selectors (simplified)
    */
   public static readonly WISHLIST_ITEMS_FALLBACK = [
-    '.collection-grid-item',
-    '.música_grid li',
-    '.music-grid li',
-    '.collection-item-container',
-    '.music_grid li',
+    '.collection-grid-item',       // Alternative grid structure
+    '.music-grid li',             // Different naming convention
+    'li[class*="collection"]',    // Generic collection item pattern
   ];
 
   /**

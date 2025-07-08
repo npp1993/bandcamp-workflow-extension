@@ -14,7 +14,7 @@ export class Logger {
   };
   
   // Current log level - set to WARN for production (reduces verbose logging)
-  private static currentLogLevel = this.LOG_LEVELS.WARN;
+  private static currentLogLevel = this.LOG_LEVELS.DEBUG;
   
   /**
    * Set the current log level
@@ -85,5 +85,12 @@ export class Logger {
       console.log(`${this.PREFIX} [${this.getTimestamp()}] TIMING: Starting ${operation}`);
     }
     return startTime;
+  }
+
+  /**
+   * Check if debug logging is enabled
+   */
+  public static isDebugEnabled(): boolean {
+    return this.currentLogLevel >= this.LOG_LEVELS.DEBUG;
   }
 }
