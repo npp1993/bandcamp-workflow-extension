@@ -52,6 +52,8 @@ export class BandcampFacade {
 
   private static _isWishlistPage: boolean;
 
+  private static _isCollectionPage: boolean;
+
   private static _colors: BandcampColors;
 
   private static _audio: HTMLAudioElement;
@@ -173,6 +175,26 @@ export class BandcampFacade {
     this._isWishlistPage = wishlistRegex.test(url);
 
     return this._isWishlistPage;
+  }
+
+  public static get isCollectionPage(): boolean {
+    if (typeof this._isCollectionPage !== 'undefined') {
+      return this._isCollectionPage;
+    }
+
+    // Detect collection pages: bandcamp.com/username (without /wishlist)
+    const url = window.location.href;
+    const collectionRegex = /^https?:\/\/[^\/]*bandcamp\.com\/[^\/]+(?:[?#].*)?$/;
+    this._isCollectionPage = collectionRegex.test(url) && !this.isWishlistPage;
+
+    return this._isCollectionPage;
+  }
+
+  /**
+   * Check if current page supports track transport controls (wishlist or collection)
+   */
+  public static get isCollectionBasedPage(): boolean {
+    return this.isWishlistPage || this.isCollectionPage;
   }
 
   public static get colors(): BandcampColors {
@@ -546,15 +568,15 @@ export class BandcampFacade {
   // ============================================
 
   public static seekReset(): void {
-    SeekUtils.seekReset(this.isWishlistPage);
+    SeekUtils.seekReset(this.isCollectionBasedPage);
   }
 
   public static seekForward(): void {
-    SeekUtils.seekForward(this.isWishlistPage);
+    SeekUtils.seekForward(this.isCollectionBasedPage);
   }
 
   public static seekBackward(): void {
-    SeekUtils.seekBackward(this.isWishlistPage);
+    SeekUtils.seekBackward(this.isCollectionBasedPage);
   }
 
   public static setSpeed(speed: number): void {
@@ -706,28 +728,60 @@ export class BandcampFacade {
    * Load all wishlist items on the current page
    */
   public static loadWishlistItems(): HTMLElement[] {
-    if (!this.isWishlistPage) {
+    if (!this.isCollectionBasedPage) {
       return [];
     }
 
     try {
-      Logger.info('Loading wishlist items...');
+      Logger.info('Loading collection items...');
       
       // First, try to find items only within the currently active wishlist container
       // This helps avoid double-counting items from other tabs (like collection)
       let items: HTMLElement[] = [];
       
-      // Look for a wishlist-specific container first (optimized based on effectiveness data)
-      const wishlistContainers = [
-        '#wishlist-grid',              // Primary container - consistently found
-        '[data-grid-id="wishlist-grid"]', // Alternative attribute-based selector
-        '.wishlist-content',           // Generic content container
-      ];
+      // Look for containers (both wishlist and collection specific)
+      // Define container priorities based on current page type
+      let containers: string[];
       
-      for (const containerSelector of wishlistContainers) {
+      if (this.isCollectionPage) {
+        // For collection pages, prioritize collection containers
+        containers = [
+          '#collection-grid',            // Primary collection container
+          '[data-grid-id="collection-grid"]', // Alternative collection attribute-based selector
+          '#wishlist-grid',              // Fallback: Primary wishlist container  
+          '[data-grid-id="wishlist-grid"]', // Alternative wishlist attribute-based selector
+          '.collection-content',         // Generic collection content container
+          '.wishlist-content',           // Generic wishlist content container
+          '.grid-content',               // Generic grid content container
+        ];
+      } else if (this.isWishlistPage) {
+        // For wishlist pages, prioritize wishlist containers
+        containers = [
+          '#wishlist-grid',              // Primary wishlist container
+          '[data-grid-id="wishlist-grid"]', // Alternative wishlist attribute-based selector
+          '#collection-grid',            // Fallback: Primary collection container
+          '[data-grid-id="collection-grid"]', // Alternative collection attribute-based selector
+          '.wishlist-content',           // Generic wishlist content container
+          '.collection-content',         // Generic collection content container
+          '.grid-content',               // Generic grid content container
+        ];
+      } else {
+        // For other collection-based pages, try both but prefer collection first
+        containers = [
+          '#collection-grid',            // Primary collection container
+          '[data-grid-id="collection-grid"]', // Alternative collection attribute-based selector
+          '#wishlist-grid',              // Primary wishlist container
+          '[data-grid-id="wishlist-grid"]', // Alternative wishlist attribute-based selector
+          '.collection-content',         // Generic collection content container
+          '.wishlist-content',           // Generic wishlist content container
+          '.grid-content',               // Generic grid content container
+        ];
+      }
+      
+      for (const containerSelector of containers) {
         const container = document.querySelector(containerSelector);
         if (container) {
-          Logger.debug(`Found wishlist container: ${containerSelector}`);
+          Logger.debug(`Found container: ${containerSelector}`);
           
           // Log detailed selector effectiveness for this container (only in debug mode)
           if (Logger.isDebugEnabled()) {
@@ -746,7 +800,7 @@ export class BandcampFacade {
           
           items = DOMSelectors.findWithSelectors<HTMLElement>(DOMSelectors.WISHLIST_ITEMS, container as HTMLElement);
           if (items.length > 0) {
-            Logger.info(`Found ${items.length} wishlist items in specific container`);
+            Logger.info(`Found ${items.length} items in specific container`);
             
             // Log the actual structure of first few items for analysis
             if (items.length > 0 && Logger.isDebugEnabled()) {
@@ -798,7 +852,7 @@ export class BandcampFacade {
           return isVisible && isDisplayed;
         });
         
-        Logger.info(`Found ${items.length} visible wishlist items`);
+        Logger.info(`Found ${items.length} visible items`);
         
         // Log filtering results in debug mode
         if (Logger.isDebugEnabled() && allItems.length !== items.length) {
@@ -807,7 +861,7 @@ export class BandcampFacade {
       }
       
       if (!items || items.length === 0) {
-        Logger.warn('No wishlist items found with any selector, trying more general selectors');
+        Logger.warn('No items found with any selector, trying more general selectors');
         
         // Log fallback selector effectiveness
         if (Logger.isDebugEnabled()) {
@@ -832,7 +886,7 @@ export class BandcampFacade {
         }
         
         if (!items || items.length === 0) {
-          Logger.warn('No wishlist items found with any selector');
+          Logger.warn('No items found with any selector');
           
           // Log DOM structure for debugging when no items are found
           if (Logger.isDebugEnabled()) {
@@ -898,12 +952,47 @@ export class BandcampFacade {
         }
       });
       
-      Logger.info(`Found ${this._wishlistItems.length} playable wishlist items`);
+      // Reset current index if we're loading a completely different set of items
+      // This happens when navigating between wishlist and collection pages
+      if (this._currentWishlistIndex >= this._wishlistItems.length) {
+        Logger.info(`Resetting current index (was ${this._currentWishlistIndex}, but only have ${this._wishlistItems.length} items)`);
+        this._currentWishlistIndex = -1;
+      }
+      
+      // Try to find the currently playing track in the new item array
+      // This helps maintain proper navigation after page switches
+      if (this._currentWishlistIndex < 0) {
+        const audio = AudioUtils.getAudioElement();
+        if (audio && audio.src && !audio.paused) {
+          // Extract track ID from the current audio source
+          let currentTrackId = null;
+          if (audio.src.includes('track_id=')) {
+            const urlParams = new URLSearchParams(audio.src.split('?')[1]);
+            currentTrackId = urlParams.get('track_id');
+          }
+          
+          if (currentTrackId) {
+            // Find this track in the current item array
+            const matchingIndex = this._wishlistItems.findIndex(item => 
+              item.getAttribute('data-track-id') === currentTrackId
+            );
+            
+            if (matchingIndex >= 0) {
+              Logger.info(`Found currently playing track at index ${matchingIndex} in new item array`);
+              this._currentWishlistIndex = matchingIndex;
+            } else {
+              Logger.info(`Currently playing track not found in current page items`);
+            }
+          }
+        }
+      }
+      
+      Logger.info(`Found ${this._wishlistItems.length} playable items`);
       return this._wishlistItems;
     } catch (error) {
       ErrorHandler.withErrorHandling(() => {
         throw error; 
-      }, 'Error loading wishlist items');
+      }, 'Error loading items');
       return [];
     }
   }
@@ -1149,8 +1238,8 @@ export class BandcampFacade {
   public static playWishlistTrack(index: number): void {
     const startTime = Logger.startTiming('playWishlistTrack');
     
-    if (!this.isWishlistPage || this._wishlistItems.length === 0) {
-      Logger.warn('Cannot play wishlist track - not on wishlist page or no items loaded');
+    if (!this.isCollectionBasedPage || this._wishlistItems.length === 0) {
+      Logger.warn('Cannot play wishlist track - not on collection-based page or no items loaded');
       Logger.timing('playWishlistTrack failed - invalid state', startTime);
       return;
     }
@@ -1295,7 +1384,7 @@ export class BandcampFacade {
   public static playNextWishlistTrack(): void {
     const startTime = Logger.startTiming('playNextWishlistTrack');
     
-    if (!this.isWishlistPage || this._wishlistItems.length === 0) {
+    if (!this.isCollectionBasedPage || this._wishlistItems.length === 0) {
       Logger.timing('playNextWishlistTrack failed - invalid state', startTime);
       return;
     }
@@ -1357,7 +1446,7 @@ export class BandcampFacade {
   public static async playPreviousWishlistTrack(): Promise<void> {
     const startTime = Logger.startTiming('playPreviousWishlistTrack');
     
-    if (!this.isWishlistPage || this._wishlistItems.length === 0) {
+    if (!this.isCollectionBasedPage || this._wishlistItems.length === 0) {
       Logger.timing('playPreviousWishlistTrack failed - invalid state', startTime);
       return;
     }
@@ -1489,7 +1578,7 @@ export class BandcampFacade {
    * Start playing the wishlist from the beginning
    */
   public static startWishlistPlayback(): void {
-    if (!this.isWishlistPage) {
+    if (!this.isCollectionBasedPage) {
       return;
     }
 
@@ -1510,14 +1599,14 @@ export class BandcampFacade {
    * Check if currently playing a wishlist track
    */
   public static isPlayingWishlistTrack(): boolean {
-    return this.isWishlistPage && this._currentWishlistIndex >= 0;
+    return this.isCollectionBasedPage && this._currentWishlistIndex >= 0;
   }
 
   /**
    * Setup automatic playback of next track when current track ends
    */
   public static setupWishlistContinuousPlayback(): void {
-    if (!this.isWishlistPage) {
+    if (!this.isCollectionBasedPage) {
       return;
     }
 
@@ -1568,7 +1657,7 @@ export class BandcampFacade {
   private static handleTrackEnded = () => {
     Logger.info('Track ended, playing next track');
     // Use BandcampFacade instead of this to avoid reference issues
-    if (BandcampFacade.isWishlistPage && BandcampFacade._currentWishlistIndex >= 0) {
+    if (BandcampFacade.isCollectionBasedPage && BandcampFacade._currentWishlistIndex >= 0) {
       BandcampFacade.playNextWishlistTrack();
     }
   }
@@ -1988,8 +2077,8 @@ export class BandcampFacade {
   private static handleAudioLoadStart = (event: Event) => {
     const audio = event.target as HTMLAudioElement;
     
-    // Check if we're on a wishlist page and have a source with missing track ID
-    if (BandcampFacade.isWishlistPage && 
+    // Check if we're on a collection-based page and have a source with missing track ID
+    if (BandcampFacade.isCollectionBasedPage && 
         BandcampFacade._currentWishlistIndex >= 0 &&
         audio.src && 
         (audio.src.includes('track_id=&') || !audio.src.includes('track_id='))) {
@@ -2258,30 +2347,37 @@ export class BandcampFacade {
         Logger.info('No play button found');
       }
 
-      // Special handling for wishlist pages
-      if (this.isWishlistPage) {
-        Logger.info('=== WISHLIST PAGE HANDLING ===');
+      // Special handling for collection-based pages (wishlist and collection)
+      if (this.isCollectionBasedPage) {
+        const pageType = this.isWishlistPage ? 'WISHLIST' : 'COLLECTION';
+        Logger.info(`=== ${pageType} PAGE HANDLING ===`);
+        
         // Check if we need to start playback for the first time (no track selected yet)
-        if (this._currentWishlistIndex < 0 && this._wishlistItems.length === 0) {
-          Logger.info('Loading wishlist items for first-time playback');
+        if (this._wishlistItems.length === 0) {
+          Logger.info(`Loading ${pageType.toLowerCase()} items for first-time playback`);
           this.loadWishlistItems();
         }
         
-        if (this._currentWishlistIndex < 0 && this._wishlistItems.length > 0) {
-          Logger.info('No track currently selected on wishlist page, starting from first track');
+        const collectionAudio = AudioUtils.getWishlistAudioElement();
+        
+        // Check if no track is currently loaded/playing (audio has no src or is at beginning)
+        const needsFirstTimePlayback = collectionAudio && 
+          (!collectionAudio.src || collectionAudio.src === '' || 
+           (collectionAudio.currentTime === 0 && collectionAudio.paused && this._currentWishlistIndex < 0));
+        
+        if (needsFirstTimePlayback && this._wishlistItems.length > 0) {
+          Logger.info(`No track currently loaded on ${pageType.toLowerCase()} page, starting from first track`);
           // Clear the flag before starting a new track to avoid lockout
           this._playPauseInProgress = false;
           this.startWishlistPlayback();
           return;
         }
         
-        const wishlistAudio = AudioUtils.getWishlistAudioElement();
-        
-        if (wishlistAudio) {
+        if (collectionAudio) {
           // Toggle play/pause state
-          if ((wishlistAudio as HTMLAudioElement).paused) {
-            Logger.info('Playing audio on wishlist page');
-            (wishlistAudio as HTMLAudioElement).play()
+          if ((collectionAudio as HTMLAudioElement).paused) {
+            Logger.info(`Playing audio on ${pageType.toLowerCase()} page`);
+            (collectionAudio as HTMLAudioElement).play()
               .then(() => {
                 // Clear the flag after successful play
                 setTimeout(() => {
@@ -2296,8 +2392,8 @@ export class BandcampFacade {
                 this._playPauseInProgress = false;
               });
           } else {
-            Logger.info('Pausing audio on wishlist page');
-            (wishlistAudio as HTMLAudioElement).pause();
+            Logger.info(`Pausing audio on ${pageType.toLowerCase()} page`);
+            (collectionAudio as HTMLAudioElement).pause();
             // Clear the flag after a short delay for pausing
             setTimeout(() => {
               this._playPauseInProgress = false;
@@ -2305,12 +2401,12 @@ export class BandcampFacade {
           }
           
           // Also try to find and update UI play button if it exists
-          const wishlistPlayButton = document.querySelector('.carousel-player-inner .playbutton, .play-button');
-          if (wishlistPlayButton && wishlistPlayButton.classList) {
-            if ((wishlistAudio as HTMLAudioElement).paused) {
-              wishlistPlayButton.classList.remove('playing');
+          const collectionPlayButton = document.querySelector('.carousel-player-inner .playbutton, .play-button');
+          if (collectionPlayButton && collectionPlayButton.classList) {
+            if ((collectionAudio as HTMLAudioElement).paused) {
+              collectionPlayButton.classList.remove('playing');
             } else {
-              wishlistPlayButton.classList.add('playing');
+              collectionPlayButton.classList.add('playing');
             }
           }
           
@@ -3292,6 +3388,7 @@ export class BandcampFacade {
     BandcampFacade._isTrack = undefined;
     BandcampFacade._isAlbum = undefined;
     BandcampFacade._isWishlistPage = undefined;
+    BandcampFacade._isCollectionPage = undefined;
     
     // Clear cached data and colors
     BandcampFacade._data = undefined;

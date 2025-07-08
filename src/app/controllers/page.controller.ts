@@ -40,13 +40,13 @@ export class PageController {
       this.controllers.downloadHelper = new DownloadHelperController();
     }
 
-    // Initialize wishlist controller for wishlist pages
-    if (BandcampFacade.isWishlistPage) {
+    // Initialize wishlist controller for collection-based pages (wishlist and collection)
+    if (BandcampFacade.isCollectionBasedPage) {
       this.controllers.wishlist = new WishlistController();
     }
 
-    // If not on a supported page or wishlist page, return early
-    if (!BandcampFacade.isPageSupported && !BandcampFacade.isWishlistPage) {
+    // If not on a supported page or collection-based page, return early
+    if (!BandcampFacade.isPageSupported && !BandcampFacade.isCollectionBasedPage) {
       return;
     }
 
@@ -59,16 +59,16 @@ export class PageController {
       this.createSpeedRow();
     }
 
-    // Initialize waveform controller for supported page types (track, album, wishlist)
-    if (BandcampFacade.isPageSupported || BandcampFacade.isWishlistPage) {
+    // Initialize waveform controller for supported page types (track, album, wishlist, collection)
+    if (BandcampFacade.isPageSupported || BandcampFacade.isCollectionBasedPage) {
       WaveformController.initialize();
     }
 
-    // Initialize keyboard controller for both supported pages and wishlist page
+    // Initialize keyboard controller for both supported pages and collection-based pages
     KeyboardController.start(this.controllers);
 
     // Initialize the advanced mouse playbar controller
-    // This works on both regular pages and wishlist pages
+    // This works on both regular pages and collection-based pages
     PlaybarController.start();
   }
 

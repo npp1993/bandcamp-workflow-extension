@@ -82,7 +82,8 @@ export class KeyboardController {
           
         case 'c':
           // Handle add to cart functionality with special handling for Shift+C
-          if (!e.metaKey && !e.ctrlKey && !e.altKey) {
+          // Disabled on collection pages
+          if (!e.metaKey && !e.ctrlKey && !e.altKey && !BandcampFacade.isCollectionPage) {
             e.preventDefault();
             if (e.shiftKey) {
               // Shift+C: Add to cart and close tab (only on wishlist pages)
@@ -117,16 +118,11 @@ export class KeyboardController {
           break;
           
         case 'p':
-          // Check for shift modifier for first track functionality
-          // Only trigger if no Command/Ctrl keys are pressed (allow Command+P for print)
+          // Only trigger previous track if no Command/Ctrl keys are pressed (allow Command+P for print)
           // Skip if in bulk mode (bulk mode handles 'p' for navigation)
-          if (!e.metaKey && !e.ctrlKey && !e.altKey && !BulkCartService.isInBulkMode) {
+          if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey && !BulkCartService.isInBulkMode) {
             e.preventDefault();
-            if (e.shiftKey) {
-              BandcampFacade.playFirstTrack();
-            } else {
-              this.handlePreviousTrack();
-            }
+            this.handlePreviousTrack();
           }
           break;
           
@@ -161,7 +157,8 @@ export class KeyboardController {
           
         case 'arrowup':
           // Only trigger speed increase if no modifier keys are pressed
-          if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+          // Disabled on wishlist and collection pages
+          if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey && !BandcampFacade.isCollectionBasedPage) {
             e.preventDefault();
             if (this.controllers && this.controllers.speed) {
               this.controllers.speed.increase();
@@ -171,7 +168,8 @@ export class KeyboardController {
           
         case 'arrowdown':
           // Only trigger speed decrease if no modifier keys are pressed
-          if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+          // Disabled on wishlist and collection pages
+          if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey && !BandcampFacade.isCollectionBasedPage) {
             e.preventDefault();
             if (this.controllers && this.controllers.speed) {
               this.controllers.speed.decrease();
@@ -182,7 +180,8 @@ export class KeyboardController {
         case 'r':
           // Only trigger speed reset if no modifier keys are pressed
           // This allows Cmd+R (reload page), Ctrl+R, etc. to work normally
-          if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+          // Disabled on wishlist and collection pages
+          if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey && !BandcampFacade.isCollectionBasedPage) {
             // Don't prevent default for 'r' to allow page reload
             if (this.controllers && this.controllers.speed) {
               this.controllers.speed.reset();
@@ -236,8 +235,8 @@ export class KeyboardController {
   private static handlePreviousTrack() {
     const startTime = Logger.startTiming('Previous track navigation');
     
-    if (BandcampFacade.isWishlistPage) {
-      Logger.info('Previous track requested on wishlist page');
+    if (BandcampFacade.isCollectionBasedPage) {
+      Logger.info('Previous track requested on collection-based page (wishlist/collection)');
       // Handle async call without blocking
       BandcampFacade.playPreviousWishlistTrack()
         .then(() => {
@@ -261,8 +260,8 @@ export class KeyboardController {
   private static handleNextTrack() {
     const startTime = Logger.startTiming('Next track navigation');
     
-    if (BandcampFacade.isWishlistPage) {
-      Logger.info('Next track requested on wishlist page');
+    if (BandcampFacade.isCollectionBasedPage) {
+      Logger.info('Next track requested on collection-based page (wishlist/collection)');
       BandcampFacade.playNextWishlistTrack();
       // Note: playNextWishlistTrack is sync but has internal delays, so timing will be logged there
       Logger.timing('Next track navigation initiated', startTime);

@@ -3,14 +3,14 @@ import {Logger} from '../utils/logger';
 import {BulkCartService} from '../services/bulk-cart.service';
 
 /**
- * Controller for the wishlist page
- * Handles streaming tracks from the wishlist page
+ * Controller for collection-based pages (wishlist and collection)
+ * Handles streaming tracks from collection-based pages
  */
 export class WishlistController {
   private hasInitialized = false;
 
   constructor() {
-    if (!BandcampFacade.isWishlistPage) {
+    if (!BandcampFacade.isCollectionBasedPage) {
       return;
     }
 
@@ -29,55 +29,99 @@ export class WishlistController {
         // Add a visual indicator that we're loading
         this.showLoadingIndicator();
         
-        // First, load all wishlist items by clicking the "view all" button
-        Logger.info('Initializing wishlist controller - checking if all items need to be loaded...');
-        BandcampFacade.loadAllWishlistItems().then((success) => {
-          if (success) {
-            Logger.info('All wishlist items are now loaded');
-          } else {
-            Logger.info('Unable to load all wishlist items, proceeding with visible items');
-          }
+        // For wishlist pages, try to load all items by clicking the "view all" button
+        // For collection pages, skip this step and proceed directly to loading visible items
+        if (BandcampFacade.isWishlistPage) {
+          Logger.info('Initializing wishlist controller - checking if all items need to be loaded...');
+          BandcampFacade.loadAllWishlistItems().then((success) => {
+            if (success) {
+              Logger.info('All wishlist items are now loaded');
+            } else {
+              Logger.info('Unable to load all wishlist items, proceeding with visible items');
+            }
 
-          // Now load the wishlist items that are visible
-          const items = BandcampFacade.loadWishlistItems();
-          
-          if (items.length > 0) {
-            // Setup continuous playback
-            BandcampFacade.setupWishlistContinuousPlayback();
-            
-            // Add controls to the sidebar
-            this.addWishlistControls();
-            
-            // Remove loading indicator and show success message
-            this.hideLoadingIndicator();
-            Logger.info(`Wishlist controller initialized with ${items.length} items. Press spacebar to start playing.`);
-          } else {
-            this.hideLoadingIndicator();
-            Logger.warn('No wishlist items found during initialization');
-          }
-          
-          this.hasInitialized = true;
-        }).catch((error) => {
-          Logger.error('Error loading all wishlist items:', error);
-          
-          // Fall back to just loading visible items
-          const items = BandcampFacade.loadWishlistItems();
-          
-          if (items.length > 0) {
-            BandcampFacade.setupWishlistContinuousPlayback();
-            this.addWishlistControls();
-            Logger.info(`Wishlist controller initialized in fallback mode with ${items.length} items.`);
-          }
-          
+            this.initializeItemsAndControls();
+          }).catch((error) => {
+            Logger.error('Error loading all wishlist items:', error);
+            this.initializeItemsAndControls();
+          });
+        } else if (BandcampFacade.isCollectionPage) {
+          Logger.info('Initializing collection controller - proceeding directly with visible items...');
+          this.initializeItemsAndControls();
+        } else {
+          Logger.warn('Not on a recognized collection-based page');
           this.hideLoadingIndicator();
           this.hasInitialized = true;
-        });
+        }
+
+        // Add a visual indicator that we're loading
+        this.showLoadingIndicator();
+        
+        // For wishlist pages, try to load all items by clicking the "view all" button
+        // For collection pages, skip this step and proceed directly to loading visible items
+        if (BandcampFacade.isWishlistPage) {
+          Logger.info('Initializing wishlist controller - checking if all items need to be loaded...');
+          BandcampFacade.loadAllWishlistItems().then((success) => {
+            if (success) {
+              Logger.info('All wishlist items are now loaded');
+            } else {
+              Logger.info('Unable to load all wishlist items, proceeding with visible items');
+            }
+
+            this.initializeItemsAndControls();
+          }).catch((error) => {
+            Logger.error('Error loading all wishlist items:', error);
+            this.initializeItemsAndControls();
+          });
+        } else if (BandcampFacade.isCollectionPage) {
+          Logger.info('Initializing collection controller - proceeding directly with visible items...');
+          this.initializeItemsAndControls();
+        } else {
+          Logger.warn('Not on a recognized collection-based page');
+          this.hideLoadingIndicator();
+          this.hasInitialized = true;
+        }
       } catch (error) {
         Logger.error('Error initializing wishlist controller:', error);
         this.hideLoadingIndicator();
         this.hasInitialized = true;
       }
     }, 1000);
+  }
+
+  /**
+   * Initialize items and controls (shared logic for both wishlist and collection pages)
+   */
+  private initializeItemsAndControls(): void {
+    try {
+      // Now load the items that are visible
+      const items = BandcampFacade.loadWishlistItems();
+      
+      if (items.length > 0) {
+        // Setup continuous playback
+        BandcampFacade.setupWishlistContinuousPlayback();
+        
+        // Add controls to the sidebar (only for wishlist pages)
+        if (BandcampFacade.isWishlistPage) {
+          this.addWishlistControls();
+        }
+        
+        // Remove loading indicator and show success message
+        this.hideLoadingIndicator();
+        const pageType = BandcampFacade.isWishlistPage ? 'wishlist' : 'collection';
+        Logger.info(`${pageType} controller initialized with ${items.length} items. Press spacebar to start playing.`);
+      } else {
+        this.hideLoadingIndicator();
+        const pageType = BandcampFacade.isWishlistPage ? 'wishlist' : 'collection';
+        Logger.warn(`No ${pageType} items found during initialization`);
+      }
+      
+      this.hasInitialized = true;
+    } catch (error) {
+      Logger.error('Error in initializeItemsAndControls:', error);
+      this.hideLoadingIndicator();
+      this.hasInitialized = true;
+    }
   }
 
   /**
