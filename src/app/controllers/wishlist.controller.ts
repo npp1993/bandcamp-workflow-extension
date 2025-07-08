@@ -1,6 +1,7 @@
 import {BandcampFacade} from '../facades/bandcamp.facade';
 import {Logger} from '../utils/logger';
 import {BulkCartService} from '../services/bulk-cart.service';
+import {ShuffleService} from '../services/shuffle.service';
 
 /**
  * Controller for collection-based pages (wishlist and collection)
@@ -101,9 +102,11 @@ export class WishlistController {
         // Setup continuous playback
         BandcampFacade.setupWishlistContinuousPlayback();
         
-        // Add controls to the sidebar (only for wishlist pages)
+        // Add controls to the sidebar (different controls based on page type)
         if (BandcampFacade.isWishlistPage) {
           this.addWishlistControls();
+        } else if (BandcampFacade.isCollectionPage) {
+          this.addCollectionControls();
         }
         
         // Remove loading indicator and show success message
@@ -148,6 +151,20 @@ export class WishlistController {
 
       // Set the button reference for the service
       BulkCartService.setBulkButton(bulkCartButton);
+
+      // Create shuffle button
+      const shuffleButton = document.createElement('button');
+      shuffleButton.className = 'bandcamp-workflow-shuffle-button';
+      shuffleButton.textContent = 'Shuffle: OFF (S)';
+      shuffleButton.style.cssText = 'padding: 8px 12px; cursor: pointer; background-color: #6c757d; color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: bold; margin-top: 5px;';
+      shuffleButton.title = 'Toggle shuffle mode for next track navigation - Press S key';
+      
+      shuffleButton.addEventListener('click', () => {
+        ShuffleService.toggleShuffle();
+      });
+
+      // Set the button reference for the shuffle service
+      ShuffleService.setShuffleButton(shuffleButton);
 
       // Create navigation buttons (hidden by default, shown in bulk mode)
       const prevButton = document.createElement('button');
@@ -222,7 +239,8 @@ export class WishlistController {
       BulkCartService.setToggleSelectionButton(toggleSelectionButton);
       BulkCartService.setExitBulkButton(exitBulkButton);
 
-      // Add the buttons to the controls container
+      // Add the buttons to the controls container (shuffle first, then bulk cart)
+      controlsContainer.appendChild(shuffleButton);
       controlsContainer.appendChild(bulkCartButton);
       controlsContainer.appendChild(prevButton);
       controlsContainer.appendChild(nextButton);
@@ -232,6 +250,40 @@ export class WishlistController {
       controlsContainer.appendChild(exitBulkButton);
     } catch (error) {
       Logger.error('Error adding wishlist controls:', error);
+    }
+  }
+
+  /**
+   * Add collection controls to the sidebar (shuffle only, no bulk cart features)
+   */
+  private addCollectionControls(): void {
+    try {
+      // Get the existing sidebar container (created during loading)
+      const controlsContainer = this.createSidebarContainer();
+      
+      // Clear any loading content
+      controlsContainer.innerHTML = '';
+
+      // Create shuffle button (only control available on collection pages)
+      const shuffleButton = document.createElement('button');
+      shuffleButton.className = 'bandcamp-workflow-shuffle-button';
+      shuffleButton.textContent = 'Shuffle: OFF (S)';
+      shuffleButton.style.cssText = 'padding: 8px 12px; cursor: pointer; background-color: #6c757d; color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: bold;';
+      shuffleButton.title = 'Toggle shuffle mode for next track navigation - Press S key';
+      
+      shuffleButton.addEventListener('click', () => {
+        ShuffleService.toggleShuffle();
+      });
+
+      // Set the button reference for the shuffle service
+      ShuffleService.setShuffleButton(shuffleButton);
+
+      // Add the shuffle button to the controls container
+      controlsContainer.appendChild(shuffleButton);
+      
+      Logger.info('Collection controls added (shuffle only)');
+    } catch (error) {
+      Logger.error('Error adding collection controls:', error);
     }
   }
 
@@ -333,6 +385,17 @@ export class WishlistController {
       } else {
         Logger.warn('No wishlist items found for bulk cart mode');
       }
+    }
+  }
+
+  /**
+   * Clean up the sidebar when navigating away from collection-based pages
+   */
+  public static cleanup(): void {
+    const controlsContainer = document.querySelector('.bandcamp-workflow-controls-sidebar') as HTMLElement;
+    if (controlsContainer) {
+      controlsContainer.remove();
+      Logger.info('Wishlist/Collection sidebar removed during cleanup');
     }
   }
 

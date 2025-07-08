@@ -9,6 +9,7 @@ import {DOMSelectors} from '../utils/dom-selectors';
 import {AddToCartUtils} from '../utils/add-to-cart-utils';
 import {WishlistService} from '../services/wishlist.service';
 import {NotificationService} from '../services/notification.service';
+import {ShuffleService} from '../services/shuffle.service';
 
 // Add type definition for window.TralbumData
 declare global {
@@ -940,6 +941,8 @@ export class BandcampFacade {
               if (playButton.contains(target)) {
                 Logger.info(`Manual play detected on wishlist item index: ${index}`);
                 BandcampFacade._currentWishlistIndex = index;
+                // Record the manual selection in shuffle history
+                ShuffleService.recordManualSelection(index);
                 // Ensure continuous playback listeners are (re)attached after a short delay
                 // in case Bandcamp swaps the audio element on play.
                 setTimeout(() => BandcampFacade.setupWishlistContinuousPlayback(), 50);
@@ -1413,12 +1416,19 @@ export class BandcampFacade {
       // Phase 2: Track navigation optimization (150ms saved: 250ms → 100ms)
       this.logPhase2Metrics('Navigation', 150);
       
-      let nextIndex = this._currentWishlistIndex + 1;
-      if (nextIndex >= this._wishlistItems.length) {
-        nextIndex = 0; // Loop back to the first track
+      let nextIndex: number;
+      if (ShuffleService.isShuffleEnabled) {
+        // Use shuffle service to get next track
+        nextIndex = ShuffleService.getNextShuffledIndex(this._currentWishlistIndex, this._wishlistItems.length);
+      } else {
+        // Regular sequential navigation
+        nextIndex = this._currentWishlistIndex + 1;
+        if (nextIndex >= this._wishlistItems.length) {
+          nextIndex = 0; // Loop back to the first track
+        }
       }
 
-      Logger.info(`Playing next wishlist track (${nextIndex + 1} of ${this._wishlistItems.length})`);
+      Logger.info(`Playing next wishlist track (${nextIndex + 1} of ${this._wishlistItems.length})${ShuffleService.isShuffleEnabled ? ' [SHUFFLE]' : ''}`);
       Logger.timing('Next index calculated', delayCompleteTime);
       
       const playTrackStart = Logger.startTiming('Calling playWishlistTrack');
@@ -1500,9 +1510,30 @@ export class BandcampFacade {
       }
       Logger.timing('Previous track preparation completed', delayCompleteTime);
 
-      let prevIndex = this._currentWishlistIndex - 1;
-      if (prevIndex < 0) {
-        prevIndex = this._wishlistItems.length - 1; // Loop back to the last track
+      let prevIndex: number;
+      
+      // Check if shuffle is enabled and we have a valid previous track in history
+      if (ShuffleService.isShuffleEnabled && ShuffleService.hasPreviousInHistory(this._currentWishlistIndex)) {
+        const historyIndex = ShuffleService.getPreviousFromHistory(this._currentWishlistIndex, this._wishlistItems.length);
+        if (historyIndex !== null) {
+          // Successfully got a previous track from shuffle history
+          prevIndex = historyIndex;
+          Logger.info(`Using shuffle history: going to track ${prevIndex + 1} (from history)`);
+        } else {
+          // No valid previous track in shuffle history - treat as if shuffle was disabled
+          prevIndex = this._currentWishlistIndex - 1;
+          if (prevIndex < 0) {
+            prevIndex = this._wishlistItems.length - 1; // Loop back to the last track
+          }
+          Logger.info(`Sequential navigation: going to track ${prevIndex + 1} (no valid shuffle history)`);
+        }
+      } else {
+        // Sequential behavior (shuffle disabled or no history available)
+        prevIndex = this._currentWishlistIndex - 1;
+        if (prevIndex < 0) {
+          prevIndex = this._wishlistItems.length - 1; // Loop back to the last track
+        }
+        Logger.info(`Sequential navigation: going to track ${prevIndex + 1}${ShuffleService.isShuffleEnabled ? ' (no shuffle history)' : ' (shuffle disabled)'}`);
       }
 
       // Check if the previous track is in our problem list
@@ -3266,8 +3297,12 @@ export class BandcampFacade {
       
       Logger.info(`Clicking wishlist button: "${wishlistButton.textContent?.trim()}"`);
       
-      // Save the current scroll position
-      const originalScrollPosition = window.scrollY;
+      // Save the current scroll position more reliably
+      const originalScrollPosition = {
+        x: window.scrollX,
+        y: window.scrollY
+      };
+      Logger.info(`Saved original scroll position: x=${originalScrollPosition.x}, y=${originalScrollPosition.y}`);
       
       // Click the wishlist "view all items" button
       try {
@@ -3304,7 +3339,7 @@ export class BandcampFacade {
             const itemsAtBottom = this.loadWishlistItems();
             Logger.info(`Found ${itemsAtBottom.length} items while at bottom`);
             
-            // Scroll back to top
+            // Scroll back to top temporarily to check loading
             window.scrollTo(0, 0);
             await new Promise((resolve) => setTimeout(resolve, 400));
           }
@@ -3363,12 +3398,34 @@ export class BandcampFacade {
             Logger.info(`After manual scroll events: Found ${items.length} items`);
           }
           
-          // Final scroll back to top
+          // Final scroll back to top before checking final counts
           window.scrollTo(0, 0);
         }
         
-        // Restore scroll position
-        window.scrollTo(0, originalScrollPosition);
+        // Restore original scroll position with smooth scrolling and delay
+        Logger.info(`Restoring scroll position to: x=${originalScrollPosition.x}, y=${originalScrollPosition.y}`);
+        
+        // Use a slight delay to ensure DOM is stable after all the loading
+        setTimeout(() => {
+          try {
+            // Use smooth scrolling if the position is reasonable
+            if (originalScrollPosition.y < document.body.scrollHeight) {
+              window.scrollTo({
+                left: originalScrollPosition.x,
+                top: originalScrollPosition.y,
+                behavior: 'smooth'
+              });
+            } else {
+              // If original position is beyond new page height, scroll to top
+              Logger.info('Original scroll position is beyond new page height, scrolling to top');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+          } catch (scrollError) {
+            Logger.warn('Error restoring scroll position:', scrollError);
+            // Fallback to instant scroll
+            window.scrollTo(originalScrollPosition.x, originalScrollPosition.y);
+          }
+        }, 500); // 500ms delay to let DOM settle
         
         Logger.info(`Final result: Loaded ${items.length} wishlist items after clicking "view all items" button`);
         
@@ -3412,6 +3469,9 @@ export class BandcampFacade {
     BandcampFacade._consecutiveErrors = 0;
     BandcampFacade._errorLogSuppressed = false;
     BandcampFacade._releaseNavigationInProgress = false;
+    
+    // Reset shuffle service history
+    ShuffleService.reset();
     
     Logger.info('BandcampFacade: Reset completed');
   }
@@ -3485,6 +3545,9 @@ export class BandcampFacade {
       
       clearTimeout(timeoutId);
       cleanup();
+      
+      // Add track to shuffle play history when successfully played
+      ShuffleService.addToPlayHistory(index);
       
       Logger.info(`Track ${index + 1} playing via event-based verification`);
       Logger.timing('Event-based verification successful', verificationStart);

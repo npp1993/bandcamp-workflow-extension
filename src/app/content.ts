@@ -1,4 +1,5 @@
 import {PageController} from './controllers/page.controller';
+import {WishlistController} from './controllers/wishlist.controller';
 import {BandcampFacade} from './facades/bandcamp.facade';
 import {AddToCartUtils} from './utils/add-to-cart-utils';
 import {AlbumOnlyUtils} from './utils/album-only-utils';
@@ -135,6 +136,9 @@ function initializeExtension(): void {
     Logger.info('Cleaning up existing PageController instance');
     // TODO: Add cleanup method to PageController if needed
   }
+  
+  // Clean up any existing wishlist/collection sidebar
+  WishlistController.cleanup();
   
   // Reset the BandcampFacade to clear any cached values
   BandcampFacade.reset();

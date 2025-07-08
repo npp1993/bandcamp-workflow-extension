@@ -42,6 +42,7 @@ Icons were created by [Dharu Ghazi](https://www.fiverr.com/dghzdesign).
 | `r` | Reset playback speed to normal | Album/track pages only |
 | `c` | Add current track/album to cart | Album/track/wishlist pages only |
 | `Shift + c` | Add current track to cart and close tab | Wishlist pages only |
+| `s` | Toggle shuffle mode for next track navigation | Wishlist/collection pages only |
 | `b` | Enter/exit bulk selection mode | Wishlist pages only |
 
 ### Page Types
@@ -58,10 +59,12 @@ The extension recognizes different page types and enables different features acc
   - Shift+C to add to cart and close tab is available
   - Transport controls work with wishlist items
   - Auto-scrolling keeps the currently playing track visible when using n/p navigation
+  - Shuffle mode (s) randomizes next track selection to avoid predictable playback
 
 - **Collection Pages**: Your music collection (bandcamp.com/username)
   - Transport controls (space/n/p/h/l/i) work with collection items
   - Auto-scrolling keeps the currently playing track visible when using n/p navigation
+  - Shuffle mode (s) randomizes next track selection to avoid predictable playback
   - Speed controls and add to cart features are disabled
 
 ## Bulk Selection Mode
@@ -80,6 +83,23 @@ When on the wishlist page, you can enter bulk selection mode to add multiple ite
 By default, all items are selected when entering bulk mode. Selected items have a background color change, and the currently focused item has a border. The "Select All" and "Deselect All" buttons appear only when in bulk mode.
 
 **Tip**: The continuous selection feature is great for quickly selecting or deselecting ranges of items. Hold down `f` and use `n` or `p` to navigate - each item you move to will automatically toggle its selection state.
+
+## Shuffle Mode
+
+On wishlist and collection pages, you can enable shuffle mode to randomize the next track selection:
+
+- **Toggle shuffle**: Press `s` or click the "Shuffle" button in the sidebar
+- **Smart randomization**: Avoids playing recently played tracks (remembers last 30% of your collection)
+- **Visual indicator**: The button shows "Shuffle: ON" when enabled and "Shuffle: OFF" when disabled
+- **Persistent setting**: Shuffle preference is maintained when navigating between collection and wishlist pages
+- **History tracking**: Records manually selected tracks to improve randomization quality
+
+When shuffle mode is enabled, pressing `n` (next track) will jump to a random track instead of the next sequential one. The `p` (previous track) key has smart behavior:
+
+- **Shuffle enabled**: Goes back to the previously played track from your play history (maintaining the actual order you listened to tracks)
+- **Shuffle disabled**: Goes to the previous sequential track in the collection/wishlist
+
+**Note**: Play history is maintained only during your current session and resets when you reload the page.
 
 ## License
 

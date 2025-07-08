@@ -4,6 +4,7 @@ import {WishlistController} from './wishlist.controller';
 import {Controllers} from './page.controller';
 import {Logger} from '../utils/logger';
 import {BulkCartService} from '../services/bulk-cart.service';
+import {ShuffleService} from '../services/shuffle.service';
 
 /**
  * KeyboardController class handles keyboard shortcuts for the extension
@@ -77,6 +78,15 @@ export class KeyboardController {
           if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
             e.preventDefault();
             this.toggleWishlistTrack();
+          }
+          break;
+
+        case 's':
+          // Only trigger shuffle toggle on collection-based pages if no modifier keys are pressed
+          // This allows Ctrl+S (save), Command+S, etc. to work normally
+          if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey && BandcampFacade.isCollectionBasedPage) {
+            e.preventDefault();
+            ShuffleService.toggleShuffle();
           }
           break;
           
