@@ -76,6 +76,9 @@ export class BandcampFacade {
   private static _errorLogSuppressed = false;
 
   private static _releaseNavigationInProgress = false;
+  
+  // Flag to track when we're doing programmatic navigation (vs manual user clicks)
+  private static _programmaticNavigationInProgress = false;
   // _playAttemptMade is already declared at line 59
 
   // Static list to keep track of problematic track IDs that return 404s
@@ -91,6 +94,19 @@ export class BandcampFacade {
   private static _domSelectionOptimizations = 0;
 
   private static _flagClearingOptimizations = 0;
+
+  /**
+   * Determine the page type for shuffle service
+   */
+  private static get pageType(): 'wishlist' | 'collection' {
+    // Check URL to determine if we're on wishlist or collection page
+    const url = window.location.href;
+    if (url.includes('/wishlist')) {
+      return 'wishlist';
+    } else {
+      return 'collection'; // Default to collection for other collection-based pages
+    }
+  }
 
   /**
    * Checks if the current track ID is in our known problem list
@@ -196,6 +212,13 @@ export class BandcampFacade {
    */
   public static get isCollectionBasedPage(): boolean {
     return this.isWishlistPage || this.isCollectionPage;
+  }
+
+  /**
+   * Get the current wishlist item index for debugging purposes
+   */
+  public static get currentWishlistIndex(): number {
+    return this._currentWishlistIndex;
   }
 
   public static get colors(): BandcampColors {
@@ -935,18 +958,35 @@ export class BandcampFacade {
           // Use a data attribute to prevent attaching multiple listeners
           if (!playButton.getAttribute('data-bcwf-play-listener')) {
             const listener = (event: MouseEvent) => {
+              // Check if we're currently doing programmatic navigation
+              if (BandcampFacade._programmaticNavigationInProgress) {
+                Logger.info('=== PROGRAMMATIC CLICK DETECTED - IGNORING ===');
+                Logger.info(`Programmatic click on item ${index} - not treating as manual play`);
+                return;
+              }
+              
               // Check if the click is directly on the button or a child element that should trigger play
               // This helps avoid unintended index updates from clicks elsewhere in the item
               const target = event.target as HTMLElement;
+              Logger.info('=== MANUAL PLAY BUTTON CLICK DETECTED ===');
+              Logger.info(`Click target: ${target.tagName}.${target.className}`);
+              Logger.info(`Play button: ${playButton.tagName}.${playButton.className}`);
+              Logger.info(`Contains target: ${playButton.contains(target)}`);
+              Logger.info(`Item index: ${index}`);
+              Logger.info(`Current shuffle state: ${ShuffleService.isShuffleEnabled}`);
+              
               if (playButton.contains(target)) {
+                Logger.info(`=== VALID MANUAL PLAY DETECTED ===`);
                 Logger.info(`Manual play detected on wishlist item index: ${index}`);
                 BandcampFacade._currentWishlistIndex = index;
-                // Record the manual selection in shuffle history
-                ShuffleService.recordManualSelection(index);
+                // Update shuffle position for the manual selection
+                ShuffleService.updateShufflePosition(this.pageType, this._wishlistItems.length, index);
                 // Ensure continuous playback listeners are (re)attached after a short delay
                 // in case Bandcamp swaps the audio element on play.
                 setTimeout(() => BandcampFacade.setupWishlistContinuousPlayback(), 50);
                 // Let Bandcamp's default behavior handle the actual playback.
+              } else {
+                Logger.info(`=== CLICK OUTSIDE PLAY BUTTON - IGNORED ===`);
               }
             };
             playButton.addEventListener('click', listener);
@@ -1271,7 +1311,28 @@ export class BandcampFacade {
       if (playButton) {
         const playClickStart = Logger.startTiming('Play button click');
         Logger.info(`Found play button for wishlist track ${index + 1}, clicking it`);
-        playButton.click();
+        Logger.info(`Play button element: ${playButton.tagName} with classes: ${playButton.className}`);
+        
+        // Set flag to indicate this is a programmatic click (not manual user click)
+        this._programmaticNavigationInProgress = true;
+        Logger.info('=== SETTING PROGRAMMATIC NAVIGATION FLAG ===');
+        
+        // Small delay to ensure flag is set before click
+        setTimeout(() => {
+          try {
+            playButton.click();
+            Logger.info('Play button click executed successfully');
+          } catch (error) {
+            Logger.error('Error clicking play button:', error);
+          }
+        }, 10);
+        
+        // Clear the programmatic flag after a short delay to allow the click event to be processed
+        setTimeout(() => {
+          this._programmaticNavigationInProgress = false;
+          Logger.info('=== CLEARING PROGRAMMATIC NAVIGATION FLAG ===');
+        }, 50);
+        
         Logger.timing('Play button clicked', playClickStart);
         
         // Ensure the track item is visible on screen
@@ -1331,7 +1392,19 @@ export class BandcampFacade {
               if (playButton) {
                 const focusedPlayClickStart = Logger.startTiming('Focused play button click');
                 Logger.info('Found play button in focused track, clicking it');
+                
+                // Set flag to indicate this is a programmatic click (not manual user click)
+                this._programmaticNavigationInProgress = true;
+                Logger.info('=== SETTING PROGRAMMATIC NAVIGATION FLAG (FOCUSED) ===');
+                
                 (playButton as HTMLElement).click();
+                
+                // Clear the programmatic flag after a short delay to allow the click event to be processed
+                setTimeout(() => {
+                  this._programmaticNavigationInProgress = false;
+                  Logger.info('=== CLEARING PROGRAMMATIC NAVIGATION FLAG (FOCUSED) ===');
+                }, 50);
+                
                 Logger.timing('Focused play button clicked', focusedPlayClickStart);
                 
                 // For the first track, give a small delay to allow audio initialization
@@ -1417,10 +1490,18 @@ export class BandcampFacade {
       this.logPhase2Metrics('Navigation', 150);
       
       let nextIndex: number;
+      
+      Logger.info('=== FACADE: Determining next track index ===');
+      Logger.info(`Current index: ${this._currentWishlistIndex}`);
+      Logger.info(`Total items: ${this._wishlistItems.length}`);
+      Logger.info(`Shuffle enabled: ${ShuffleService.isShuffleEnabled}`);
+      
       if (ShuffleService.isShuffleEnabled) {
+        Logger.info('=== USING SHUFFLE MODE ===');
         // Use shuffle service to get next track
-        nextIndex = ShuffleService.getNextShuffledIndex(this._currentWishlistIndex, this._wishlistItems.length);
+        nextIndex = ShuffleService.getNextShuffledIndex(this.pageType, this._wishlistItems.length, this._currentWishlistIndex);
       } else {
+        Logger.info('=== USING SEQUENTIAL MODE ===');
         // Regular sequential navigation
         nextIndex = this._currentWishlistIndex + 1;
         if (nextIndex >= this._wishlistItems.length) {
@@ -1512,28 +1593,24 @@ export class BandcampFacade {
 
       let prevIndex: number;
       
-      // Check if shuffle is enabled and we have a valid previous track in history
-      if (ShuffleService.isShuffleEnabled && ShuffleService.hasPreviousInHistory(this._currentWishlistIndex)) {
-        const historyIndex = ShuffleService.getPreviousFromHistory(this._currentWishlistIndex, this._wishlistItems.length);
-        if (historyIndex !== null) {
-          // Successfully got a previous track from shuffle history
-          prevIndex = historyIndex;
-          Logger.info(`Using shuffle history: going to track ${prevIndex + 1} (from history)`);
-        } else {
-          // No valid previous track in shuffle history - treat as if shuffle was disabled
-          prevIndex = this._currentWishlistIndex - 1;
-          if (prevIndex < 0) {
-            prevIndex = this._wishlistItems.length - 1; // Loop back to the last track
-          }
-          Logger.info(`Sequential navigation: going to track ${prevIndex + 1} (no valid shuffle history)`);
-        }
+      Logger.info('=== FACADE: Determining previous track index ===');
+      Logger.info(`Current index: ${this._currentWishlistIndex}`);
+      Logger.info(`Total items: ${this._wishlistItems.length}`);
+      Logger.info(`Shuffle enabled: ${ShuffleService.isShuffleEnabled}`);
+      
+      if (ShuffleService.isShuffleEnabled) {
+        Logger.info('=== USING SHUFFLE MODE ===');
+        // Use shuffle service to get previous track
+        prevIndex = ShuffleService.getPreviousShuffledIndex(this.pageType, this._wishlistItems.length, this._currentWishlistIndex);
+        Logger.info(`Shuffle mode: going to track ${prevIndex + 1}`);
       } else {
-        // Sequential behavior (shuffle disabled or no history available)
+        Logger.info('=== USING SEQUENTIAL NAVIGATION ===');
+        // Sequential behavior
         prevIndex = this._currentWishlistIndex - 1;
         if (prevIndex < 0) {
           prevIndex = this._wishlistItems.length - 1; // Loop back to the last track
         }
-        Logger.info(`Sequential navigation: going to track ${prevIndex + 1}${ShuffleService.isShuffleEnabled ? ' (no shuffle history)' : ' (shuffle disabled)'}`);
+        Logger.info(`Sequential navigation: going to track ${prevIndex + 1}`);
       }
 
       // Check if the previous track is in our problem list
@@ -1869,7 +1946,18 @@ export class BandcampFacade {
                 const playButton = BandcampFacade.findPlayButton(currentItem);
                 if (playButton) {
                   Logger.info('Trying to recover by clicking play button');
+                  
+                  // Set flag to indicate this is a programmatic click (not manual user click)
+                  BandcampFacade._programmaticNavigationInProgress = true;
+                  Logger.info('=== SETTING PROGRAMMATIC NAVIGATION FLAG (ERROR RECOVERY) ===');
+                  
                   playButton.click();
+                  
+                  // Clear the programmatic flag after a short delay to allow the click event to be processed
+                  setTimeout(() => {
+                    BandcampFacade._programmaticNavigationInProgress = false;
+                    Logger.info('=== CLEARING PROGRAMMATIC NAVIGATION FLAG (ERROR RECOVERY) ===');
+                  }, 50);
                   
                   // Check after a longer delay if this approach worked
                   setTimeout(() => {
@@ -3534,7 +3622,7 @@ export class BandcampFacade {
     
     // First track needs more time to initialize audio system
     const isFirstTrack = index === 0;
-    const timeoutMs = isFirstTrack ? 800 : 350; // Give first track more time
+    const timeoutMs = isFirstTrack ? 1500 : 750; // Increased timeouts for better reliability
 
     // Set up success handler for when playback starts
     const onPlaybackSuccess = () => {
@@ -3546,9 +3634,8 @@ export class BandcampFacade {
       clearTimeout(timeoutId);
       cleanup();
       
-      // Add track to shuffle play history when successfully played
-      ShuffleService.addToPlayHistory(index);
-      
+      // Track successfully playing - no need to add to play history for now
+      // TODO: Implement new simplified play history logic
       Logger.info(`Track ${index + 1} playing via event-based verification`);
       Logger.timing('Event-based verification successful', verificationStart);
       Logger.timing('playWishlistTrack completed successfully', startTime);
@@ -3645,8 +3732,14 @@ export class BandcampFacade {
     // Dynamic timeout based on track position - first track gets more time
     timeoutId = setTimeout(() => {
       if (!verificationComplete) {
+        // Enhanced logging for timeout debugging
+        Logger.info(`Timeout reached for track ${index + 1} after ${timeoutMs}ms`);
+        Logger.info(`Audio state - paused: ${audio.paused}, readyState: ${audio.readyState}, currentTime: ${audio.currentTime}`);
+        Logger.info(`Audio src: ${audio.src ? 'present' : 'missing'}`);
+        
         // Check one more time before giving up
         if (!audio.paused && (audio.readyState >= 2 || audio.currentTime > 0)) {
+          Logger.info('Track actually started playing, accepting late success');
           onPlaybackSuccess();
         } else {
           onPlaybackFailure('timeout - no events received');
