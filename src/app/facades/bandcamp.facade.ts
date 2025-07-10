@@ -1296,11 +1296,13 @@ export class BandcampFacade {
     }
 
     try {
-      // Check if index is within bounds
-      if (index < 0 || index >= this._wishlistItems.length) {
-        Logger.warn(`Track index ${index} is out of bounds (0-${this._wishlistItems.length - 1})`);
-        Logger.timing('playWishlistTrack failed - index out of bounds', startTime);
-        return;
+      // Safety check and correction for invalid indices
+      if (index < 0) {
+        Logger.warn(`Track index ${index} is negative, correcting to 0 (first track)`);
+        index = 0;
+      } else if (index >= this._wishlistItems.length) {
+        Logger.warn(`Track index ${index} is out of bounds (0-${this._wishlistItems.length - 1}), correcting to last track`);
+        index = this._wishlistItems.length - 1;
       }
 
       const item = this._wishlistItems[index];
@@ -1508,6 +1510,7 @@ export class BandcampFacade {
         Logger.info('=== USING SHUFFLE MODE ===');
         // Use shuffle service to get next track
         nextIndex = ShuffleService.getNextShuffledIndex(this.pageType, this._wishlistItems.length, this._currentWishlistIndex);
+        Logger.info(`Shuffle mode returned next index: ${nextIndex}`);
       } else {
         Logger.info('=== USING SEQUENTIAL MODE ===');
         // Regular sequential navigation
@@ -1515,6 +1518,7 @@ export class BandcampFacade {
         if (nextIndex >= this._wishlistItems.length) {
           nextIndex = 0; // Loop back to the first track
         }
+        Logger.info(`Sequential mode calculated next index: ${nextIndex}`);
       }
 
       Logger.info(`Playing next wishlist track (${nextIndex + 1} of ${this._wishlistItems.length})${ShuffleService.isShuffleEnabled ? ' [SHUFFLE]' : ''}`);
@@ -1610,7 +1614,7 @@ export class BandcampFacade {
         Logger.info('=== USING SHUFFLE MODE ===');
         // Use shuffle service to get previous track
         prevIndex = ShuffleService.getPreviousShuffledIndex(this.pageType, this._wishlistItems.length, this._currentWishlistIndex);
-        Logger.info(`Shuffle mode: going to track ${prevIndex + 1}`);
+        Logger.info(`Shuffle mode returned previous index: ${prevIndex}`);
       } else {
         Logger.info('=== USING SEQUENTIAL NAVIGATION ===');
         // Sequential behavior
@@ -1618,7 +1622,7 @@ export class BandcampFacade {
         if (prevIndex < 0) {
           prevIndex = this._wishlistItems.length - 1; // Loop back to the last track
         }
-        Logger.info(`Sequential navigation: going to track ${prevIndex + 1}`);
+        Logger.info(`Sequential navigation calculated previous index: ${prevIndex}`);
       }
 
       // Check if the previous track is in our problem list
