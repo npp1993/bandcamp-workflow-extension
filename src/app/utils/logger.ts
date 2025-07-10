@@ -14,7 +14,7 @@ export class Logger {
   };
   
   // Current log level - set to WARN for production (reduces verbose logging)
-  private static currentLogLevel = this.LOG_LEVELS.WARN;
+  private static currentLogLevel = this.LOG_LEVELS.DEBUG;
   
   /**
    * Set the current log level

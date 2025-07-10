@@ -2384,7 +2384,7 @@ export class BandcampFacade {
         
         if (trackLink && trackLink.href) {
           Logger.info('Found track link for currently playing track, opening with cart parameter:', trackLink.href);
-          AddToCartUtils.openAddToCartLinkWithCart(trackLink.href);
+          AddToCartUtils.openAddToCartLinkWithCart(trackLink.href, closeTabAfterAdd);
           return;
         } else {
           Logger.warn('Could not find track link in currently playing track row');

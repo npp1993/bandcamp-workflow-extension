@@ -94,11 +94,13 @@ export class KeyboardController {
           if (!e.metaKey && !e.ctrlKey && !e.altKey && !BandcampFacade.isCollectionPage) {
             e.preventDefault();
             if (e.shiftKey) {
-              // Shift+C: Add to cart and close tab (only on wishlist pages)
+              // Shift+C: Add to cart and close tab (wishlist and album pages)
               if (BandcampFacade.isWishlistPage) {
                 BandcampFacade.addCurrentTrackToCart(true); // closeTabAfterAdd = true
+              } else if (BandcampFacade.isAlbum) {
+                BandcampFacade.addCurrentTrackToCart(true); // closeTabAfterAdd = true
               } else {
-                // On non-wishlist pages, Shift+C behaves the same as C
+                // On other pages, Shift+C behaves the same as C
                 BandcampFacade.addCurrentTrackToCart();
               }
             } else {

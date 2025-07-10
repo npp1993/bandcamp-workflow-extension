@@ -311,8 +311,8 @@ export class KeyboardSidebarController {
       });
     }
 
-    // Wishlist-specific shortcuts
-    if (BandcampFacade.isWishlistPage) {
+    // Shift+C shortcut for wishlist and album pages
+    if (BandcampFacade.isWishlistPage || BandcampFacade.isAlbum) {
       shortcuts.push({
         key: 'Shift+C',
         description: 'Add to cart & close tab',
