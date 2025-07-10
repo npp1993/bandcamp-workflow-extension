@@ -63,6 +63,7 @@ export class AddToCartUtils {
       Logger.warn('No add to cart button found on the current page');
       return false;
     } catch (error) {
+      Logger.error('Error in clickAddToCartButtonOnCurrentPage:', error);
       ErrorHandler.withErrorHandling(() => {
         throw error; 
       }, 'Error clicking add to cart button');
@@ -299,7 +300,7 @@ export class AddToCartUtils {
           const element = document.querySelector(selector);
           if (element) {
             isFixedPrice = true;
-            Logger.info('Detected fixed-price item by fixed-price class');
+            Logger.info('Detected fixed-price item');
             break;
           }
         }
@@ -320,7 +321,7 @@ export class AddToCartUtils {
             const element = document.querySelector(selector);
             if (element) {
               isNYP = true;
-              Logger.info('Detected name-your-price (NYP) item - will fill minimum price');
+              Logger.info('Detected name-your-price (NYP) item');
               break;
             }
           }
@@ -365,7 +366,7 @@ export class AddToCartUtils {
               const priceRegex = /[\$€£¥]\s*\d+(\.\d{2})?/;
               if (priceRegex.test(text)) {
                 isFixedPrice = true;
-                Logger.info('Detected fixed-price item by full price in display-price');
+                Logger.info('Detected fixed-price item by price value');
                 break;
               }
             }
@@ -400,6 +401,7 @@ export class AddToCartUtils {
         for (const selector of priceInputSelectors) {
           const inputNodeList = document.querySelectorAll(selector) as NodeListOf<HTMLInputElement>;
           const inputs = Array.from(inputNodeList);
+          
           for (const input of inputs) {
             // Check if this input looks like it's for price entry
             const placeholder = input.placeholder?.toLowerCase() || '';
@@ -424,9 +426,11 @@ export class AddToCartUtils {
         if (!priceInput) {
           const allTextInputNodeList = document.querySelectorAll('input[type="text"], input:not([type])') as NodeListOf<HTMLInputElement>;
           const allTextInputs = Array.from(allTextInputNodeList);
+          
           for (const input of allTextInputs) {
             // Check if it's visible and potentially a price input
             const rect = input.getBoundingClientRect();
+            
             if (rect.width > 0 && rect.height > 0 && !input.disabled && !input.readOnly) {
               // If there's only one visible text input, assume it's the price input
               if (allTextInputs.length === 1) {
@@ -458,6 +462,21 @@ export class AddToCartUtils {
           
           Logger.info(`Auto-filling add to cart price: ${minPrice}`);
           
+          // Check if the price is already filled
+          if (priceInput.value && priceInput.value.trim() !== '') {
+            // Only update if the current value looks like it might be a placeholder or default
+            const currentValue = priceInput.value.trim();
+            if (currentValue === '0' || currentValue === '0.00' || currentValue === '$0' || currentValue === '$0.00') {
+              Logger.info('Updating placeholder price value');
+            } else {
+              Logger.info('Price already has valid value, proceeding to add to cart');
+              setTimeout(() => {
+                AddToCartUtils.clickAddToCartButton();
+              }, 300);
+              return;
+            }
+          }
+          
           // Clear the current value and fill in the price
           priceInput.value = '';
           priceInput.value = minPrice;
@@ -481,7 +500,7 @@ export class AddToCartUtils {
             AddToCartUtils.clickAddToCartButton();
           }, 300);
         } else {
-          Logger.warn('Could not find price input field in add to cart dialog - this might be a fixed-price item or the dialog structure has changed');
+          Logger.warn('Could not find price input field in add to cart dialog');
           // Try to click add to cart anyway in case it's a fixed-price item we didn't detect
           setTimeout(() => {
             AddToCartUtils.clickAddToCartButton();
@@ -613,9 +632,18 @@ export class AddToCartUtils {
       
       // First try to find button by text content (most reliable)
       const allButtons = Array.from(document.querySelectorAll('button, input[type="button"], input[type="submit"], a[role="button"]'));
+      
       for (const button of allButtons) {
         const text = button.textContent?.trim().toLowerCase() || '';
         const value = (button as HTMLInputElement).value?.toLowerCase() || '';
+        const className = button.className || '';
+        
+        // Skip extension's own sidebar buttons to prevent infinite loop
+        if (className.includes('bandcamp-workflow-hotkey') || 
+            className.includes('bandcamp-workflow-setting') ||
+            className.includes('bandcamp-workflow')) {
+          continue;
+        }
         
         if (text.includes('add to cart') || value.includes('add to cart') || 
             text.includes('🛒') || text.includes('cart')) {
@@ -628,10 +656,22 @@ export class AddToCartUtils {
       // If not found by text, try the selectors
       if (!addToCartButton) {
         for (const selector of addToCartSelectors) {
-          const button = document.querySelector(selector) as HTMLElement;
-          if (button && button.offsetParent !== null) { // Check if visible
-            addToCartButton = button;
-            Logger.info('Found "Add to cart" button by selector:', selector);
+          const buttons = Array.from(document.querySelectorAll(selector)) as HTMLElement[];
+          
+          for (const button of buttons) {
+            // Skip extension's own sidebar buttons
+            if (button.className.includes('bandcamp-workflow')) {
+              continue;
+            }
+            
+            if (button && button.offsetParent !== null) { // Check if visible
+              addToCartButton = button;
+              Logger.info('Found "Add to cart" button by selector:', selector);
+              break;
+            }
+          }
+          
+          if (addToCartButton) {
             break;
           }
         }
@@ -640,7 +680,13 @@ export class AddToCartUtils {
       // Last resort: look for any blue button in the dialog (common Bandcamp pattern)
       if (!addToCartButton) {
         const blueButtons = Array.from(document.querySelectorAll('button')) as HTMLElement[];
+        
         for (const button of blueButtons) {
+          // Skip extension's own sidebar buttons
+          if (button.className.includes('bandcamp-workflow')) {
+            continue;
+          }
+          
           const styles = window.getComputedStyle(button);
           const bgColor = styles.backgroundColor;
           
@@ -656,7 +702,7 @@ export class AddToCartUtils {
       }
       
       if (addToCartButton) {
-        Logger.info('Clicking "Add to cart" button automatically');
+        Logger.info('Clicking "Add to cart" button');
         addToCartButton.click();
       } else {
         Logger.warn('Could not find "Add to cart" button to click automatically');
