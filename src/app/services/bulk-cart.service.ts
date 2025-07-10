@@ -41,7 +41,6 @@ export class BulkCartService {
       return;
     }
 
-    Logger.info('Entering bulk selection mode');
     this._isInBulkMode = true;
     this._wishlistItems = [...wishlistItems];
     this._focusedItemIndex = 0;
@@ -56,8 +55,6 @@ export class BulkCartService {
     this.updateButtonText();
     this.showBulkModeButtons();
     this.focusItem(0);
-    
-    Logger.info(`Bulk mode entered with ${this._selectedItems.size} items selected`);
   }
 
   /**
@@ -68,7 +65,6 @@ export class BulkCartService {
       return;
     }
 
-    Logger.info('Exiting bulk selection mode');
     this._isInBulkMode = false;
     this._isProcessing = false;
     this._selectedItems.clear();
@@ -78,9 +74,6 @@ export class BulkCartService {
     this.clearVisualState();
     this.updateButtonText();
     this.hideBulkModeButtons();
-    this.hideBulkModeButtons();
-    
-    Logger.info('Bulk mode exited');
   }
 
   /**
@@ -98,10 +91,8 @@ export class BulkCartService {
 
     if (this._selectedItems.has(currentItem)) {
       this._selectedItems.delete(currentItem);
-      Logger.info('Item deselected');
     } else {
       this._selectedItems.add(currentItem);
-      Logger.info('Item selected');
     }
 
     this.updateItemVisualState(currentItem);
@@ -144,7 +135,6 @@ export class BulkCartService {
       return;
     }
 
-    Logger.info(`Starting bulk cart processing for ${this._selectedItems.size} items`);
     this._isProcessing = true;
 
     const selectedArray = Array.from(this._selectedItems);
@@ -152,7 +142,6 @@ export class BulkCartService {
     for (let i = 0; i < selectedArray.length; i++) {
       // Check if user exited bulk mode during processing
       if (!this._isInBulkMode) {
-        Logger.info('Bulk mode exited during processing, stopping');
         break;
       }
 
@@ -172,7 +161,6 @@ export class BulkCartService {
 
     // Exit bulk mode after processing
     this.exitBulkMode();
-    Logger.info('Bulk cart processing completed');
   }
 
   /**
@@ -253,7 +241,6 @@ export class BulkCartService {
 
     this.updateVisualState();
     this.updateButtonText();
-    Logger.info(`Selected all ${this._selectedItems.size} items`);
   }
 
   /**
@@ -267,7 +254,6 @@ export class BulkCartService {
     this._selectedItems.clear();
     this.updateVisualState();
     this.updateButtonText();
-    Logger.info('Deselected all items');
   }
 
   /**
@@ -423,7 +409,6 @@ export class BulkCartService {
       const rect = carouselPlayer.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
       if (rect.bottom >= viewportHeight - 20 && rect.height > 0) {
-        Logger.info(`Footer detected: carousel-player, height: ${rect.height}`);
         return rect.height;
       }
     }
@@ -434,7 +419,6 @@ export class BulkCartService {
       const rect = carouselPlayerInner.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
       if (rect.bottom >= viewportHeight - 20 && rect.height > 0) {
-        Logger.info(`Footer detected: carousel-player-inner, height: ${rect.height}`);
         return rect.height;
       }
     }
@@ -445,7 +429,6 @@ export class BulkCartService {
       const playerRect = player.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
       if (playerRect.bottom >= viewportHeight - 20 && playerRect.height > 0) {
-        Logger.info(`Footer detected: #player, height: ${playerRect.height}`);
         return playerRect.height;
       }
     }
@@ -465,13 +448,11 @@ export class BulkCartService {
         const footerRect = footer.getBoundingClientRect();
         const viewportHeight = window.innerHeight;
         if (footerRect.bottom >= viewportHeight - 20 && footerRect.height > 0) {
-          Logger.info(`Footer detected: ${selector}, height: ${footerRect.height}`);
           return footerRect.height;
         }
       }
     }
     
-    Logger.info('No footer detected');
     return 0;
   }
 

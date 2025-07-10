@@ -48,16 +48,11 @@ function handleWishlist(): void {
   const wishlist = urlParams.get('wishlist');
   
   if (wishlist === 'true') {
-    Logger.info('Wishlist parameter detected, will attempt to toggle wishlist for track');
-    
     // Wait for the page to fully load before attempting to toggle wishlist
     setTimeout(() => {
       // Check if we're on a track page
       if (BandcampFacade.isTrack) {
-        Logger.info('On track page, toggling wishlist');
         BandcampFacade.toggleWishlist();
-      } else {
-        Logger.info('Not on a track page, skipping wishlist toggle');
       }
     }, 2000); // Wait 2 seconds for the page to fully load
   }
@@ -73,8 +68,6 @@ function handleAddToCart(): void {
   const closeTabAfterAdd = hasCloseTabAfterAddParameter();
   
   if (addToCart === 'true') {
-    Logger.info('Add-to-cart parameter detected, will attempt to purchase track/album');
-    
     // Wait for the page to fully load before attempting to add to cart
     setTimeout(() => {
       // Check if we're on a release page
@@ -84,9 +77,7 @@ function handleAddToCart(): void {
         const {isAlbumOnly} = AlbumOnlyUtils.checkForAlbumOnlyPurchase();
         
         if (isAlbumOnly) {
-          Logger.info('Track page only allows album purchase, ignoring add_to_cart parameter as expected');
           if (closeTabAfterAdd) {
-            Logger.info('Closing tab due to close_tab_after_add parameter');
             window.close();
           }
           return;
@@ -99,7 +90,6 @@ function handleAddToCart(): void {
         if (closeTabAfterAdd) {
           // Wait a bit for the add to cart action to complete
           setTimeout(() => {
-            Logger.info('Closing tab due to close_tab_after_add parameter');
             window.close();
           }, 3000); // Wait 3 seconds for add to cart to process
         }
@@ -110,14 +100,11 @@ function handleAddToCart(): void {
         if (closeTabAfterAdd) {
           // Wait a bit for the add to cart action to complete
           setTimeout(() => {
-            Logger.info('Closing tab due to close_tab_after_add parameter');
             window.close();
           }, 3000); // Wait 3 seconds for add to cart to process
         }
       } else {
-        Logger.info('Not on a release page, skipping add to cart button click');
         if (closeTabAfterAdd) {
-          Logger.info('Closing tab due to close_tab_after_add parameter');
           window.close();
         }
       }

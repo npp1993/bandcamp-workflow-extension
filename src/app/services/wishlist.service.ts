@@ -134,11 +134,9 @@ export class WishlistService {
           window.getComputedStyle(wishlistButton as HTMLElement).display !== 'none';
         
         if (isCurrentlyWishlisted) {
-          Logger.info('Album is currently in wishlist, clicking remove button');
           (wishlistedButton as HTMLElement).click();
           return true;
         } else if (isWishlistButtonVisible) {
-          Logger.info('Album is not in wishlist, clicking add button');
           (wishlistButton as HTMLElement).click();
           return true;
         }
@@ -146,13 +144,11 @@ export class WishlistService {
         // Fallback: try any clickable element inside the container
         const anyClickableButton = collectItemContainer.querySelector('#wishlist-msg, #wishlist-msg .action, #wishlist-msg a, #wishlisted-msg .action, #wishlisted-msg a');
         if (anyClickableButton) {
-          Logger.info('Found fallback clickable button inside #collect-item, clicking it');
           (anyClickableButton as HTMLElement).click();
           return true;
         }
         
         // Last resort: click the container if no specific button found
-        Logger.info('Found #collect-item container but no specific button, clicking container');
         collectItemContainer.click();
         return true;
       }
@@ -160,7 +156,6 @@ export class WishlistService {
       // Second, try to find the specifically styled in-wishlist element in the player
       const inWishlistButton = document.querySelector('.wishlisted-msg a, .wishlisted-msg.collection-btn a');
       if (inWishlistButton) {
-        Logger.info('Found in-wishlist button in player, clicking it');
         (inWishlistButton as HTMLElement).click();
         return true;
       }
@@ -180,7 +175,6 @@ export class WishlistService {
       for (const selector of generalWishlistSelectors) {
         const wishlistElement = document.querySelector(selector);
         if (wishlistElement) {
-          Logger.info(`Found wishlist button with selector: ${selector}`);
           (wishlistElement as HTMLElement).click();
           return true;
         }
@@ -195,7 +189,6 @@ export class WishlistService {
         );
         
         if (wishlistButton) {
-          Logger.info('Found wishlist removal button in current track, clicking it');
           (wishlistButton as HTMLElement).click();
           return true;
         }
@@ -216,8 +209,6 @@ export class WishlistService {
    * @param isInWishlist Whether the item is in the wishlist or not
    */
   static updateWishlistIcons(item: HTMLElement, isInWishlist: boolean): void {
-    Logger.info(`Updating wishlist icons (isInWishlist: ${isInWishlist})`);
-    
     try {
       // Find all wishlist-related UI elements
       const heartIcons = DOMSelectors.findWithSelectors<HTMLElement>(DOMSelectors.HEART_WISHLIST_ICONS, item);
@@ -234,7 +225,6 @@ export class WishlistService {
             icon.classList.add('unfilled', 'empty');
           }
         });
-        Logger.info(`Updated ${heartIcons.length} heart icons`);
       }
       
       // Set a custom attribute to track state
@@ -299,8 +289,6 @@ export class WishlistService {
         Logger.warn('No track link found for navigation');
         return false;
       }
-      
-      Logger.info('No direct wishlist button found, navigating to track page with wishlist parameter:', trackInfo.trackLink);
       
       // Save current position before navigating away
       const audio = AudioUtils.getAudioElement();

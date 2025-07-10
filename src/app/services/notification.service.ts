@@ -45,8 +45,6 @@ export class NotificationService {
     duration: number = this.DEFAULT_DURATION
   ): void {
     try {
-      Logger.info(`Showing ${type} notification: ${message}`);
-      
       const container = this.initializeContainer();
       const notification = this.createNotificationElement(message, type);
       

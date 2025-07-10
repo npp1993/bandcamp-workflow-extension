@@ -31,18 +31,14 @@ export class WaveformService {
       // Get the current audio element
       const audio = AudioUtils.getAudioElement();
       if (!audio || !audio.src) {
-        Logger.warn('No audio element or source found');
         return null;
       }
 
       // Extract stream ID from audio source for caching
       const streamId = this.extractStreamId(audio.src);
       if (!streamId) {
-        Logger.warn('Could not extract stream ID from audio source:', audio.src);
         return null;
       }
-
-      Logger.debug('[WaveformService] Generating waveform for audio URL:', audio.src);
 
       // Check cache first
       const cachedData = this.getCachedWaveformData(streamId);
@@ -95,7 +91,6 @@ export class WaveformService {
       }
     }
 
-    Logger.warn('Could not extract stream ID from URL:', src);
     return null;
   }
 
@@ -164,7 +159,6 @@ export class WaveformService {
 
             // Double-check extension context is still valid after response
             if (!this.isExtensionContextValid()) {
-              Logger.warn('Extension context became invalid during request');
               resolve(null);
               return;
             }
@@ -181,7 +175,6 @@ export class WaveformService {
               return;
             }
 
-            Logger.debug('[WaveformService] Successfully received audio buffer data');
             resolve(response.data);
           },
         );
@@ -236,13 +229,11 @@ export class WaveformService {
       // Normalize the data
       const max = Math.max(...rmsBuffer);
       if (max === 0) {
-        Logger.warn('Audio buffer appears to be silent');
         return new Array(this.CONFIG.datapoints).fill(0);
       }
       
       const normalizedData = rmsBuffer.map((value) => value / max);
       
-      Logger.debug('[WaveformService] Successfully processed audio buffer into waveform data');
       return normalizedData;
     } catch (error) {
       Logger.error('Error processing audio buffer:', error);
@@ -277,7 +268,6 @@ export class WaveformService {
       this.fillBar(canvas, amplitude, i, waveformData.length, color);
     }
 
-    Logger.debug('[WaveformService] Successfully rendered waveform canvas');
     return canvas;
   }
 
@@ -389,8 +379,6 @@ export class WaveformService {
     const cacheKey = this.getCacheKey(streamId);
     this.cache.set(cacheKey, data);
     this.cacheTimestamps.set(cacheKey, Date.now());
-    
-    Logger.debug('[WaveformService] Cached waveform data for:', streamId);
   }
 
   /**
@@ -405,8 +393,6 @@ export class WaveformService {
         this.cacheTimestamps.delete(cacheKey);
       }
     }
-    
-    Logger.debug('[WaveformService] Cleared expired cache entries');
   }
 
   /**
@@ -415,7 +401,6 @@ export class WaveformService {
   public static clearCache(): void {
     this.cache.clear();
     this.cacheTimestamps.clear();
-    Logger.debug('[WaveformService] Cleared all waveform cache');
   }
 
   /**

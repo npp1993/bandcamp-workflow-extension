@@ -16,12 +16,6 @@ export class AlbumOnlyUtils {
       // Simple logic: if we can't find "Buy Digital Track", consider it album-only
       const hasIndividualTrackPurchase = pageText.includes('Buy Digital Track');
       const isAlbumOnly = !hasIndividualTrackPurchase;
-      
-      if (isAlbumOnly) {
-        Logger.info('Album-only purchase detected: "Buy Digital Track" text not found on page');
-      } else {
-        Logger.info('Individual track purchase available: "Buy Digital Track" text found on page');
-      }
 
       return {
         isAlbumOnly,

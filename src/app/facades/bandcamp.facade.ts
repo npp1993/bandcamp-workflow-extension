@@ -757,7 +757,8 @@ export class BandcampFacade {
     }
 
     try {
-      Logger.info('Loading collection items...');
+      const pageType = this.isWishlistPage ? 'wishlist' : 'collection';
+      Logger.info(`Loading ${pageType} items...`);
       
       // First, try to find items only within the currently active wishlist container
       // This helps avoid double-counting items from other tabs (like collection)
@@ -1031,6 +1032,13 @@ export class BandcampFacade {
       }
       
       Logger.info(`Found ${this._wishlistItems.length} playable items`);
+      
+      // Update shuffle order if shuffle mode is enabled and new items were loaded
+      if (ShuffleService.isShuffleEnabled) {
+        Logger.info(`Shuffle mode enabled, updating shuffle order for ${this.pageType} page with ${this._wishlistItems.length} total items`);
+        ShuffleService.updateShuffleOrderForNewItems(this.pageType, this._wishlistItems.length, this._currentWishlistIndex >= 0 ? this._currentWishlistIndex : 0);
+      }
+      
       return this._wishlistItems;
     } catch (error) {
       ErrorHandler.withErrorHandling(() => {

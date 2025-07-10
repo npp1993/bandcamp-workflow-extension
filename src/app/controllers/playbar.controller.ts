@@ -18,7 +18,6 @@ export class PlaybarController {
       return;
     }
 
-    Logger.info('Starting PlaybarController');
     this.attachPlaybarClickHandlers();
     this.initialized = true;
   }

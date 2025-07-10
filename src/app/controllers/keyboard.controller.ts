@@ -28,8 +28,6 @@ export class KeyboardController {
     // Attach our keyboard handlers directly to the document
     document.addEventListener('keydown', this.handleKeyboardEvent);
     document.addEventListener('keyup', this.handleKeyUpEvent);
-    
-    Logger.info('Keyboard controller started');
   }
   
   /**
@@ -132,10 +130,6 @@ export class KeyboardController {
           // Skip if in bulk mode (bulk mode handles 'p' for navigation)
           if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey && !BulkCartService.isInBulkMode) {
             e.preventDefault();
-            Logger.info('=== P KEY PRESSED ===');
-            Logger.info(`Page type: ${BandcampFacade.isCollectionBasedPage ? 'collection-based' : 'release'}`);
-            Logger.info(`Shuffle enabled: ${ShuffleService.isShuffleEnabled}`);
-            Logger.info(`Current index: ${BandcampFacade.currentWishlistIndex}`);
             this.handlePreviousTrack();
           }
           break;
@@ -146,11 +140,6 @@ export class KeyboardController {
           // Skip if in bulk mode (bulk mode handles 'n' for navigation)
           if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey && !BulkCartService.isInBulkMode) {
             e.preventDefault();
-            Logger.info('=== N KEY PRESSED ===');
-            Logger.info(`Page type: ${BandcampFacade.isCollectionBasedPage ? 'collection-based' : 'release'}`);
-            Logger.info(`Shuffle enabled: ${ShuffleService.isShuffleEnabled}`);
-            Logger.info(`Current index: ${BandcampFacade.currentWishlistIndex}`);
-            Logger.info(`Total items: ${BandcampFacade.isCollectionBasedPage ? 'checking...' : 'N/A'}`);
             this.handleNextTrack();
           }
           break;
@@ -252,29 +241,15 @@ export class KeyboardController {
    * Handle playing the previous track
    */
   private static handlePreviousTrack() {
-    const startTime = Logger.startTiming('Previous track navigation');
-    
     if (BandcampFacade.isCollectionBasedPage) {
-      Logger.info('=== PREVIOUS TRACK HANDLER (COLLECTION-BASED) ===');
-      Logger.info(`Current index: ${BandcampFacade.currentWishlistIndex}`);
-      Logger.info(`Shuffle enabled: ${ShuffleService.isShuffleEnabled}`);
-      
       // Handle async call without blocking
       BandcampFacade.playPreviousWishlistTrack()
-        .then(() => {
-          Logger.info('=== PREVIOUS TRACK HANDLER COMPLETED ===');
-          Logger.timing('Previous track navigation completed', startTime);
-        })
         .catch((error: any) => {
-          Logger.error('=== PREVIOUS TRACK HANDLER ERROR ===');
           Logger.error('Error in playPreviousWishlistTrack:', error);
-          Logger.timing('Previous track navigation failed', startTime);
         });
     } else {
-      Logger.info('=== PREVIOUS TRACK HANDLER (RELEASE PAGE) ===');
       // Use optimized release page navigation with Phase 2 improvements
       BandcampFacade.playPreviousReleaseTrack();
-      Logger.timing('Previous track navigation initiated', startTime);
     }
   }
 
@@ -282,21 +257,11 @@ export class KeyboardController {
    * Handle playing the next track
    */
   private static handleNextTrack() {
-    const startTime = Logger.startTiming('Next track navigation');
-    
     if (BandcampFacade.isCollectionBasedPage) {
-      Logger.info('=== NEXT TRACK HANDLER (COLLECTION-BASED) ===');
-      Logger.info(`Current index: ${BandcampFacade.currentWishlistIndex}`);
-      Logger.info(`Shuffle enabled: ${ShuffleService.isShuffleEnabled}`);
-      
       BandcampFacade.playNextWishlistTrack();
-      // Note: playNextWishlistTrack is sync but has internal delays, so timing will be logged there
-      Logger.timing('Next track navigation initiated', startTime);
     } else {
-      Logger.info('=== NEXT TRACK HANDLER (RELEASE PAGE) ===');
       // Use optimized release page navigation with Phase 2 improvements
       BandcampFacade.playNextReleaseTrack();
-      Logger.timing('Next track navigation initiated', startTime);
     }
   }
 

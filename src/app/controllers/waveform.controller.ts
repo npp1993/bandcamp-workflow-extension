@@ -24,11 +24,8 @@ export class WaveformController {
    */
   public static initialize(): void {
     try {
-      Logger.debug('Initializing waveform functionality');
-      
       // Only initialize on supported page types
       if (!this.isPageSupported()) {
-        Logger.info('Page type not supported for waveforms');
         return;
       }
 
@@ -37,8 +34,6 @@ export class WaveformController {
 
       // Generate initial waveform if audio is already present
       this.generateWaveformIfNeeded();
-
-      Logger.debug('Waveform functionality initialized');
     } catch (error) {
       Logger.error('Error initializing waveform functionality:', error);
     }
@@ -59,13 +54,10 @@ export class WaveformController {
    */
   private static setupAudioEventListeners(): void {
     try {
-      Logger.debug('Setting up audio event listeners');
-
       // Listen for audio source changes with debouncing
       const checkAudioChanges = () => {
         const audio = AudioUtils.getAudioElement();
         if (audio && audio.src && audio.src !== this.lastAudioSrc) {
-          Logger.debug('Audio source changed, scheduling waveform regeneration');
           this.debouncedGenerateWaveform();
         }
       };
@@ -76,7 +68,6 @@ export class WaveformController {
       // Listen for loadstart events on audio elements (existing and future)
       document.addEventListener('loadstart', (event) => {
         if (event.target instanceof HTMLAudioElement) {
-          Logger.debug('Audio loadstart detected');
           this.debouncedGenerateWaveform(1000);
         }
       }, true);
@@ -84,7 +75,6 @@ export class WaveformController {
       // Listen for play events
       document.addEventListener('play', (event) => {
         if (event.target instanceof HTMLAudioElement) {
-          Logger.debug('Audio play detected');
           this.debouncedGenerateWaveform(500);
         }
       }, true);
@@ -119,19 +109,16 @@ export class WaveformController {
     try {
       // Double-check that we're not on a wishlist page (additional safety check)
       if (BandcampFacade.isWishlistPage) {
-        Logger.debug('Skipping waveform generation on wishlist page');
         return;
       }
 
       // Check if extension context is still valid before attempting generation
       if (!this.isExtensionContextValid()) {
-        Logger.debug('Extension context is no longer valid, skipping waveform generation');
         return;
       }
 
       // If a generation is already in progress, wait for it to complete
       if (this.generationPromise) {
-        Logger.debug('Waveform generation already in progress, waiting for completion');
         await this.generationPromise;
         return;
       }
@@ -139,7 +126,6 @@ export class WaveformController {
       // Check if audio is available and ready
       const audio = AudioUtils.getAudioElement();
       if (!audio || !audio.src) {
-        Logger.debug('No audio element or source available');
         return;
       }
 
@@ -147,7 +133,6 @@ export class WaveformController {
       if (audio.src === this.lastAudioSrc && this.currentWaveformContainer && 
           !this.currentWaveformContainer.classList.contains('bandcamp-waveform-loading') &&
           !this.currentWaveformContainer.classList.contains('bandcamp-waveform-error')) {
-        Logger.debug('Waveform already generated for current audio');
         return;
       }
 
@@ -169,8 +154,6 @@ export class WaveformController {
       this.isGenerating = true;
       this.lastAudioSrc = audioSrc;
 
-      Logger.debug('Generating waveform for current audio');
-
       // Remove existing waveform first
       this.removeCurrentWaveform();
 
@@ -186,7 +169,6 @@ export class WaveformController {
       if (waveformCanvas) {
         // Insert the waveform into the page
         this.insertWaveform(waveformCanvas);
-        Logger.debug('Successfully generated and inserted waveform');
       } else {
         Logger.warn('Failed to generate waveform');
         this.showErrorIndicator();
@@ -224,8 +206,6 @@ export class WaveformController {
       BandcampFacade.insertBelowPlayer(container);
       
       this.currentWaveformContainer = container;
-
-      Logger.debug('Waveform inserted below player');
     } catch (error) {
       Logger.error('Error inserting waveform:', error);
     }
@@ -250,8 +230,6 @@ export class WaveformController {
         // Use SeekUtils to seek to the clicked position
         const isWishlistPage = BandcampFacade.isWishlistPage;
         SeekUtils.seekToRatio(clampedRatio, isWishlistPage);
-        
-        Logger.debug('Seeking to position:', clampedRatio);
       } catch (error) {
         Logger.error('Error in click-to-seek:', error);
       }
@@ -269,13 +247,11 @@ export class WaveformController {
       // Get the current audio source for waveform data lookup
       const audio = AudioUtils.getAudioElement();
       if (!audio || !audio.src) {
-        Logger.warn('No audio element available for playhead tracking');
         return;
       }
 
       const streamId = WaveformService.extractStreamId(audio.src);
       if (!streamId) {
-        Logger.warn('Could not extract stream ID for playhead tracking');
         return;
       }
 
@@ -345,10 +321,6 @@ export class WaveformController {
     });
     
     this.currentWaveformContainer = null;
-    
-    if (existingContainers.length > 0) {
-      Logger.info('Removed', existingContainers.length, 'existing waveform container(s)');
-    }
   }
 
   /**
@@ -425,8 +397,6 @@ export class WaveformController {
       if (this.currentWaveformContainer === loadingElement) {
         this.currentWaveformContainer = null;
       }
-      
-      Logger.info('[WaveformController] Removed loading indicator');
     }
   }
 
@@ -466,7 +436,6 @@ export class WaveformController {
    * Manually trigger waveform regeneration
    */
   public static regenerateWaveform(): void {
-    Logger.info('[WaveformController] Manually regenerating waveform');
     this.lastAudioSrc = ''; // Reset to force regeneration
     
     // Clear any pending debounced generation
@@ -484,22 +453,18 @@ export class WaveformController {
    */
   private static async preloadFirstTrackData(): Promise<void> {
     try {
-      Logger.info('[WaveformController] Attempting to preload first track data');
-      
       let firstTrackAudioSrc: string | null = null;
 
       // Strategy 1: Check if there's already an audio element with a source
       const existingAudio = AudioUtils.getAudioElement();
       if (existingAudio && existingAudio.src) {
         firstTrackAudioSrc = existingAudio.src;
-        Logger.info('[WaveformController] Found existing audio source for preloading:', firstTrackAudioSrc);
       }
 
       // Strategy 2: For track/album pages, try to detect first track without playing
       if (!firstTrackAudioSrc && (BandcampFacade.isTrack || BandcampFacade.isAlbum)) {
         const firstPlayButton = document.querySelector('.play-button, .playbutton, [data-bind*="play"]');
         if (firstPlayButton) {
-          Logger.info('[WaveformController] Found first play button, will preload when track starts');
           // We'll preload when the user actually starts playback
           return;
         }
@@ -510,7 +475,6 @@ export class WaveformController {
         try {
           const wishlistItems = BandcampFacade.loadWishlistItems();
           if (wishlistItems && wishlistItems.length > 0) {
-            Logger.info('[WaveformController] Wishlist page detected, preloading will occur on track selection');
             // For wishlist, we'll preload when a track is selected
             return;
           }
@@ -523,23 +487,12 @@ export class WaveformController {
       if (firstTrackAudioSrc) {
         const streamId = WaveformService.extractStreamId(firstTrackAudioSrc);
         if (streamId) {
-          Logger.info('[WaveformController] Starting background preload for stream:', streamId);
-          
           // Preload in background without showing UI
           WaveformService.generateWaveformForCurrentAudio()
-            .then((canvas) => {
-              if (canvas) {
-                Logger.info('[WaveformController] Successfully preloaded waveform data');
-              } else {
-                Logger.info('[WaveformController] Preload completed but no waveform generated (likely cached or error)');
-              }
-            })
             .catch((error) => {
               Logger.warn('[WaveformController] Background preload failed (this is non-critical):', error);
             });
         }
-      } else {
-        Logger.info('[WaveformController] No audio source available for preloading, will generate on demand');
       }
     } catch (error) {
       Logger.warn('[WaveformController] Error during preload attempt (non-critical):', error);
@@ -566,8 +519,6 @@ export class WaveformController {
       
       // Clear expired cache
       WaveformService.clearExpiredCache();
-      
-      Logger.info('[WaveformController] Cleaned up waveform resources');
     } catch (error) {
       Logger.error('[WaveformController] Error during cleanup:', error);
     }
@@ -608,7 +559,6 @@ export class WaveformController {
       
       // Check extension context validity before proceeding
       if (!this.isExtensionContextValid()) {
-        Logger.debug('[WaveformController] Extension context no longer valid, skipping debounced generation');
         return;
       }
       
