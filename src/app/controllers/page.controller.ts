@@ -8,6 +8,7 @@ import {WishlistController} from './wishlist.controller';
 import {PlaybarController} from './playbar.controller';
 import {DownloadHelperController} from './download-helper.controller';
 import {WaveformController} from './waveform.controller';
+import {KeyboardSidebarController} from './keyboard-sidebar.controller';
 
 export interface Controllers {
   speed: SpeedController | null;
@@ -16,6 +17,7 @@ export interface Controllers {
   wishlist?: WishlistController | null;
   downloadHelper?: DownloadHelperController | null;
   waveform?: WaveformController | null;
+  keyboardSidebar?: KeyboardSidebarController | null;
 }
 
 /**
@@ -33,6 +35,7 @@ export class PageController {
       wishlist: null,
       downloadHelper: null,
       waveform: null,
+      keyboardSidebar: null,
     };
 
     // Initialize download helper controller for download pages
@@ -66,6 +69,11 @@ export class PageController {
 
     // Initialize keyboard controller for both supported pages and collection-based pages
     KeyboardController.start(this.controllers);
+
+    // Initialize keyboard sidebar controller for all relevant pages
+    if (BandcampFacade.isPageSupported || BandcampFacade.isCollectionBasedPage) {
+      this.controllers.keyboardSidebar = KeyboardSidebarController.init(this.controllers);
+    }
 
     // Initialize the advanced mouse playbar controller
     // This works on both regular pages and collection-based pages

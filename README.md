@@ -67,39 +67,22 @@ The extension recognizes different page types and enables different features acc
   - Shuffle mode (s) randomizes next track selection to avoid predictable playback
   - Speed controls and add to cart features are disabled
 
-## Bulk Selection Mode
+## Bulk Purchase Mode
 
-When on the wishlist page, you can enter bulk selection mode to add multiple items to your cart at once:
+When on the wishlist page, you can enter Bulk Purchase Mode to add multiple items to your cart at once:
 
-1. **Enter bulk mode**: Press `b` or click the "Bulk Add to Cart" button
+1. **Enter Bulk Purchase Mode**: Press `b` or click the "Bulk Purchase" button
 2. **Navigate items**: Use `n` (next) and `p` (previous) to move between items
 3. **Toggle selection**: Press `f` to select/deselect the currently focused item
 4. **Continuous selection**: Hold `f` and press `n`/`p` to quickly toggle multiple items in sequence
 5. **Select all**: Press `a` or click "Select All" button to select all items
 6. **Deselect all**: Press `d` or click "Deselect All" button to deselect all items
-7. **Add to cart**: Press `b` again or click "Add Selected to Cart" to process selected items
-8. **Exit mode**: Press `Esc` to exit bulk selection mode
+7. **Add to cart**: Press `c` or click "Add Selected to Cart" to process selected items
+8. **Exit mode**: Press `b` or `Esc` to exit Bulk Purchase Mode
 
 By default, all items are selected when entering bulk mode. Selected items have a background color change, and the currently focused item has a border. The "Select All" and "Deselect All" buttons appear only when in bulk mode.
 
 **Tip**: The continuous selection feature is great for quickly selecting or deselecting ranges of items. Hold down `f` and use `n` or `p` to navigate - each item you move to will automatically toggle its selection state.
-
-## Shuffle Mode
-
-On wishlist and collection pages, you can enable shuffle mode to randomize the next track selection:
-
-- **Toggle shuffle**: Press `s` or click the "Shuffle" button in the sidebar
-- **Smart randomization**: Avoids playing recently played tracks (remembers last 30% of your collection)
-- **Visual indicator**: The button shows "Shuffle: ON" when enabled and "Shuffle: OFF" when disabled
-- **Persistent setting**: Shuffle preference is maintained when navigating between collection and wishlist pages
-- **History tracking**: Records manually selected tracks to improve randomization quality
-
-When shuffle mode is enabled, pressing `n` (next track) will jump to a random track instead of the next sequential one. The `p` (previous track) key has smart behavior:
-
-- **Shuffle enabled**: Goes back to the previously played track from your play history (maintaining the actual order you listened to tracks)
-- **Shuffle disabled**: Goes to the previous sequential track in the collection/wishlist
-
-**Note**: Play history is maintained only during your current session and resets when you reload the page.
 
 ## License
 
