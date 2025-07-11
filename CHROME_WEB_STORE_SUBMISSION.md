@@ -2,6 +2,27 @@
 
 This document contains the required justifications for Chrome Web Store submission.
 
+## Chrome Web Store Review Questions
+
+### What is the single purpose of this extension?
+
+This extension has one focused purpose: adding keyboard navigation to the Bandcamp music platform. All features serve this single goal of making Bandcamp controllable via keyboard shortcuts instead of mouse clicks.
+
+### What does this extension do and why should users install it?
+
+This extension transforms Bandcamp into a keyboard-navigable music platform by adding shortcuts for playback control, track navigation, and wishlisting items.  Wishlisted tracks and albums can also easily be added to a user's cart in bulk from the wishlist page.
+
+Users should install this extension to save time by navigating and purchasing music much faster using keyboard shortcuts instead of mouse clicks. It improves workflow for music enthusiasts who browse extensive catalogs or manage large wishlists, and enhances accessibility by providing keyboard-only navigation for those who prefer or require it. Music collectors and DJs also benefit from playback speed controls and waveform visualization, making it a valuable tool for music browsing.
+
+### Features
+
+- Keyboard shortcuts for playback, navigation, and cart actions (Vim-style: Spacebar, N/P, C, Z, arrow keys, B)
+- Enhanced wishlist management: bulk purchase, automatic loading, and direct wishlisting from release pages
+- Playback speed controls with vinyl/stretched modes and quick reset
+- Visual waveform display for audio analysis
+- Keyboard-only navigation for accessibility and productivity
+- Streamlined workflow for music collectors, musicians, and DJs
+
 ## Permission Justifications
 
 ### 1. activeTab Permission
@@ -51,33 +72,12 @@ This extension does NOT use remote code. All functionality is self-contained wit
 - All code execution happens from the packaged extension files only
 ```
 
-## Store Listing Information
-
-### Single Purpose Description
-"Enhances Bandcamp browsing with keyboard shortcuts and audio visualization features"
-
-### Detailed Description for Store
-```
-This extension adds Vim-style keyboard shortcuts and enhanced features to Bandcamp, making music browsing faster and more efficient. Features include:
-
-• Keyboard shortcuts for play/pause, track navigation, and quick purchases
-• Visual waveform generation for audio tracks
-• Bulk wishlist management and cart operations
-• Playback speed controls with vinyl and stretched audio modes
-
-All processing occurs locally in your browser. No data is collected or transmitted to external servers.
-```
-
 ### Category
 Productivity
-
-### Target Audience
-Music enthusiasts, Bandcamp users, power users who prefer keyboard navigation
 
 ## Data Handling Disclosure
 
 ### Data Types Collected
-- User preferences (discovery filters)
 - Temporary audio data for waveform generation
 
 ### Data Usage
