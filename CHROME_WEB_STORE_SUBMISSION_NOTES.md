@@ -1,4 +1,4 @@
-# Chrome Web Store Submission Justifications
+# Chrome Web Store Submission Notes
 
 This document contains the required justifications for Chrome Web Store submission.
 

@@ -37,6 +37,11 @@ export class KeyboardSidebarController {
   private hotkeysSidebar: HTMLElement | null = null;
   private bulkSidebar: HTMLElement | null = null;
   private isVisible = true;
+  
+  // Collapse state for each sidebar
+  private settingsCollapsed = false;
+  private hotkeysCollapsed = false;
+  private bulkCollapsed = false;
 
   constructor(controllers: Controllers) {
     this.controllers = controllers;
@@ -140,8 +145,7 @@ export class KeyboardSidebarController {
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
       max-height: calc(100vh - 40px);
       overflow-y: auto;
-      min-width: 200px;
-      max-width: 300px;
+      width: 250px;
       font-family: Arial, sans-serif;
       font-size: 12px;
     `;
@@ -233,8 +237,8 @@ export class KeyboardSidebarController {
       });
     }
 
-    // Navigation shortcuts (only when not in bulk mode)
-    if (BandcampFacade.isCollectionBasedPage || BandcampFacade.isPageSupported) {
+    // Navigation shortcuts (only when not in bulk mode and not on individual track pages)
+    if ((BandcampFacade.isCollectionBasedPage || BandcampFacade.isAlbum) && !BandcampFacade.isTrack) {
       shortcuts.push({
         key: 'N',
         description: 'Next track',
@@ -521,6 +525,61 @@ export class KeyboardSidebarController {
   }
 
   /**
+   * Create a collapsible title with triangle icon
+   */
+  private createCollapsibleTitle(text: string, isCollapsed: boolean, onToggle: () => void): HTMLElement {
+    const titleContainer = document.createElement('div');
+    titleContainer.style.cssText = `
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 13px;
+      color: #495057;
+      border-bottom: 1px solid #dee2e6;
+      padding-bottom: 5px;
+      margin-bottom: 5px;
+      user-select: none;
+    `;
+
+    // Create triangle icon
+    const triangle = document.createElement('span');
+    triangle.style.cssText = `
+      margin-right: 6px;
+      font-size: 10px;
+      transition: transform 0.2s ease;
+      transform: ${isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)'};
+      color: #6c757d;
+    `;
+    triangle.textContent = '▼';
+
+    // Create title text
+    const titleText = document.createElement('span');
+    titleText.textContent = text;
+
+    titleContainer.appendChild(triangle);
+    titleContainer.appendChild(titleText);
+
+    // Add click handler
+    titleContainer.addEventListener('click', () => {
+      onToggle();
+    });
+
+    // Add hover effect
+    titleContainer.addEventListener('mouseenter', () => {
+      titleContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
+      titleContainer.style.borderRadius = '4px';
+    });
+
+    titleContainer.addEventListener('mouseleave', () => {
+      titleContainer.style.backgroundColor = 'transparent';
+      titleContainer.style.borderRadius = '0px';
+    });
+
+    return titleContainer;
+  }
+
+  /**
    * Render both sidebars
    */
   private render(): void {
@@ -545,25 +604,21 @@ export class KeyboardSidebarController {
 
     this.settingsSidebar.style.display = 'flex';
 
-    // Add title
-    const title = document.createElement('div');
-    title.textContent = 'Settings';
-    title.style.cssText = `
-      font-weight: bold;
-      font-size: 13px;
-      color: #495057;
-      border-bottom: 1px solid #dee2e6;
-      padding-bottom: 5px;
-      margin-bottom: 5px;
-    `;
+    // Add collapsible title
+    const title = this.createCollapsibleTitle('Settings', this.settingsCollapsed, () => {
+      this.settingsCollapsed = !this.settingsCollapsed;
+      this.renderSettingsSidebar();
+    });
     this.settingsSidebar.appendChild(title);
 
-    // Add settings
-    settings.forEach(setting => {
-      if (!setting.condition || setting.condition()) {
-        this.settingsSidebar!.appendChild(this.createToggleButton(setting));
-      }
-    });
+    // Add settings (only if not collapsed)
+    if (!this.settingsCollapsed) {
+      settings.forEach(setting => {
+        if (!setting.condition || setting.condition()) {
+          this.settingsSidebar!.appendChild(this.createToggleButton(setting));
+        }
+      });
+    }
   }
 
   /**
@@ -608,23 +663,19 @@ export class KeyboardSidebarController {
 
     this.hotkeysSidebar.style.display = 'flex';
 
-    // Add title
-    const title = document.createElement('div');
-    title.textContent = `Hotkeys${isInBulkMode ? ' (Bulk Purchase)' : ''}`;
-    title.style.cssText = `
-      font-weight: bold;
-      font-size: 13px;
-      color: #495057;
-      border-bottom: 1px solid #dee2e6;
-      padding-bottom: 5px;
-      margin-bottom: 5px;
-    `;
+    // Add collapsible title
+    const title = this.createCollapsibleTitle('Hotkeys', this.hotkeysCollapsed, () => {
+      this.hotkeysCollapsed = !this.hotkeysCollapsed;
+      this.renderHotkeysSidebar();
+    });
     this.hotkeysSidebar.appendChild(title);
 
-    // Add shortcuts
-    visibleShortcuts.forEach(shortcut => {
-      this.hotkeysSidebar!.appendChild(this.createHotkeyButton(shortcut));
-    });
+    // Add shortcuts (only if not collapsed)
+    if (!this.hotkeysCollapsed) {
+      visibleShortcuts.forEach(shortcut => {
+        this.hotkeysSidebar!.appendChild(this.createHotkeyButton(shortcut));
+      });
+    }
   }
 
   /**
@@ -650,23 +701,19 @@ export class KeyboardSidebarController {
       return;
     }
 
-    // Add title
-    const title = document.createElement('div');
-    title.textContent = 'Bulk Purchase';
-    title.style.cssText = `
-      font-weight: bold;
-      font-size: 13px;
-      color: #495057;
-      border-bottom: 1px solid #dee2e6;
-      padding-bottom: 5px;
-      margin-bottom: 5px;
-    `;
+    // Add collapsible title
+    const title = this.createCollapsibleTitle('Bulk Purchase', this.bulkCollapsed, () => {
+      this.bulkCollapsed = !this.bulkCollapsed;
+      this.renderBulkSidebar();
+    });
     this.bulkSidebar.appendChild(title);
 
-    // Add bulk shortcuts
-    bulkShortcuts.forEach(shortcut => {
-      this.bulkSidebar!.appendChild(this.createHotkeyButton(shortcut));
-    });
+    // Add bulk shortcuts (only if not collapsed)
+    if (!this.bulkCollapsed) {
+      bulkShortcuts.forEach(shortcut => {
+        this.bulkSidebar!.appendChild(this.createHotkeyButton(shortcut));
+      });
+    }
   }
 
   /**
