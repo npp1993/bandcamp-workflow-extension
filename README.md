@@ -40,7 +40,8 @@ Icons were created by [Dharu Ghazi](https://www.fiverr.com/dghzdesign).
 | `↑` | Increase playback speed | Album/track pages only |
 | `↓` | Decrease playback speed | Album/track pages only |
 | `r` | Reset playback speed to normal | Album/track pages only |
-| `c` | Add current track/album to cart | Album/track/wishlist pages only |
+| `c` | Add current track to cart | Album/track/wishlist pages only (requires track selection on album pages) |
+| `z` | Add current album to cart | Album pages only |
 | `Shift + c` | Add current track to cart and close tab | Wishlist pages only |
 | `s` | Toggle shuffle mode for next track navigation | Wishlist/collection pages only |
 | `b` | Enter/exit bulk selection mode | Wishlist pages only |
@@ -51,7 +52,8 @@ The extension recognizes different page types and enables different features acc
 
 - **Album/Track Pages**: Individual release pages with track listings and playback controls
   - Speed controls (↑/↓/r) are available
-  - Add to cart (c) is available
+  - Add current track to cart (c) is available when a track is selected/playing
+  - Add current album to cart (z) is available on album pages
   - Transport controls (space/n/p/h/l/i) work with the album's tracks
 
 - **Wishlist Pages**: Your personal wishlist (bandcamp.com/username/wishlist)

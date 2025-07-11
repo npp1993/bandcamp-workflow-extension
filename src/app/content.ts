@@ -1,8 +1,8 @@
-import {PageController} from './controllers/page.controller';
-import {BandcampFacade} from './facades/bandcamp.facade';
-import {AddToCartUtils} from './utils/add-to-cart-utils';
-import {AlbumOnlyUtils} from './utils/album-only-utils';
-import {Logger} from './utils/logger';
+import { PageController } from './controllers/page.controller';
+import { BandcampFacade } from './facades/bandcamp.facade';
+import { AddToCartUtils } from './utils/add-to-cart-utils';
+import { AlbumOnlyUtils } from './utils/album-only-utils';
+import { Logger } from './utils/logger';
 
 // Track current URL to detect navigation changes
 let currentUrl = window.location.href;
@@ -45,7 +45,7 @@ function handleWishlist(): void {
   // Check for wishlist parameter in URL
   const urlParams = new URLSearchParams(window.location.search);
   const wishlist = urlParams.get('wishlist');
-  
+
   if (wishlist === 'true') {
     // Wait for the page to fully load before attempting to toggle wishlist
     setTimeout(() => {
@@ -65,7 +65,7 @@ function handleAddToCart(): void {
   const urlParams = new URLSearchParams(window.location.search);
   const addToCart = urlParams.get('add_to_cart');
   const closeTabAfterAdd = hasCloseTabAfterAddParameter();
-  
+
   if (addToCart === 'true') {
     // Wait for the page to fully load before attempting to add to cart
     setTimeout(() => {
@@ -73,18 +73,18 @@ function handleAddToCart(): void {
       if (BandcampFacade.isTrack) {
         // For track pages, we need to check if only album purchase is available
         // and handle it the same way as when hitting 'C' directly on the track page
-        const {isAlbumOnly} = AlbumOnlyUtils.checkForAlbumOnlyPurchase();
-        
+        const { isAlbumOnly } = AlbumOnlyUtils.checkForAlbumOnlyPurchase();
+
         if (isAlbumOnly) {
           if (closeTabAfterAdd) {
             window.close();
           }
           return;
         }
-        
+
         // If no album-only restriction detected, proceed with normal track purchase
         AddToCartUtils.clickAddToCartButtonOnCurrentPage();
-        
+
         // Close tab after add to cart if requested
         if (closeTabAfterAdd) {
           // Wait a bit for the add to cart action to complete
@@ -94,7 +94,7 @@ function handleAddToCart(): void {
         }
       } else if (BandcampFacade.isAlbum) {
         AddToCartUtils.clickAddToCartButtonOnCurrentPage();
-        
+
         // Close tab after add to cart if requested
         if (closeTabAfterAdd) {
           // Wait a bit for the add to cart action to complete
@@ -116,29 +116,29 @@ function handleAddToCart(): void {
  */
 function initializeExtension(): void {
   Logger.info(`Extension initializing for URL: ${window.location.href}`);
-  
+
   // Clean up existing instance if any
   if (pageController) {
     Logger.info('Cleaning up existing PageController instance');
     // TODO: Add cleanup method to PageController if needed
   }
-  
+
   // Reset the BandcampFacade to clear any cached values
   BandcampFacade.reset();
-  
+
   // Initialize the page controller
   pageController = PageController.init();
-  
+
   // Only call add-to-cart handler if the parameter is detected in the URL
   if (hasAddToCartParameter()) {
     handleAddToCart();
   }
-  
+
   // Only call wishlist handler if the parameter is detected in the URL
   if (hasWishlistParameter()) {
     handleWishlist();
   }
-  
+
   Logger.info('Extension initialization completed');
 }
 
@@ -148,9 +148,11 @@ function initializeExtension(): void {
 function handleUrlChange(): void {
   const newUrl = window.location.href;
   if (newUrl !== currentUrl) {
-    Logger.info(`URL changed from ${currentUrl} to ${newUrl} - reinitializing extension`);
+    Logger.info(
+      `URL changed from ${currentUrl} to ${newUrl} - reinitializing extension`
+    );
     currentUrl = newUrl;
-    
+
     // Give the page a moment to update the DOM before reinitializing
     setTimeout(() => {
       initializeExtension();
@@ -169,13 +171,17 @@ window.addEventListener('popstate', () => {
 const originalPushState = window.history.pushState;
 const originalReplaceState = window.history.replaceState;
 
-window.history.pushState = function(...args: Parameters<typeof originalPushState>): void {
+window.history.pushState = function (
+  ...args: Parameters<typeof originalPushState>
+): void {
   originalPushState.apply(window.history, args);
   Logger.info('PushState detected - checking for URL change');
   setTimeout(handleUrlChange, 100); // Small delay to ensure DOM updates
 };
 
-window.history.replaceState = function(...args: Parameters<typeof originalReplaceState>): void {
+window.history.replaceState = function (
+  ...args: Parameters<typeof originalReplaceState>
+): void {
   originalReplaceState.apply(window.history, args);
   Logger.info('ReplaceState detected - checking for URL change');
   setTimeout(handleUrlChange, 100); // Small delay to ensure DOM updates

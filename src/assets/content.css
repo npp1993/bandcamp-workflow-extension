@@ -16,12 +16,13 @@
   --thumbHeight: 12px;
 
   --color: #fff;
-  --backgroundColor: rgba(246, 246, 246, .1);
+  --backgroundColor: rgba(246, 246, 246, 0.1);
   --highlightColor: #f6f6f6;
-  --borderColor: rgba(190, 190, 190, .5);
+  --borderColor: rgba(190, 190, 190, 0.5);
 }
 
-.bandcamp-workflow__input, .bandcamp-workflow__input::-webkit-slider-thumb {
+.bandcamp-workflow__input,
+.bandcamp-workflow__input::-webkit-slider-thumb {
   -webkit-appearance: none;
 }
 
@@ -31,7 +32,9 @@
  * ------------------------------------------------------------
  */
 /* Make playbar elements have a pointer cursor to indicate they're clickable */
-.progbar, .progbar_empty, .progress {
+.progbar,
+.progbar_empty,
+.progress {
   cursor: pointer !important;
 }
 
@@ -49,7 +52,8 @@
   height: var(--trackHeight);
   border: 1px solid var(--borderColor);
   --sx: calc(var(--ratio) * 100%);
-  background: linear-gradient(var(--highlightColor), var(--highlightColor)) 0/ var(--sx) 100% no-repeat var(--backgroundColor);
+  background: linear-gradient(var(--highlightColor), var(--highlightColor)) 0 /
+    var(--sx) 100% no-repeat var(--backgroundColor);
 }
 
 /**
@@ -141,15 +145,25 @@
 
 /* Animation for "preparing download..." */
 @keyframes loadingDots {
-  0% { content: ""; }
-  25% { content: "."; }
-  50% { content: ".."; }
-  75% { content: "..."; }
-  100% { content: ""; }
+  0% {
+    content: '';
+  }
+  25% {
+    content: '.';
+  }
+  50% {
+    content: '..';
+  }
+  75% {
+    content: '...';
+  }
+  100% {
+    content: '';
+  }
 }
 
 .bandcamp-workflow-download-all[disabled]::after {
-  content: "";
+  content: '';
   display: inline-block;
   animation: loadingDots 1.5s infinite;
   width: 1.1em;
@@ -203,8 +217,6 @@
   border: 1px solid rgba(190, 190, 190, 0.3);
 }
 
-
-
 /* Error state */
 .bandcamp-waveform-error {
   margin: 10px 0;
@@ -223,11 +235,11 @@
     margin: 8px 0;
     padding: 4px;
   }
-  
+
   .bandcamp-waveform {
     max-width: 100%;
   }
-  
+
   .bandcamp-waveform-title {
     font-size: 11px;
   }
@@ -239,7 +251,9 @@
  * ------------------------------------------------------------
  */
 #bandcamp-workflow-notifications {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+    Arial, sans-serif !important;
 }
 
 .bandcamp-workflow-notification {

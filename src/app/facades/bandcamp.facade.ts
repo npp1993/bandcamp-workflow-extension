@@ -570,10 +570,19 @@ export class BandcampFacade {
       const flagClearTime = Logger.startTiming('🏁 Release navigation flag clear');
       this._releaseNavigationInProgress = false;
       Logger.timing('Release navigation flag cleared', flagClearTime);
-      // Track flag clearing optimization (150ms saved: 350ms → 200ms)
-      this.logReleasePageMetrics('FlagClearing', 150);
-      Logger.timing('playReleaseTrack fully completed', startTime);
-    }, 200); // Phase 2: Reduced from 350ms to 200ms
+      // Track flag clearing optimization (100ms saved: 250ms → 150ms)
+      this.logReleasePageMetrics('FlagClearing', 100);
+      
+      // Phase 2: Reduced delay for skip flag (350ms vs 500ms)
+      setTimeout(() => {
+        const secondClearTime = Logger.startTiming('🏁 Skip flag clear');
+        this._skipInProgress = false;
+        Logger.timing('Skip flag cleared', secondClearTime);
+        // Track flag clearing optimization (150ms saved: 500ms → 350ms)
+        this.logReleasePageMetrics('FlagClearing', 150);
+        Logger.timing('playNextReleaseTrack fully completed', startTime);
+      }, 350); // Reduced from 500ms to 350ms
+    }, 150); // Reduced from 250ms to 150ms
   }
 
   /**
@@ -2335,6 +2344,14 @@ export class BandcampFacade {
   }
   
   /**
+   * Add the current album to cart (z key functionality)
+   */
+  public static addCurrentAlbumToCart(): void {
+    Logger.info('z key detected on album page - adding entire album to cart');
+    AddToCartUtils.clickAddToCartButtonOnCurrentPage();
+  }
+
+  /**
    * Add the current track to cart
    * @param closeTabAfterAdd Whether to close the tab after adding to cart (only applies to wishlist pages)
    */
@@ -2370,7 +2387,7 @@ export class BandcampFacade {
         Logger.warn('No wishlist items loaded');
       }
     } else if (this.isAlbum) {
-      // Special handling for album pages - add the currently playing track to cart, not the entire album
+      // Special handling for album pages - only add the currently playing track to cart if one is selected
       Logger.info('c key detected on album page - looking for currently playing track');
       
       // Find the currently playing track row (has 'current_track' class)
@@ -2390,11 +2407,9 @@ export class BandcampFacade {
           Logger.warn('Could not find track link in currently playing track row');
         }
       } else {
-        Logger.info('No track currently playing on album page, adding entire album to cart instead');
+        Logger.info('No track currently playing on album page, ignoring c key press');
+        return;
       }
-      
-      // Fallback: add the entire album to cart if no specific track is playing
-      AddToCartUtils.clickAddToCartButtonOnCurrentPage();
     } else if (this.isTrack) {
       // For individual track pages, first check if only album purchase is available
       Logger.info('c key detected on track page - checking purchase options');
@@ -3370,24 +3385,12 @@ export class BandcampFacade {
             return {button, count};
           }).sort((a, b) => a.count - b.count);
           
-          // Log the buttons sorted by count
-          Logger.info('Buttons sorted by count:');
-          buttonsByCount.forEach(({button, count}) => {
-            Logger.info(`  "${button.textContent?.trim()}" - count: ${count}`);
-          });
-          
-          // Take the button with the smallest count - which should be the wishlist count
+          // Use the button with the smallest count (likely the wishlist)
           if (buttonsByCount.length > 0) {
             wishlistButton = buttonsByCount[0].button;
-            Logger.info(`Selected wishlist button by count: "${wishlistButton.textContent?.trim()}"`);
+            Logger.info(`Found wishlist button by position approach: "${wishlistButton.textContent?.trim()}"`);
           }
-        } else if (buttonDetails.length === 1) {
-          // If there's only one button, use it
-          wishlistButton = buttonDetails[0].button;
-          Logger.info(`Only one 'items' button found, using it: "${wishlistButton.textContent?.trim()}"`);
         }
-      } else if (wishlistButton) {
-        Logger.info(`Found wishlist button by matching tab count: "${wishlistButton.textContent?.trim()}"`);
       }
       
       if (!wishlistButton) {

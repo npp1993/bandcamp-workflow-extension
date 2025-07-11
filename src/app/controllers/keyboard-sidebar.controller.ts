@@ -302,21 +302,31 @@ export class KeyboardSidebarController {
       });
     }
 
-    // Add to cart (not on collection pages)
+    // Add to cart shortcuts (not on collection pages)
     if (!BandcampFacade.isCollectionPage) {
+      // C - Add current track to cart
       shortcuts.push({
         key: 'C',
-        description: 'Add to cart',
+        description: BandcampFacade.isAlbum ? 'Add current track to cart' : 'Add to cart',
         action: () => BandcampFacade.addCurrentTrackToCart()
       });
+
+      // Shift+C - Add to cart & close tab (wishlist and album pages only)
+      if (BandcampFacade.isWishlistPage || BandcampFacade.isAlbum) {
+        shortcuts.push({
+          key: 'Shift+C',
+          description: 'Add to cart & close tab',
+          action: () => BandcampFacade.addCurrentTrackToCart(true)
+        });
+      }
     }
 
-    // Shift+C shortcut for wishlist and album pages
-    if (BandcampFacade.isWishlistPage || BandcampFacade.isAlbum) {
+    // Z - Add album to cart (album pages only)
+    if (BandcampFacade.isAlbum) {
       shortcuts.push({
-        key: 'Shift+C',
-        description: 'Add to cart & close tab',
-        action: () => BandcampFacade.addCurrentTrackToCart(true)
+        key: 'Z',
+        description: 'Add album to cart',
+        action: () => BandcampFacade.addCurrentAlbumToCart()
       });
     }
 

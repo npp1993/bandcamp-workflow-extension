@@ -13,7 +13,7 @@
     "default_title": "Bandcamp Workflow Extension",
     "default_icon": {
       "16": "icons/icon16.png",
-      "48": "icons/icon48.png", 
+      "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     }
   },
@@ -25,15 +25,9 @@
   ],
   "content_scripts": [
     {
-      "matches": [
-        "*://*.bandcamp.com/*"
-      ],
-      "js": [
-        "scripts/content.js"
-      ],
-      "css": [
-        "assets/content.css"
-      ],
+      "matches": ["*://*.bandcamp.com/*"],
+      "js": ["scripts/content.js"],
+      "css": ["assets/content.css"],
       "run_at": "document_start",
       "all_frames": false
     }
