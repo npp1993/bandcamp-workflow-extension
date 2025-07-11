@@ -6,7 +6,7 @@ This document contains the required justifications for Chrome Web Store submissi
 
 ### What is the single purpose of this extension?
 
-This extension has one focused purpose: adding keyboard navigation to the Bandcamp music platform. All features serve this single goal of making Bandcamp controllable via keyboard shortcuts instead of mouse clicks.
+This extension enhances the Bandcamp music platform with keyboard shortcuts that allow users to navigate, play, wishlist, and purchase music without using a mouse. The core functionality centers around making Bandcamp more efficient for power users who prefer keyboard navigation.
 
 ### What does this extension do and why should users install it?
 
@@ -14,7 +14,7 @@ This extension transforms Bandcamp into a keyboard-navigable music platform by a
 
 Users should install this extension to save time by navigating and purchasing music much faster using keyboard shortcuts instead of mouse clicks. It improves workflow for music enthusiasts who browse extensive catalogs or manage large wishlists, and enhances accessibility by providing keyboard-only navigation for those who prefer or require it. Music collectors and DJs also benefit from playback speed controls and waveform visualization, making it a valuable tool for music browsing.
 
-### Features
+Features include:
 
 - Keyboard shortcuts for playback, navigation, and cart actions (Vim-style: Spacebar, N/P, C, Z, arrow keys, B)
 - Enhanced wishlist management: bulk purchase, automatic loading, and direct wishlisting from release pages
