@@ -10,3 +10,5 @@ chrome_user_data_persistent/
 .DS_Store
 
 login.json
+
+*.mov
