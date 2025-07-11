@@ -614,6 +614,10 @@ export class AddToCartUtils {
    */
   public static clickAddToCartButton(): void {
     try {
+      // Check if we should close the tab after adding to cart
+      const urlParams = new URLSearchParams(window.location.search);
+      const shouldCloseTab = urlParams.get('close_tab_after_add') === 'true';
+
       // Look for the "Add to cart" button with multiple possible selectors
       const addToCartSelectors = [
         'button[title*="Add to cart"]',
@@ -704,11 +708,36 @@ export class AddToCartUtils {
       if (addToCartButton) {
         Logger.info('Clicking "Add to cart" button');
         addToCartButton.click();
+        
+        // Close tab immediately after clicking if requested
+        if (shouldCloseTab) {
+          Logger.info('Closing tab after add to cart button click');
+          // Small delay to ensure the click is processed
+          setTimeout(() => {
+            window.close();
+          }, 100);
+        }
       } else {
         Logger.warn('Could not find "Add to cart" button to click automatically');
+        // If we can't find the button but should close tab, close anyway
+        if (shouldCloseTab) {
+          Logger.info('Closing tab - could not find add to cart button');
+          setTimeout(() => {
+            window.close();
+          }, 1000); // Give more time in case something is still loading
+        }
       }
     } catch (error) {
       Logger.error('Error clicking "Add to cart" button:', error);
+      // If there's an error but we should close tab, still close it
+      const urlParams = new URLSearchParams(window.location.search);
+      const shouldCloseTab = urlParams.get('close_tab_after_add') === 'true';
+      if (shouldCloseTab) {
+        Logger.info('Closing tab after error');
+        setTimeout(() => {
+          window.close();
+        }, 1000);
+      }
     }
   }
 

@@ -84,24 +84,8 @@ function handleAddToCart(): void {
 
         // If no album-only restriction detected, proceed with normal track purchase
         AddToCartUtils.clickAddToCartButtonOnCurrentPage();
-
-        // Close tab after add to cart if requested
-        if (closeTabAfterAdd) {
-          // Wait a bit for the add to cart action to complete
-          setTimeout(() => {
-            window.close();
-          }, 3000); // Wait 3 seconds for add to cart to process
-        }
       } else if (BandcampFacade.isAlbum) {
         AddToCartUtils.clickAddToCartButtonOnCurrentPage();
-
-        // Close tab after add to cart if requested
-        if (closeTabAfterAdd) {
-          // Wait a bit for the add to cart action to complete
-          setTimeout(() => {
-            window.close();
-          }, 3000); // Wait 3 seconds for add to cart to process
-        }
       } else {
         if (closeTabAfterAdd) {
           window.close();
