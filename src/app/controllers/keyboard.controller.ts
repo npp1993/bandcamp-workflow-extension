@@ -93,20 +93,30 @@ export class KeyboardController {
           // Disabled on collection pages
           if (!e.metaKey && !e.ctrlKey && !e.altKey && !BandcampFacade.isCollectionPage) {
             e.preventDefault();
-            if (e.shiftKey) {
-              // Shift+C: Add to cart and close tab (wishlist and track pages only)
-              if (BandcampFacade.isWishlistPage) {
-                BandcampFacade.addCurrentTrackToCart(true); // closeTabAfterAdd = true
-              } else if (BandcampFacade.isTrack) {
-                BandcampFacade.addCurrentTrackToCart(true); // closeTabAfterAdd = true
-              } else {
-                // On other pages, Shift+C behaves the same as C
-                BandcampFacade.addCurrentTrackToCart();
+            
+            // Check if we're in bulk mode first
+            if (BulkCartService.isInBulkMode) {
+              // In bulk mode, both C and Shift+C should add selected items to cart
+              if (!BulkCartService.isProcessing) {
+                BulkCartService.processSelectedItems();
               }
             } else {
-              // Regular C: Add to cart without closing tab (wishlist and track pages only)
-              // On album pages, 'c' only works if a track is selected
-              BandcampFacade.addCurrentTrackToCart();
+              // Regular mode: handle C and Shift+C normally
+              if (e.shiftKey) {
+                // Shift+C: Add to cart and close tab (wishlist and track pages only)
+                if (BandcampFacade.isWishlistPage) {
+                  BandcampFacade.addCurrentTrackToCart(true); // closeTabAfterAdd = true
+                } else if (BandcampFacade.isTrack) {
+                  BandcampFacade.addCurrentTrackToCart(true); // closeTabAfterAdd = true
+                } else {
+                  // On other pages, Shift+C behaves the same as C
+                  BandcampFacade.addCurrentTrackToCart();
+                }
+              } else {
+                // Regular C: Add to cart without closing tab (wishlist and track pages only)
+                // On album pages, 'c' only works if a track is selected
+                BandcampFacade.addCurrentTrackToCart();
+              }
             }
           }
           break;

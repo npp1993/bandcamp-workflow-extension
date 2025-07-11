@@ -308,19 +308,21 @@ export class KeyboardSidebarController {
 
     // Add to cart shortcuts (not on collection pages)
     if (!BandcampFacade.isCollectionPage) {
-      // C - Add current track to cart
+      // C - Add current track to cart (hidden in bulk mode since functionality is overridden)
       shortcuts.push({
         key: 'C',
         description: BandcampFacade.isAlbum ? 'Add current track to cart' : 'Add to cart',
-        action: () => BandcampFacade.addCurrentTrackToCart()
+        action: () => BandcampFacade.addCurrentTrackToCart(),
+        condition: () => !BulkCartService.isInBulkMode
       });
 
-      // Shift+C - Add to cart & close tab (wishlist and album pages only)
+      // Shift+C - Add to cart & close tab (wishlist and album pages only, hidden in bulk mode)
       if (BandcampFacade.isWishlistPage || BandcampFacade.isAlbum) {
         shortcuts.push({
           key: 'Shift+C',
           description: 'Add to cart & close tab',
-          action: () => BandcampFacade.addCurrentTrackToCart(true)
+          action: () => BandcampFacade.addCurrentTrackToCart(true),
+          condition: () => !BulkCartService.isInBulkMode
         });
       }
     }

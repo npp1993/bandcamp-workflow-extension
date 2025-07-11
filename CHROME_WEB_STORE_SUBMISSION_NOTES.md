@@ -22,6 +22,7 @@ Features include:
 - Visual waveform display for audio analysis
 - Keyboard-only navigation for accessibility and productivity
 - Streamlined workflow for music collectors, musicians, and DJs
+- Automated curl script generation for bulk downloading purchased items with ZIP extraction
 
 ## Permission Justifications
 
