@@ -112,7 +112,7 @@ export class KeyboardSidebarController {
     container.className = 'bandcamp-workflow-sidebars-container';
     container.style.cssText = `
       position: fixed;
-      top: 20px;
+      top: 70px;
       right: 20px;
       z-index: 1000;
       display: flex;
