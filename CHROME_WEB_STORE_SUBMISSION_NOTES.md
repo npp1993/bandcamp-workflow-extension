@@ -25,19 +25,7 @@ Features include:
 
 ## Permission Justifications
 
-### 1. activeTab Permission
-
-**Justification:**
-```
-The activeTab permission is required to interact with the currently active Bandcamp page. This allows the extension to:
-- Read page content to identify track/album information for keyboard shortcuts
-- Inject enhanced UI controls for playback speed adjustment and waveform visualization
-- Provide seamless navigation between tracks and albums
-- Enable add-to-cart functionality through keyboard shortcuts
-The extension only accesses the active tab when the user is on a Bandcamp domain and does not access any other tabs or browse user's browsing history.
-```
-
-### 2. Host Permissions (*.bandcamp.com, t4.bcbits.com)
+### 1. Host Permissions (*.bandcamp.com, t4.bcbits.com)
 
 **Justification:**
 ```
@@ -47,19 +35,7 @@ Host permissions for *.bandcamp.com and t4.bcbits.com are essential for core fun
 These permissions are limited to Bandcamp-related domains only. No other websites are accessed. All data processing occurs locally within the user's browser.
 ```
 
-### 3. Storage Permission
-
-**Justification:**
-```
-The storage permission is used exclusively for saving user preferences locally:
-- Discovery page filter settings that users choose to save for convenience
-- Temporary waveform cache data (expires after 15 minutes) to improve performance
-- No personal data, browsing history, or sensitive information is stored
-- All stored data remains local to the user's browser and is never transmitted to external servers
-- Users can clear this data at any time through browser settings or by uninstalling the extension
-```
-
-### 4. Remote Code Use
+### 2. Remote Code Use
 
 **Justification:**
 ```
@@ -78,14 +54,15 @@ Productivity
 ## Data Handling Disclosure
 
 ### Data Types Collected
-- Temporary audio data for waveform generation
+- None - this extension does not collect, store, or transmit any user data
 
 ### Data Usage
-- Functionality enhancement only
-- No analytics or tracking
+- All functionality operates locally within the browser
+- No analytics, tracking, or data collection
 - No data sharing with third parties
+- Temporary audio data processing for waveform generation (not stored)
 
 ### Data Storage
-- Local browser storage only
+- No persistent data storage
 - No remote servers involved
-- User-controlled data retention
+- All processing happens locally in the browser
