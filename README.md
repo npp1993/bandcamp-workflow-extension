@@ -18,11 +18,11 @@ Icons were created by [Dharu Ghazi](https://www.fiverr.com/dghzdesign).
 
 - Vim-style keybindings to greatly enhance music browsing and purchasing workflow while using Bandcamp
 - Wishlist individual tracks directly from release pages
-- Playback speed adjustment with vinyl and stretched modes
 - Add-to-Cart functionality for quickly adding tracks and albums to your cart from the wishlist, release pages, or track pages
 - Bulk add-to-cart functionality for adding multiple wishlist items to your cart at once
 - Automatic loading of all wishlist items
 - Always play the first track on a release page (instead of a featured track)
+- Playback speed adjustment with vinyl and stretched modes
 - Generate a ready-to-use `curl` script for bulk downloading your purchased items, including automatic extraction of downloaded ZIP files
 
 ## Keyboard Shortcuts
@@ -51,10 +51,11 @@ Icons were created by [Dharu Ghazi](https://www.fiverr.com/dghzdesign).
 The extension recognizes different page types and enables different features accordingly:
 
 - **Album/Track Pages**: Individual release pages with track listings and playback controls
-  - Speed controls (↑/↓/r) are available
+  - Keyboard transport controls (seeking within tracks and skipping between tracks)
   - Add current track to cart (c) is available when a track is selected/playing
   - Add current album to cart (z) is available on album pages
-  - Transport controls (space/n/p/h/l/i) work with the album's tracks
+  - Speed controls (↑/↓/r) are available
+  - Click "Vinyl" button to toggle between "Vinyl" and "Stretch" speed adjustment modes
 
 - **Wishlist Pages**: Your personal wishlist (bandcamp.com/username/wishlist)
   - Bulk selection mode (b) is available

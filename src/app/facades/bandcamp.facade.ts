@@ -321,6 +321,79 @@ export class BandcampFacade {
     return document.getElementsByClassName('nextbutton')[0] as HTMLDivElement;
   }
 
+  /**
+   * Get the current track index in the album
+   * @returns The index of the currently playing track, or -1 if no track is playing
+   */
+  public static getCurrentTrackIndex(): number {
+    const tracks = this.tracks;
+    if (tracks.length === 0) {
+      return -1;
+    }
+    
+    const currentTrackRow = document.querySelector('.track_row_view.current_track');
+    if (!currentTrackRow) {
+      return -1;
+    }
+    
+    return tracks.indexOf(currentTrackRow as HTMLTableRowElement);
+  }
+
+  /**
+   * Navigate to a specific track by index (used for wrap-around edge cases)
+   * @param trackIndex The index of the track to navigate to
+   */
+  public static navigateToTrack(trackIndex: number): void {
+    const tracks = this.tracks;
+    if (trackIndex < 0 || trackIndex >= tracks.length) {
+      Logger.warn(`Invalid track index: ${trackIndex}, total tracks: ${tracks.length}`);
+      return;
+    }
+    
+    const targetTrack = tracks[trackIndex];
+    
+    try {
+      // Use the same approach as playFirstTrack which works
+      // Structure: track row -> children[0] -> children[0] -> children[0] = play button div
+      const playButton = targetTrack?.children[0]?.children[0]?.children[0] as HTMLDivElement;
+      
+      if (!playButton) {
+        Logger.debug(`No play button found for track ${trackIndex + 1} using playFirstTrack structure`);
+        return;
+      }
+      
+      // Check if this track is already playing
+      if (playButton.classList.contains('playing')) {
+        Logger.debug(`Track ${trackIndex + 1} is already playing`);
+        return;
+      }
+      
+      playButton.click();
+      return;
+      
+    } catch (error) {
+      Logger.debug(`Error using playFirstTrack approach for track ${trackIndex + 1}:`, error);
+    }
+    
+    // Fallback: Try the old approach if the new one fails
+    const playCell = targetTrack.querySelector('td:first-child, .play-col');
+    if (playCell) {
+      // Try multiple play button selectors
+      const playButtonSelectors = ['.playbutton', '.play-btn', '.play-button', 'a', 'div.playbutton'];
+      
+      for (const selector of playButtonSelectors) {
+        const playButton = playCell.querySelector(selector);
+        if (playButton && !playButton.className.includes('status') && !playButton.className.includes('icon')) {
+          (playButton as HTMLElement).click();
+          return;
+        }
+      }
+      
+      // Last resort: click the play cell itself
+      (playCell as HTMLElement).click();
+    }
+  }
+
   // ============================================
   // OPTIMIZED RELEASE PAGE NAVIGATION METHODS
   // ============================================
@@ -328,8 +401,8 @@ export class BandcampFacade {
   // 85-90% performance improvements for wishlist navigation to release pages
 
   /**
-   * Play the next track on album/track pages with optimized performance
-   * Applies Phase 2 optimization techniques: event-based verification, smart delays, error recovery
+   * Play the next track on album/track pages with wrap-around support
+   * Uses track index to detect when to wrap around instead of button state
    */
   public static playNextReleaseTrack(): void {
     const startTime = Logger.startTiming('playNextReleaseTrack');
@@ -343,7 +416,7 @@ export class BandcampFacade {
 
     // Check if navigation is already in progress
     if (this._releaseNavigationInProgress) {
-      Logger.info('Release navigation already in progress, ignoring additional request');
+      Logger.warn('Release navigation already in progress, ignoring additional request');
       Logger.timing('playNextReleaseTrack blocked - concurrent request', startTime);
       return;
     }
@@ -358,30 +431,62 @@ export class BandcampFacade {
       // Track navigation optimization (150ms saved: 250ms → 100ms)
       this.logReleasePageMetrics('Navigation', 150);
       
-      const nextButton = this.getNext();
-      if (!nextButton) {
-        Logger.warn('Next button not found on release page');
+      const tracks = this.tracks;
+      const currentTrackIndex = this.getCurrentTrackIndex();
+      
+      if (tracks.length === 0) {
+        Logger.warn('No tracks found on release page');
         this._releaseNavigationInProgress = false;
-        Logger.timing('playNextReleaseTrack failed - no next button', startTime);
+        Logger.timing('playNextReleaseTrack failed - no tracks', startTime);
         return;
       }
 
-      Logger.info('Clicking next track button on release page');
-      Logger.timing('Next button found', delayCompleteTime);
+      // Check if we need to wrap around (only at last track, not when no track is playing)
+      const isAtLastTrack = currentTrackIndex === tracks.length - 1;
+      const noCurrentTrack = currentTrackIndex === -1;
       
-      const clickStart = Logger.startTiming('Next button click');
-      nextButton.click();
-      Logger.timing('Next button clicked', clickStart);
-      
-      // Use event-based verification instead of timeout-based
-      const verificationStart = Logger.startTiming('Event-based navigation verification');
-      this.verifyReleaseNavigationWithEvents('next', verificationStart, startTime);
+      Logger.debug(`Next track navigation: currentIndex=${currentTrackIndex}, totalTracks=${tracks.length}, isAtLastTrack=${isAtLastTrack}, noCurrentTrack=${noCurrentTrack}`);
+
+      if (isAtLastTrack) {
+        // We're at the last track, wrap around to the first track
+        Logger.debug('At last track, wrapping around to first track');
+        Logger.timing('Wrapping around to first track', delayCompleteTime);
+        
+        this.navigateToTrack(0); // Go to first track
+        
+        // Reset the navigation flag after a short delay
+        setTimeout(() => {
+          this._releaseNavigationInProgress = false;
+          Logger.timing('playNextReleaseTrack completed with wrap-around', startTime);
+        }, 200);
+      } else {
+        // Use Bandcamp's native next button for normal navigation
+        // This handles both: no track playing (starts track 2) and normal next track progression
+        const nextButton = this.getNext();
+        if (!nextButton) {
+          Logger.warn('Next button not found on release page');
+          this._releaseNavigationInProgress = false;
+          Logger.timing('playNextReleaseTrack failed - no next button', startTime);
+          return;
+        }
+
+        Logger.debug('Using native next button (handles no track playing → track 2, or normal progression)');
+        Logger.timing('Next button found', delayCompleteTime);
+        
+        const clickStart = Logger.startTiming('Next button click');
+        nextButton.click();
+        Logger.timing('Next button clicked', clickStart);
+        
+        // Use event-based verification instead of timeout-based
+        const verificationStart = Logger.startTiming('Event-based navigation verification');
+        this.verifyReleaseNavigationWithEvents('next', verificationStart, startTime);
+      }
     }, 100); // Phase 2: Reduced from 250ms to 100ms
   }
 
   /**
-   * Play the previous track on album/track pages with optimized performance
-   * Applies Phase 2 optimization techniques: event-based verification, smart delays, error recovery
+   * Play the previous track on album/track pages with wrap-around support
+   * Uses track index to detect when to wrap around instead of button state
    */
   public static playPreviousReleaseTrack(): void {
     const startTime = Logger.startTiming('playPreviousReleaseTrack');
@@ -395,7 +500,7 @@ export class BandcampFacade {
 
     // Check if navigation is already in progress
     if (this._releaseNavigationInProgress) {
-      Logger.info('Release navigation already in progress, ignoring additional request');
+      Logger.warn('Release navigation already in progress, ignoring additional request');
       Logger.timing('playPreviousReleaseTrack blocked - concurrent request', startTime);
       return;
     }
@@ -410,24 +515,55 @@ export class BandcampFacade {
       // Track navigation optimization (150ms saved: 250ms → 100ms)
       this.logReleasePageMetrics('Navigation', 150);
       
-      const prevButton = this.getPrevious();
-      if (!prevButton) {
-        Logger.warn('Previous button not found on release page');
+      const tracks = this.tracks;
+      const currentTrackIndex = this.getCurrentTrackIndex();
+      
+      if (tracks.length === 0) {
+        Logger.warn('No tracks found on release page');
         this._releaseNavigationInProgress = false;
-        Logger.timing('playPreviousReleaseTrack failed - no previous button', startTime);
+        Logger.timing('playPreviousReleaseTrack failed - no tracks', startTime);
         return;
       }
 
-      Logger.info('Clicking previous track button on release page');
-      Logger.timing('Previous button found', delayCompleteTime);
+      // Check if we need to wrap around (at first track or no current track)
+      const isAtFirstTrack = currentTrackIndex === 0;
+      const noCurrentTrack = currentTrackIndex === -1;
       
-      const clickStart = Logger.startTiming('Previous button click');
-      prevButton.click();
-      Logger.timing('Previous button clicked', clickStart);
-      
-      // Use event-based verification instead of timeout-based
-      const verificationStart = Logger.startTiming('Event-based navigation verification');
-      this.verifyReleaseNavigationWithEvents('previous', verificationStart, startTime);
+      Logger.debug(`Previous track navigation: currentIndex=${currentTrackIndex}, totalTracks=${tracks.length}, isAtFirstTrack=${isAtFirstTrack}, noCurrentTrack=${noCurrentTrack}`);
+
+      if (isAtFirstTrack || noCurrentTrack) {
+        // We're at the first track or no track is playing, wrap around to the last track
+        Logger.debug('At first track or no current track, wrapping around to last track');
+        Logger.timing('Wrapping around to last track', delayCompleteTime);
+        
+        this.navigateToTrack(tracks.length - 1); // Go to last track
+        
+        // Reset the navigation flag after a short delay
+        setTimeout(() => {
+          this._releaseNavigationInProgress = false;
+          Logger.timing('playPreviousReleaseTrack completed with wrap-around', startTime);
+        }, 200);
+      } else {
+        // Use Bandcamp's native previous button for normal navigation
+        const prevButton = this.getPrevious();
+        if (!prevButton) {
+          Logger.warn('Previous button not found on release page');
+          this._releaseNavigationInProgress = false;
+          Logger.timing('playPreviousReleaseTrack failed - no previous button', startTime);
+          return;
+        }
+
+        Logger.debug('Using native previous button for normal navigation');
+        Logger.timing('Previous button found', delayCompleteTime);
+        
+        const clickStart = Logger.startTiming('Previous button click');
+        prevButton.click();
+        Logger.timing('Previous button clicked', clickStart);
+        
+        // Use event-based verification instead of timeout-based
+        const verificationStart = Logger.startTiming('Event-based navigation verification');
+        this.verifyReleaseNavigationWithEvents('previous', verificationStart, startTime);
+      }
     }, 100); // Phase 2: Reduced from 250ms to 100ms
   }
 
