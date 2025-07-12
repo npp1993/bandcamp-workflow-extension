@@ -17,7 +17,6 @@
       "128": "icons/icon128.png"
     }
   },
-  "permissions": ["storage", "activeTab"],
   "host_permissions": ["*://*.bandcamp.com/*", "https://t4.bcbits.com/*"],
   "background": {
     "service_worker": "scripts/background.js"
