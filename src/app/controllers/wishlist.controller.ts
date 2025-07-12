@@ -99,8 +99,8 @@ export class WishlistController {
       return;
     }
 
-    Logger.info('Setting up collection item observer on container:', collectionContainer.className);
-    Logger.info('Container element details:', {
+    Logger.debug('Setting up collection item observer on container:', collectionContainer.className);
+    Logger.debug('Container element details:', {
       id: collectionContainer.id,
       className: collectionContainer.className,
       tagName: collectionContainer.tagName,
@@ -108,14 +108,14 @@ export class WishlistController {
     });
 
     let previousItemCount = BandcampFacade.loadWishlistItems().length;
-    Logger.info(`Initial item count for observer: ${previousItemCount}`);
+    Logger.debug(`Initial item count for observer: ${previousItemCount}`);
     
     this.collectionObserver = new MutationObserver((mutations) => {
-      Logger.info(`Collection observer triggered with ${mutations.length} mutations`);
+      Logger.debug(`Collection observer triggered with ${mutations.length} mutations`);
       
       // Log all mutations for debugging
       mutations.forEach((mutation, index) => {
-        Logger.info(`Mutation ${index + 1}:`, {
+        Logger.debug(`Mutation ${index + 1}:`, {
           type: mutation.type,
           target: `${mutation.target.nodeName}.${(mutation.target as HTMLElement).className}`,
           addedNodes: mutation.addedNodes.length,
@@ -127,7 +127,7 @@ export class WishlistController {
             const node = mutation.addedNodes[i];
             if (node.nodeType === Node.ELEMENT_NODE) {
               const element = node as HTMLElement;
-              Logger.info(`Added node ${i + 1}:`, {
+              Logger.debug(`Added node ${i + 1}:`, {
                 tagName: element.tagName,
                 className: element.className,
                 id: element.id,
@@ -154,7 +154,7 @@ export class WishlistController {
                   element.classList.contains('collection-item') ||
                   element.querySelector('.collection-item-container, .collection-item')) {
                 hasNewItems = true;
-                Logger.info('Detected new collection item:', element.className);
+                Logger.debug('Detected new collection item:', element.className);
                 break;
               }
             }
@@ -168,20 +168,20 @@ export class WishlistController {
         const currentItems = BandcampFacade.loadWishlistItems();
         const currentItemCount = currentItems.length;
         
-        Logger.info(`Item count check: ${previousItemCount} → ${currentItemCount} (hasNewItems: ${hasNewItems})`);
+        Logger.debug(`Item count check: ${previousItemCount} → ${currentItemCount} (hasNewItems: ${hasNewItems})`);
         
         if (currentItemCount > previousItemCount) {
-          Logger.info(`Collection observer detected ${currentItemCount - previousItemCount} new items (${previousItemCount} → ${currentItemCount})`);
+          Logger.debug(`Collection observer detected ${currentItemCount - previousItemCount} new items (${previousItemCount} → ${currentItemCount})`);
           
           // Update shuffle order if shuffle mode is enabled
           if (ShuffleService.isShuffleEnabled) {
-            Logger.info(`Shuffle mode enabled, updating shuffle order for new collection items`);
+            Logger.debug(`Shuffle mode enabled, updating shuffle order for new collection items`);
             ShuffleService.updateShuffleOrderForNewItems('collection', currentItemCount, BandcampFacade.currentWishlistIndex >= 0 ? BandcampFacade.currentWishlistIndex : 0);
           }
           
           previousItemCount = currentItemCount;
         } else if (currentItemCount !== previousItemCount) {
-          Logger.info(`Item count changed unexpectedly: ${previousItemCount} → ${currentItemCount}`);
+          Logger.debug(`Item count changed unexpectedly: ${previousItemCount} → ${currentItemCount}`);
           previousItemCount = currentItemCount;
         }
       }, 500);
@@ -195,7 +195,7 @@ export class WishlistController {
       characterData: true
     });
     
-    Logger.info('Collection mutation observer is now active');
+    Logger.debug('Collection mutation observer is now active');
   }
 
   /**
@@ -209,7 +209,7 @@ export class WishlistController {
     let previousItemCount = BandcampFacade.loadWishlistItems().length;
     let lastCheckTime = Date.now();
     
-    Logger.info('Setting up global collection observer as backup');
+    Logger.debug('Setting up global collection observer as backup');
     
     this.globalObserver = new MutationObserver((mutations) => {
       const now = Date.now();
@@ -237,7 +237,7 @@ export class WishlistController {
                 (node as HTMLElement).className.includes('collection-item')
               )) {
             hasCollectionRelatedChanges = true;
-            Logger.info('Global observer detected collection-related DOM changes');
+            Logger.debug('Global observer detected collection-related DOM changes');
             break;
           }
         }
@@ -248,15 +248,15 @@ export class WishlistController {
           const currentItems = BandcampFacade.loadWishlistItems();
           const currentItemCount = currentItems.length;
              if (currentItemCount > previousItemCount) {
-          Logger.info(`Global observer detected ${currentItemCount - previousItemCount} new items (${previousItemCount} → ${currentItemCount})`);
+          Logger.debug(`Global observer detected ${currentItemCount - previousItemCount} new items (${previousItemCount} → ${currentItemCount})`);
           
           // Update shuffle order if shuffle mode is enabled
-          Logger.info(`Checking shuffle mode: enabled=${ShuffleService.isShuffleEnabled}`);
+          Logger.debug(`Checking shuffle mode: enabled=${ShuffleService.isShuffleEnabled}`);
           if (ShuffleService.isShuffleEnabled) {
-            Logger.info(`Shuffle mode enabled, updating shuffle order for new collection items (global observer)`);
+            Logger.debug(`Shuffle mode enabled, updating shuffle order for new collection items (global observer)`);
             ShuffleService.updateShuffleOrderForNewItems('collection', currentItemCount, BandcampFacade.currentWishlistIndex >= 0 ? BandcampFacade.currentWishlistIndex : 0);
           } else {
-            Logger.info(`Shuffle mode not enabled, skipping shuffle order update`);
+            Logger.debug(`Shuffle mode not enabled, skipping shuffle order update`);
           }
           
           previousItemCount = currentItemCount;
@@ -299,7 +299,7 @@ export class WishlistController {
     }
 
     let previousItemCount = BandcampFacade.loadWishlistItems().length;
-    Logger.info(`Setting up periodic item check (initial count: ${previousItemCount})`);
+    Logger.debug(`Setting up periodic item check (initial count: ${previousItemCount})`);
     
     this.periodicCheckInterval = window.setInterval(() => {
       // Only check if we're still on a collection page
@@ -311,15 +311,15 @@ export class WishlistController {
       const currentItemCount = currentItems.length;
       
       if (currentItemCount > previousItemCount) {
-        Logger.info(`Periodic check detected ${currentItemCount - previousItemCount} new items (${previousItemCount} → ${currentItemCount})`);
+        Logger.debug(`Periodic check detected ${currentItemCount - previousItemCount} new items (${previousItemCount} → ${currentItemCount})`);
         
         // Update shuffle order if shuffle mode is enabled
-        Logger.info(`Periodic check - shuffle mode: enabled=${ShuffleService.isShuffleEnabled}`);
+        Logger.debug(`Periodic check - shuffle mode: enabled=${ShuffleService.isShuffleEnabled}`);
         if (ShuffleService.isShuffleEnabled) {
-          Logger.info(`Shuffle mode enabled, updating shuffle order for new collection items (periodic check)`);
+          Logger.debug(`Shuffle mode enabled, updating shuffle order for new collection items (periodic check)`);
           ShuffleService.updateShuffleOrderForNewItems('collection', currentItemCount, BandcampFacade.currentWishlistIndex >= 0 ? BandcampFacade.currentWishlistIndex : 0);
         } else {
-          Logger.info(`Shuffle mode not enabled, skipping shuffle order update (periodic check)`);
+          Logger.debug(`Shuffle mode not enabled, skipping shuffle order update (periodic check)`);
         }
         
         previousItemCount = currentItemCount;

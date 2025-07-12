@@ -25,7 +25,7 @@ export class AddToCartUtils {
       // First, try to find add to cart buttons by text content (most reliable for modern Bandcamp)
       const addToCartButtonByText = this.findAddToCartButtonByText();
       if (addToCartButtonByText) {
-        Logger.info('Found add to cart button by text content, clicking it');
+        Logger.debug('Found add to cart button by text content, clicking it');
         addToCartButtonByText.click();
         clicked = true;
 
@@ -38,7 +38,7 @@ export class AddToCartUtils {
       const addToCartButton = DOMSelectors.findOneWithSelectors<HTMLElement>(DOMSelectors.BUY_BUTTONS);
       
       if (addToCartButton) {
-        Logger.info('Found add to cart button by class selector, clicking it');
+        Logger.debug('Found add to cart button by class selector, clicking it');
         addToCartButton.click();
         clicked = true;
 
@@ -51,7 +51,7 @@ export class AddToCartUtils {
       const addToCartLink = DOMSelectors.findOneWithSelectors<HTMLElement>(DOMSelectors.BUY_LINKS);
       
       if (addToCartLink) {
-        Logger.info('Found add to cart link, clicking it');
+        Logger.debug('Found add to cart link, clicking it');
         addToCartLink.click();
         clicked = true;
 
@@ -115,7 +115,7 @@ export class AddToCartUtils {
                                  window.getComputedStyle(htmlElement).visibility === 'hidden';
           
           if (isVisible && !isDisabled && !hasHiddenStyle) {
-            Logger.info(`Found digital add to cart button by text: "${text}"`);
+            Logger.debug(`Found digital add to cart button by text: "${text}"`);
             return htmlElement;
           }
         }
@@ -155,7 +155,7 @@ export class AddToCartUtils {
                                  window.getComputedStyle(htmlElement).visibility === 'hidden';
           
           if (isVisible && !isDisabled && !hasHiddenStyle) {
-            Logger.info(`Found generic add to cart button by text: "${text}"`);
+            Logger.debug(`Found generic add to cart button by text: "${text}"`);
             return htmlElement;
           }
         }
@@ -181,7 +181,7 @@ export class AddToCartUtils {
         text.toLowerCase().includes('track') ||
         text.toLowerCase().includes('album')
       )) {
-        Logger.info(`Found potential add to cart button by class with text: "${text}"`);
+        Logger.debug(`Found potential add to cart button by class with text: "${text}"`);
         return htmlElement;
       }
     }
@@ -239,7 +239,7 @@ export class AddToCartUtils {
    */
   public static openWishlistLinkWithWishlist(href: string): void {
     const wishlistUrl = this.addWishlistParameterToUrl(href);
-    Logger.info('Opening wishlist link with wishlist parameter in new tab:', wishlistUrl);
+    Logger.debug('Opening wishlist link with wishlist parameter in new tab:', wishlistUrl);
     window.open(wishlistUrl, '_blank');
   }
 
@@ -273,7 +273,7 @@ export class AddToCartUtils {
    */
   public static openAddToCartLinkWithCart(href: string, closeTabAfterAdd = false): void {
     const cartUrl = this.addCartParameterToUrl(href, closeTabAfterAdd);
-    Logger.info('Opening add to cart link with add_to_cart parameter in new tab:', cartUrl);
+    Logger.debug('Opening add to cart link with add_to_cart parameter in new tab:', cartUrl);
     window.open(cartUrl, '_blank');
   }
 
@@ -300,7 +300,7 @@ export class AddToCartUtils {
           const element = document.querySelector(selector);
           if (element) {
             isFixedPrice = true;
-            Logger.info('Detected fixed-price item');
+            Logger.debug('Detected fixed-price item');
             break;
           }
         }
@@ -321,7 +321,7 @@ export class AddToCartUtils {
             const element = document.querySelector(selector);
             if (element) {
               isNYP = true;
-              Logger.info('Detected name-your-price (NYP) item');
+              Logger.debug('Detected name-your-price (NYP) item');
               break;
             }
           }
@@ -340,7 +340,7 @@ export class AddToCartUtils {
             for (const pattern of nypTextPatterns) {
               if (pageText.toLowerCase().includes(pattern.toLowerCase())) {
                 isNYP = true;
-                Logger.info(`Detected NYP item by text pattern: "${pattern}"`);
+                Logger.debug(`Detected NYP item by text pattern: "${pattern}"`);
                 break;
               }
             }
@@ -366,7 +366,7 @@ export class AddToCartUtils {
               const priceRegex = /[\$€£¥]\s*\d+(\.\d{2})?/;
               if (priceRegex.test(text)) {
                 isFixedPrice = true;
-                Logger.info('Detected fixed-price item by price value');
+                Logger.debug('Detected fixed-price item by price value');
                 break;
               }
             }
@@ -460,16 +460,16 @@ export class AddToCartUtils {
             minPrice = AddToCartUtils.getDefaultPrice(isTrack);
           }
           
-          Logger.info(`Auto-filling add to cart price: ${minPrice}`);
+          Logger.debug(`Auto-filling add to cart price: ${minPrice}`);
           
           // Check if the price is already filled
           if (priceInput.value && priceInput.value.trim() !== '') {
             // Only update if the current value looks like it might be a placeholder or default
             const currentValue = priceInput.value.trim();
             if (currentValue === '0' || currentValue === '0.00' || currentValue === '$0' || currentValue === '$0.00') {
-              Logger.info('Updating placeholder price value');
+              Logger.debug('Updating placeholder price value');
             } else {
-              Logger.info('Price already has valid value, proceeding to add to cart');
+              Logger.debug('Price already has valid value, proceeding to add to cart');
               setTimeout(() => {
                 AddToCartUtils.clickAddToCartButton();
               }, 300);
@@ -652,7 +652,7 @@ export class AddToCartUtils {
         if (text.includes('add to cart') || value.includes('add to cart') || 
             text.includes('🛒') || text.includes('cart')) {
           addToCartButton = button as HTMLElement;
-          Logger.info('Found "Add to cart" button by text:', text || value);
+          Logger.debug('Found "Add to cart" button by text:', text || value);
           break;
         }
       }
@@ -670,7 +670,7 @@ export class AddToCartUtils {
             
             if (button && button.offsetParent !== null) { // Check if visible
               addToCartButton = button;
-              Logger.info('Found "Add to cart" button by selector:', selector);
+              Logger.debug('Found "Add to cart" button by selector:', selector);
               break;
             }
           }
@@ -699,19 +699,19 @@ export class AddToCartUtils {
               bgColor.includes('#1b81e5') || bgColor.includes('#1da1f2') ||
               bgColor.includes('blue') || button.className.includes('primary')) {
             addToCartButton = button;
-            Logger.info('Found potential "Add to cart" button by blue color');
+            Logger.debug('Found potential "Add to cart" button by blue color');
             break;
           }
         }
       }
       
       if (addToCartButton) {
-        Logger.info('Clicking "Add to cart" button');
+        Logger.debug('Clicking "Add to cart" button');
         addToCartButton.click();
         
         // Close tab immediately after clicking if requested
         if (shouldCloseTab) {
-          Logger.info('Closing tab after add to cart button click');
+          Logger.debug('Closing tab after add to cart button click');
           // Small delay to ensure the click is processed
           setTimeout(() => {
             window.close();
@@ -721,7 +721,7 @@ export class AddToCartUtils {
         Logger.warn('Could not find "Add to cart" button to click automatically');
         // If we can't find the button but should close tab, close anyway
         if (shouldCloseTab) {
-          Logger.info('Closing tab - could not find add to cart button');
+          Logger.debug('Closing tab - could not find add to cart button');
           setTimeout(() => {
             window.close();
           }, 1000); // Give more time in case something is still loading
@@ -733,7 +733,7 @@ export class AddToCartUtils {
       const urlParams = new URLSearchParams(window.location.search);
       const shouldCloseTab = urlParams.get('close_tab_after_add') === 'true';
       if (shouldCloseTab) {
-        Logger.info('Closing tab after error');
+        Logger.debug('Closing tab after error');
         setTimeout(() => {
           window.close();
         }, 1000);
@@ -764,18 +764,18 @@ export class AddToCartUtils {
           logPrefix = 'Adding wishlist item to cart',
           closeTabAfterAdd = false
         } = options;
-        Logger.info(logPrefix);
+        Logger.debug(logPrefix);
         
         // First priority: Check the now-playing section if requested (for currently playing track)
         if (checkNowPlaying) {
           const nowPlaying = document.querySelector('.now-playing');
           if (nowPlaying) {
-            Logger.info('Found now-playing section, checking for direct add to cart links');
+            Logger.debug('Found now-playing section, checking for direct add to cart links');
             
             // Look for the add-to-cart link in the now-playing section which should point to the individual track
             const nowPlayingAddToCartLink = this.findAddToCartLinkInContainer(nowPlaying as HTMLElement);
             if (nowPlayingAddToCartLink) {
-              Logger.info('Found add to cart link in now-playing section, using this');
+              Logger.debug('Found add to cart link in now-playing section, using this');
               const href = (nowPlayingAddToCartLink as HTMLAnchorElement).href;
               this.openAddToCartLinkWithCart(href, closeTabAfterAdd);
               resolve();
@@ -787,7 +787,7 @@ export class AddToCartUtils {
             if (nowPlayingTrackLink) {
               const trackLinkParent = nowPlayingTrackLink.closest('a');
               if (trackLinkParent) {
-                Logger.info('Found track link in now-playing section, using this instead');
+                Logger.debug('Found track link in now-playing section, using this instead');
                 const href = (trackLinkParent as HTMLAnchorElement).href;
                 this.openAddToCartLinkWithCart(href, closeTabAfterAdd);
                 resolve();
@@ -811,7 +811,7 @@ export class AddToCartUtils {
         
         // If we found a direct track link, use it
         if (trackLink && trackLink.href) {
-          Logger.info('Opening direct track link:', trackLink.href);
+          Logger.debug('Opening direct track link:', trackLink.href);
           this.openAddToCartLinkWithCart(trackLink.href, closeTabAfterAdd);
           resolve();
           return;
@@ -829,7 +829,7 @@ export class AddToCartUtils {
           // Check if we already have a direct track link (rare but possible)
           const directTrackLink = cleanLinks.find(link => link.href.includes('/track/'));
           if (directTrackLink) {
-            Logger.info('Opening direct track link:', directTrackLink.href);
+            Logger.debug('Opening direct track link:', directTrackLink.href);
             this.openAddToCartLinkWithCart(directTrackLink.href, closeTabAfterAdd);
             resolve();
             return;
@@ -845,7 +845,7 @@ export class AddToCartUtils {
               .replace(/-+/g, '-')
               .replace(/^-|-$/g, '');
             const directTrackUrl = `${url.origin}/track/${trackSlug}`;
-            Logger.info('Opening constructed track URL:', directTrackUrl);
+            Logger.debug('Opening constructed track URL:', directTrackUrl);
             this.openAddToCartLinkWithCart(directTrackUrl, closeTabAfterAdd);
             resolve();
             return;
@@ -868,7 +868,7 @@ export class AddToCartUtils {
         }
         
         if (trackLink && trackLink.href) {
-          Logger.info('Opening item page:', trackLink.href);
+          Logger.debug('Opening item page:', trackLink.href);
           this.openAddToCartLinkWithCart(trackLink.href, closeTabAfterAdd);
           resolve();
           return;

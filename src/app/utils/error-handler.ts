@@ -14,7 +14,7 @@ export class ErrorHandler {
     isWishlistPage = false,
   ): void {
     if (trackId) {
-      Logger.info(`Adding track ID ${trackId} to problem list due to playback error`);
+      Logger.debug(`Adding track ID ${trackId} to problem list due to playback error`);
     }
 
     if (error) {

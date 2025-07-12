@@ -99,11 +99,11 @@ function handleAddToCart(): void {
  * Initialize or reinitialize the extension
  */
 function initializeExtension(): void {
-  Logger.info(`Extension initializing for URL: ${window.location.href}`);
+  Logger.debug(`Extension initializing for URL: ${window.location.href}`);
 
   // Clean up existing instance if any
   if (pageController) {
-    Logger.info('Cleaning up existing PageController instance');
+    Logger.debug('Cleaning up existing PageController instance');
     // TODO: Add cleanup method to PageController if needed
   }
 
@@ -123,7 +123,7 @@ function initializeExtension(): void {
     handleWishlist();
   }
 
-  Logger.info('Extension initialization completed');
+  Logger.debug('Extension initialization completed');
 }
 
 /**
@@ -132,7 +132,7 @@ function initializeExtension(): void {
 function handleUrlChange(): void {
   const newUrl = window.location.href;
   if (newUrl !== currentUrl) {
-    Logger.info(
+    Logger.debug(
       `URL changed from ${currentUrl} to ${newUrl} - reinitializing extension`
     );
     currentUrl = newUrl;
@@ -146,7 +146,7 @@ function handleUrlChange(): void {
 
 // Listen for browser navigation events (back/forward)
 window.addEventListener('popstate', () => {
-  Logger.info('Popstate event detected - checking for URL change');
+  Logger.debug('Popstate event detected - checking for URL change');
   handleUrlChange();
 });
 
@@ -159,7 +159,7 @@ window.history.pushState = function (
   ...args: Parameters<typeof originalPushState>
 ): void {
   originalPushState.apply(window.history, args);
-  Logger.info('PushState detected - checking for URL change');
+  Logger.debug('PushState detected - checking for URL change');
   setTimeout(handleUrlChange, 100); // Small delay to ensure DOM updates
 };
 
@@ -167,7 +167,7 @@ window.history.replaceState = function (
   ...args: Parameters<typeof originalReplaceState>
 ): void {
   originalReplaceState.apply(window.history, args);
-  Logger.info('ReplaceState detected - checking for URL change');
+  Logger.debug('ReplaceState detected - checking for URL change');
   setTimeout(handleUrlChange, 100); // Small delay to ensure DOM updates
 };
 
@@ -178,13 +178,13 @@ setInterval(() => {
 
 // Initialize on page load
 window.addEventListener('load', () => {
-  Logger.info('Page load event - initializing extension');
+  Logger.debug('Page load event - initializing extension');
   initializeExtension();
 });
 
 // Also initialize immediately if page is already loaded
 if (document.readyState === 'complete') {
-  Logger.info('Page already loaded - initializing extension immediately');
+  Logger.debug('Page already loaded - initializing extension immediately');
   initializeExtension();
 }
 

@@ -8,9 +8,8 @@ export class Logger {
   public static readonly LOG_LEVELS = {
     ERROR: 0,
     WARN: 1,
-    INFO: 2,
-    DEBUG: 3,
-    TIMING: 4,
+    DEBUG: 2,
+    TIMING: 3,
   };
   
   // Current log level - set to WARN for production (reduces verbose logging)
@@ -28,15 +27,6 @@ export class Logger {
    */
   private static getTimestamp(): string {
     return new Date().toISOString().slice(11, 23); // HH:MM:SS.mmm format
-  }
-
-  /**
-   * Log an info message with timestamp (only if log level allows)
-   */
-  public static info(message: string, ...args: any[]): void {
-    if (this.currentLogLevel >= this.LOG_LEVELS.INFO) {
-      console.log(`${this.PREFIX} [${this.getTimestamp()}] ${message}`, ...args);
-    }
   }
 
   /**
