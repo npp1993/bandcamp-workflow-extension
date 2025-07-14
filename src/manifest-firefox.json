@@ -1,7 +1,7 @@
 {
   "name": "Bandcamp Workflow Extension",
   "short_name": "Bandcamp Workflow",
-  "description": "Enhanced Bandcamp browsing experience with Vim-style hotkeys, waveform visualization, and quick wishlist/add-to-cart functionality",
+  "description": "Enhanced Bandcamp browsing experience with Vim-style hotkeys, waveform visualization, and quick wishlist/add-to-cart functionality.",
   "version": "1.0",
   "manifest_version": 2,
   "icons": {
