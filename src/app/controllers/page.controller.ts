@@ -46,13 +46,13 @@ export class PageController {
       this.controllers.downloadHelper = new DownloadHelperController();
     }
 
-    // Initialize wishlist controller for collection-based pages (wishlist and collection)
-    if (BandcampFacade.isCollectionBasedPage) {
+    // Initialize wishlist controller for collection-based pages (wishlist and collection), but not download pages
+    if (BandcampFacade.isCollectionBasedPage && !isDownloadPage) {
       this.controllers.wishlist = new WishlistController();
     }
 
-    // If not on a supported page or collection-based page, return early
-    if (!BandcampFacade.isPageSupported && !BandcampFacade.isCollectionBasedPage) {
+    // If not on a supported page or collection-based page, or if it's a download page, return early
+    if ((!BandcampFacade.isPageSupported && !BandcampFacade.isCollectionBasedPage) || isDownloadPage) {
       return;
     }
 
@@ -65,16 +65,18 @@ export class PageController {
       this.createSpeedRow();
     }
 
-    // Initialize waveform controller for supported page types (track, album, wishlist, collection)
-    if (BandcampFacade.isPageSupported || BandcampFacade.isCollectionBasedPage) {
+    // Initialize waveform controller for supported page types (track, album, wishlist, collection), but not download pages
+    if ((BandcampFacade.isPageSupported || BandcampFacade.isCollectionBasedPage) && !isDownloadPage) {
       WaveformController.initialize();
     }
 
-    // Initialize keyboard controller for both supported pages and collection-based pages
-    KeyboardController.start(this.controllers);
+    // Initialize keyboard controller for both supported pages and collection-based pages, but not download pages
+    if (!isDownloadPage) {
+      KeyboardController.start(this.controllers);
+    }
 
-    // Initialize keyboard sidebar controller for all relevant pages
-    if (BandcampFacade.isPageSupported || BandcampFacade.isCollectionBasedPage) {
+    // Initialize keyboard sidebar controller for all relevant pages, but not download pages
+    if ((BandcampFacade.isPageSupported || BandcampFacade.isCollectionBasedPage) && !isDownloadPage) {
       this.controllers.keyboardSidebar = KeyboardSidebarController.init(this.controllers);
     }
 
