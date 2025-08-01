@@ -234,8 +234,8 @@ extract_zip_files() {
     
     # Move all downloaded files to the base folder first
     echo "Moving downloaded files to $BASE_FOLDER/"
-    for file in *.zip *.flac *.mp3 *.wav *.m4a *.aiff *.ogg 2>/dev/null; do
-        [ -f "$file" ] && mv "$file" "$BASE_FOLDER/"
+    for file in *.zip *.flac *.mp3 *.wav *.m4a *.aiff *.ogg; do
+        [ -f "$file" ] && mv "$file" "$BASE_FOLDER/" 2>/dev/null
     done
     
     # Extract each zip file within the base folder
