@@ -209,6 +209,34 @@ download_file() {
     fi
 }
 
+# Function to organize all downloaded files into the base folder
+organize_downloaded_files() {
+    echo ""
+    echo "=== Organizing downloaded files ==="
+    
+    # Get the script name without extension to use as base folder name
+    SCRIPT_NAME=$(basename "$0" .txt)
+    BASE_FOLDER="$SCRIPT_NAME"
+    
+    # Create the base folder if it doesn't exist
+    mkdir -p "$BASE_FOLDER"
+    
+    # Move all downloaded files to the base folder
+    echo "Moving downloaded files to $BASE_FOLDER/"
+    MOVED_COUNT=0
+    for file in *.zip *.flac *.mp3 *.wav *.m4a *.aiff *.ogg; do
+        if [ -f "$file" ]; then
+            mv "$file" "$BASE_FOLDER/" 2>/dev/null && ((MOVED_COUNT++))
+        fi
+    done
+    
+    if [ $MOVED_COUNT -gt 0 ]; then
+        echo "Moved $MOVED_COUNT files to $BASE_FOLDER/"
+    else
+        echo "No audio files found to organize."
+    fi
+}
+
 # Function to extract zip files in the current directory
 extract_zip_files() {
     echo ""
@@ -218,31 +246,26 @@ extract_zip_files() {
     SCRIPT_NAME=$(basename "$0" .txt)
     BASE_FOLDER="$SCRIPT_NAME"
     
+    # Check for zip files in the base folder
+    cd "$BASE_FOLDER" 2>/dev/null || {
+        echo "Base folder $BASE_FOLDER not found. No zip files to extract."
+        return 0
+    }
+    
     # Count the number of zip files
     ZIP_COUNT=$(find . -maxdepth 1 -name "*.zip" | wc -l | tr -d ' ')
     
     if [ "$ZIP_COUNT" -eq 0 ]; then
         echo "No zip files found to extract."
+        cd ..
         return 0
     fi
     
     echo "Found $ZIP_COUNT zip files to extract."
-    echo "Creating base folder: $BASE_FOLDER/"
-    
-    # Create the base folder if it doesn't exist
-    mkdir -p "$BASE_FOLDER"
-    
-    # Move all downloaded files to the base folder first
-    echo "Moving downloaded files to $BASE_FOLDER/"
-    for file in *.zip *.flac *.mp3 *.wav *.m4a *.aiff *.ogg; do
-        [ -f "$file" ] && mv "$file" "$BASE_FOLDER/" 2>/dev/null
-    done
     
     # Extract each zip file within the base folder
     EXTRACTED=0
     EXTRACT_FAILED=0
-    
-    cd "$BASE_FOLDER"
     
     for zip_file in *.zip; do
         # Skip if no zip files match the pattern
@@ -326,6 +349,9 @@ if [ $FAILED -eq 0 ]; then
 else
     echo "WARNING: $FAILED of $TOTAL_URLS files failed to download"
 fi
+
+# Organize all downloaded files into the base folder
+organize_downloaded_files
 
 # Extract any zip files that were downloaded
 extract_zip_files
