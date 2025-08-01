@@ -170,6 +170,19 @@
   text-align: left;
 }
 
+/* Center the download button when it's in a single page container */
+.download-item-container .bandcamp-workflow-download-all {
+  display: block;
+  margin: 15px auto;
+  text-align: center;
+}
+
+/* Keep bulk page button aligned with track titles (left-aligned) */
+.download-titles .bandcamp-workflow-download-all {
+  display: inline-block;
+  margin: 10px 0;
+}
+
 /**
  * ------------------------------------------------------------
  * Waveform Display

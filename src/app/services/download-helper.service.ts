@@ -6,7 +6,6 @@ import {Logger} from '../utils/logger';
  */
 export class DownloadHelperService {
   private button: HTMLButtonElement;
-
   private observer: MutationObserver;
 
   constructor() {
@@ -20,14 +19,19 @@ export class DownloadHelperService {
     this.createButton();
     this.checkDownloadLinks();
     
-    // Set up observer to watch for download links becoming available
-    const config = {attributes: true, attributeFilter: ['href', 'style']};
-    const targetNodes = document.querySelectorAll('.download-title .item-button');
+    // Simple observer - just watch for href changes on download links
+    const config = { attributes: true, attributeFilter: ['href'] };
     
-    // Convert NodeList to Array before iteration
-    Array.from(targetNodes).forEach((node) => {
-      this.observer.observe(node, config);
+    // Only observe existing download links, not the whole page
+    const existingLinks = document.querySelectorAll('a[href*="/download/"], .download-title .item-button');
+    existingLinks.forEach(link => {
+      this.observer.observe(link, config);
     });
+    
+    // Single fallback check after 2 seconds for slow-loading pages
+    setTimeout(() => {
+      this.checkDownloadLinks();
+    }, 2000);
   }
 
   /**
@@ -38,8 +42,24 @@ export class DownloadHelperService {
       return;
     }
 
-    const location = document.querySelector('div.download-titles');
+    // Check for bulk download structure first, then single item
+    const bulkContainer = document.querySelector('.download-titles');
+    const singleContainer = document.querySelector('.download-item-container');
+    
+    let location: Element | null = null;
+    
+    if (bulkContainer) {
+      // Bulk download page - place button in the download-titles container
+      location = bulkContainer;
+      Logger.debug('Placing button in bulk container (.download-titles)');
+    } else if (singleContainer) {
+      // Single download page - place button in the download-item-container
+      location = singleContainer;
+      Logger.debug('Placing button in single container (.download-item-container)');
+    }
+    
     if (!location) {
+      Logger.debug('No suitable location found for download button');
       return;
     }
 
@@ -50,14 +70,19 @@ export class DownloadHelperService {
     this.button.textContent = 'Preparing download...';
 
     location.append(this.button);
+    Logger.debug('Download button created and added to page');
   }
 
   /**
    * Enable the download button when all links are ready
    */
   private enableButton(): void {
+    if (!this.button) {
+      return;
+    }
+    
     this.button.disabled = false;
-    this.button.textContent = 'Download cURL File';
+    this.button.textContent = 'Download curl script';
     
     this.button.addEventListener('click', () => {
       const date = this.formatDate();
@@ -96,17 +121,29 @@ export class DownloadHelperService {
    * Callback for MutationObserver
    */
   private mutationCallback(): void {
-    const allDownloadLinks = document.querySelectorAll('.download-title .item-button');
+    // Check for both bulk and single download links
+    const bulkLinks = document.querySelectorAll('li.download_list_item .download-title .item-button[href]');
+    const singleLinks = document.querySelectorAll('a[href*="/download/"]');
     
-    if (allDownloadLinks.length === 0) {
+    const totalLinks = bulkLinks.length + singleLinks.length;
+    
+    Logger.debug(`Found ${bulkLinks.length} bulk links, ${singleLinks.length} single links`);
+    
+    if (totalLinks === 0) {
       return;
     }
     
-    const linksReady = Array.from(allDownloadLinks).every(
-      (element) => (element as HTMLElement).style.display !== 'none',
-    );
+    // Check if any links are ready (have valid href and not hidden)
+    const allLinks = [...Array.from(bulkLinks), ...Array.from(singleLinks)];
+    const readyLinks = allLinks.filter(link => {
+      const href = link.getAttribute('href');
+      const isVisible = (link as HTMLElement).style.display !== 'none';
+      return href && href.length > 0 && isVisible;
+    });
     
-    if (linksReady) {
+    Logger.debug(`Found ${readyLinks.length} ready links out of ${totalLinks} total`);
+    
+    if (readyLinks.length > 0) {
       this.enableButton();
     } else {
       this.disableButton();
@@ -117,17 +154,29 @@ export class DownloadHelperService {
    * Generate the list of download URLs
    */
   private generateDownloadList(): string {
-    const urlSet = new Set(
-      Array.from(document.querySelectorAll('a.item-button')).map((item) => 
-        item.getAttribute('href'),
-      ).filter((href) => href),
-    );
+    // Get download links using specific selectors for each page type
+    const bulkLinks = document.querySelectorAll('li.download_list_item .download-title .item-button[href]');
+    const singleLinks = document.querySelectorAll('a[href*="/download/"]');
     
-    if (urlSet.size === 0) {
+    const urls = new Set<string>();
+    
+    // Add bulk download links
+    bulkLinks.forEach(link => {
+      const href = link.getAttribute('href');
+      if (href) urls.add(href);
+    });
+    
+    // Add single download links  
+    singleLinks.forEach(link => {
+      const href = link.getAttribute('href');
+      if (href) urls.add(href);
+    });
+    
+    if (urls.size === 0) {
       return 'URLS=()\n';
     }
     
-    const fileList = Array.from(urlSet).map((url) => `\t"${url}"`).join('\n');
+    const fileList = Array.from(urls).map((url) => `\t"${url}"`).join('\n');
     return 'URLS=(\n' + fileList + '\n)\n';
   }
 

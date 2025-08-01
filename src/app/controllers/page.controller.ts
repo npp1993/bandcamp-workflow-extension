@@ -9,6 +9,7 @@ import {PlaybarController} from './playbar.controller';
 import {DownloadHelperController} from './download-helper.controller';
 import {WaveformController} from './waveform.controller';
 import {KeyboardSidebarController} from './keyboard-sidebar.controller';
+import {Logger} from '../utils/logger';
 
 export interface Controllers {
   speed: SpeedController | null;
@@ -39,7 +40,9 @@ export class PageController {
     };
 
     // Initialize download helper controller for download pages
-    if (DownloadHelperController.isDownloadPage()) {
+    const isDownloadPage = DownloadHelperController.isDownloadPage();
+    
+    if (isDownloadPage) {
       this.controllers.downloadHelper = new DownloadHelperController();
     }
 
