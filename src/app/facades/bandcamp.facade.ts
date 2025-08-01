@@ -1452,6 +1452,12 @@ export class BandcampFacade {
 
       const item = this._wishlistItems[index];
       
+      // Debug: Log item info for shuffle debugging
+      if (ShuffleService.isShuffleEnabled) {
+        const trackId = item?.getAttribute('data-track-id') || item?.getAttribute('data-generated-id') || 'unknown';
+        Logger.debug(`Playing track ${index + 1}, trackId: ${trackId}, item exists: ${!!item}`);
+      }
+      
       // Store the current index
       this._currentWishlistIndex = index;
       
@@ -1511,6 +1517,12 @@ export class BandcampFacade {
       
       // No play button found, try to click an item to select it
       Logger.debug(`No play button found for track ${index + 1}, trying to click the item itself`);
+      
+      // Debug: Additional info when no play button found in shuffle mode
+      if (ShuffleService.isShuffleEnabled) {
+        const trackId = item?.getAttribute('data-track-id') || item?.getAttribute('data-generated-id') || 'unknown';
+        Logger.warn(`No play button found for track ${index + 1} (trackId: ${trackId}). Item HTML: ${item?.outerHTML?.substring(0, 200)}...`);
+      }
       
       // Try to find any clickable element
       const elementSearchStart = Logger.startTiming('Finding clickable elements');
@@ -1652,18 +1664,22 @@ export class BandcampFacade {
       Logger.debug(`Shuffle enabled: ${ShuffleService.isShuffleEnabled}`);
       
       if (ShuffleService.isShuffleEnabled) {
-        Logger.debug('=== USING SHUFFLE MODE ===');
         // Use shuffle service to get next track
         nextIndex = ShuffleService.getNextShuffledIndex(this.pageType, this._wishlistItems.length, this._currentWishlistIndex);
-        Logger.debug(`Shuffle mode returned next index: ${nextIndex}`);
+        
+        // Debug: Check if shuffle returned a valid index
+        if (nextIndex < 0 || nextIndex >= this._wishlistItems.length) {
+          Logger.warn(`Invalid index returned ${nextIndex} (valid range: 0-${this._wishlistItems.length - 1})`);
+        }
+        if (nextIndex === this._currentWishlistIndex) {
+          Logger.warn(`Same index returned ${nextIndex} (current: ${this._currentWishlistIndex})`);
+        }
       } else {
-        Logger.debug('=== USING SEQUENTIAL MODE ===');
         // Regular sequential navigation
         nextIndex = this._currentWishlistIndex + 1;
         if (nextIndex >= this._wishlistItems.length) {
           nextIndex = 0; // Loop back to the first track
         }
-        Logger.debug(`Sequential mode calculated next index: ${nextIndex}`);
       }
 
       Logger.debug(`Playing next wishlist track (${nextIndex + 1} of ${this._wishlistItems.length})${ShuffleService.isShuffleEnabled ? ' [SHUFFLE]' : ''}`);
@@ -1756,18 +1772,22 @@ export class BandcampFacade {
       Logger.debug(`Shuffle enabled: ${ShuffleService.isShuffleEnabled}`);
       
       if (ShuffleService.isShuffleEnabled) {
-        Logger.debug('=== USING SHUFFLE MODE ===');
         // Use shuffle service to get previous track
         prevIndex = ShuffleService.getPreviousShuffledIndex(this.pageType, this._wishlistItems.length, this._currentWishlistIndex);
-        Logger.debug(`Shuffle mode returned previous index: ${prevIndex}`);
+        
+        // Debug: Check if shuffle returned a valid index
+        if (prevIndex < 0 || prevIndex >= this._wishlistItems.length) {
+          Logger.warn(`Invalid previous index returned ${prevIndex} (valid range: 0-${this._wishlistItems.length - 1})`);
+        }
+        if (prevIndex === this._currentWishlistIndex) {
+          Logger.warn(`Same previous index returned ${prevIndex} (current: ${this._currentWishlistIndex})`);
+        }
       } else {
-        Logger.debug('=== USING SEQUENTIAL NAVIGATION ===');
         // Sequential behavior
         prevIndex = this._currentWishlistIndex - 1;
         if (prevIndex < 0) {
           prevIndex = this._wishlistItems.length - 1; // Loop back to the last track
         }
-        Logger.debug(`Sequential navigation calculated previous index: ${prevIndex}`);
       }
 
       // Check if the previous track is in our problem list
@@ -3805,6 +3825,13 @@ export class BandcampFacade {
       // Enhanced logging for debugging first track issues
       if (Logger.isDebugEnabled() && isFirstTrack) {
         Logger.debug(`Audio state at failure - paused: ${audio.paused}, readyState: ${audio.readyState}, currentTime: ${audio.currentTime}, src: ${audio.src ? 'present' : 'missing'}`);
+      }
+      
+      // Debug: Additional info for shuffle mode failures
+      if (ShuffleService.isShuffleEnabled) {
+        const item = this._wishlistItems[index];
+        const trackId = item?.getAttribute('data-track-id') || item?.getAttribute('data-generated-id') || 'unknown';
+        Logger.warn(`Track ${index + 1} failed to play (${reason}). TrackId: ${trackId}, Audio paused: ${audio.paused}, ReadyState: ${audio.readyState}`);
       }
       
       Logger.debug(`Track ${index + 1} failed to play: ${reason}`);

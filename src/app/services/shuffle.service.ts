@@ -1,7 +1,7 @@
 import {Logger} from '../utils/logger';
 
 /**
- * Service for handling shuffle functionality on wishlist and collection pages
+ * Service for handling shuffle functionality for wishlist and collection pages
  */
 export class ShuffleService {
   private static _isShuffleEnabled = false;
@@ -29,21 +29,13 @@ export class ShuffleService {
    * Toggle shuffle mode on/off
    */
   public static toggleShuffle(): void {
+    const wasEnabled = this._isShuffleEnabled;
     this._isShuffleEnabled = !this._isShuffleEnabled;
-    this.updateButtonState();
     
     if (this._isShuffleEnabled) {
-      // Clear existing shuffle orders to force re-randomization
-      this._wishlistShuffledOrder = [];
+      // Clear any existing shuffle orders when enabling shuffle
       this._collectionShuffledOrder = [];
-      this._wishlistShufflePosition = 0;
-      this._collectionShufflePosition = 0;
-    } else {
-      // Clear shuffle orders when disabling
       this._wishlistShuffledOrder = [];
-      this._collectionShuffledOrder = [];
-      this._wishlistShufflePosition = 0;
-      this._collectionShufflePosition = 0;
     }
   }
 
@@ -93,17 +85,12 @@ export class ShuffleService {
    * @returns The next track index in shuffle order
    */
   public static getNextShuffledIndex(pageType: 'wishlist' | 'collection', totalTracks: number, currentIndex: number): number {
-    Logger.debug(`ShuffleService.getNextShuffledIndex: pageType=${pageType}, totalTracks=${totalTracks}, currentIndex=${currentIndex}`);
-    
     if (!this._isShuffleEnabled || totalTracks <= 1) {
-      const result = (currentIndex + 1) % totalTracks;
-      Logger.debug(`Shuffle disabled or single track, returning: ${result}`);
-      return result;
+      return (currentIndex + 1) % totalTracks;
     }
     
     // Handle case where no track is currently selected (currentIndex = -1)
     if (currentIndex < 0 || currentIndex >= totalTracks) {
-      Logger.debug(`Invalid currentIndex (${currentIndex}), initializing shuffle with first track (0)`);
       // Initialize shuffle order with first track (index 0) and return it
       this.initializeShuffleOrder(pageType, totalTracks, 0);
       return 0;
@@ -113,13 +100,24 @@ export class ShuffleService {
     const shuffledOrder = pageType === 'wishlist' ? this._wishlistShuffledOrder : this._collectionShuffledOrder;
     let currentPosition = pageType === 'wishlist' ? this._wishlistShufflePosition : this._collectionShufflePosition;
     
-    Logger.debug(`Current shuffled order length: ${shuffledOrder.length}, current position: ${currentPosition}`);
-    
     // If we don't have a shuffled order or it's outdated, initialize it
     if (shuffledOrder.length !== totalTracks || !shuffledOrder.includes(currentIndex)) {
-      Logger.debug(`Shuffle order outdated or missing currentIndex, reinitializing`);
       this.initializeShuffleOrder(pageType, totalTracks, currentIndex);
-      return currentIndex; // Stay on current track after initialization
+      
+      // After reinitializing, get the next track instead of staying on current
+      const newShuffledOrder = pageType === 'wishlist' ? this._wishlistShuffledOrder : this._collectionShuffledOrder;
+      const currentPos = newShuffledOrder.indexOf(currentIndex);
+      const nextPos = (currentPos + 1) % newShuffledOrder.length;
+      const nextIndex = newShuffledOrder[nextPos];
+      
+      // Update position
+      if (pageType === 'wishlist') {
+        this._wishlistShufflePosition = nextPos;
+      } else {
+        this._collectionShufflePosition = nextPos;
+      }
+      
+      return nextIndex;
     }
     
     // Find current position in shuffled order
@@ -131,8 +129,6 @@ export class ShuffleService {
     // Move to next position
     const nextPosition = (currentPosition + 1) % shuffledOrder.length;
     const nextIndex = shuffledOrder[nextPosition];
-    
-    Logger.debug(`Moving from position ${currentPosition} to ${nextPosition}, next track index: ${nextIndex}`);
     
     // Update position
     if (pageType === 'wishlist') {
@@ -152,17 +148,12 @@ export class ShuffleService {
    * @returns The previous track index in shuffle order
    */
   public static getPreviousShuffledIndex(pageType: 'wishlist' | 'collection', totalTracks: number, currentIndex: number): number {
-    Logger.debug(`ShuffleService.getPreviousShuffledIndex: pageType=${pageType}, totalTracks=${totalTracks}, currentIndex=${currentIndex}`);
-    
     if (!this._isShuffleEnabled || totalTracks <= 1) {
-      const result = currentIndex - 1 < 0 ? totalTracks - 1 : currentIndex - 1;
-      Logger.debug(`Shuffle disabled or single track, returning: ${result}`);
-      return result;
+      return currentIndex - 1 < 0 ? totalTracks - 1 : currentIndex - 1;
     }
     
     // Handle case where no track is currently selected (currentIndex = -1)
     if (currentIndex < 0 || currentIndex >= totalTracks) {
-      Logger.debug(`Invalid currentIndex (${currentIndex}), initializing shuffle with last track (${totalTracks - 1})`);
       // Initialize shuffle order with last track and return it
       const lastIndex = totalTracks - 1;
       this.initializeShuffleOrder(pageType, totalTracks, lastIndex);
@@ -173,13 +164,24 @@ export class ShuffleService {
     const shuffledOrder = pageType === 'wishlist' ? this._wishlistShuffledOrder : this._collectionShuffledOrder;
     let currentPosition = pageType === 'wishlist' ? this._wishlistShufflePosition : this._collectionShufflePosition;
     
-    Logger.debug(`Current shuffled order length: ${shuffledOrder.length}, current position: ${currentPosition}`);
-    
     // If we don't have a shuffled order or it's outdated, initialize it
     if (shuffledOrder.length !== totalTracks || !shuffledOrder.includes(currentIndex)) {
-      Logger.debug(`Shuffle order outdated or missing currentIndex, reinitializing`);
       this.initializeShuffleOrder(pageType, totalTracks, currentIndex);
-      return currentIndex; // Stay on current track after initialization
+      
+      // After reinitializing, get the previous track instead of staying on current
+      const newShuffledOrder = pageType === 'wishlist' ? this._wishlistShuffledOrder : this._collectionShuffledOrder;
+      const currentPos = newShuffledOrder.indexOf(currentIndex);
+      const prevPos = currentPos - 1 < 0 ? newShuffledOrder.length - 1 : currentPos - 1;
+      const prevIndex = newShuffledOrder[prevPos];
+      
+      // Update position
+      if (pageType === 'wishlist') {
+        this._wishlistShufflePosition = prevPos;
+      } else {
+        this._collectionShufflePosition = prevPos;
+      }
+      
+      return prevIndex;
     }
     
     // Find current position in shuffled order
@@ -192,16 +194,12 @@ export class ShuffleService {
     const prevPosition = currentPosition - 1 < 0 ? shuffledOrder.length - 1 : currentPosition - 1;
     const prevIndex = shuffledOrder[prevPosition];
     
-    Logger.debug(`Moving from position ${currentPosition} to ${prevPosition}, previous track index: ${prevIndex}`);
-    
     // Update position
     if (pageType === 'wishlist') {
       this._wishlistShufflePosition = prevPosition;
     } else {
       this._collectionShufflePosition = prevPosition;
     }
-    
-    return prevIndex;
     
     return prevIndex;
   }
