@@ -55,6 +55,10 @@ export class BandcampFacade {
 
   private static _isCollectionPage: boolean;
 
+  private static _isFollowersPage: boolean;
+
+  private static _isFollowingPage: boolean;
+
   private static _colors: BandcampColors;
 
   private static _audio: HTMLAudioElement;
@@ -199,12 +203,36 @@ export class BandcampFacade {
       return this._isCollectionPage;
     }
 
-    // Detect collection pages: bandcamp.com/username (without /wishlist)
+    // Detect collection pages: bandcamp.com/username (without /wishlist, /followers, or /following)
     const url = window.location.href;
     const collectionRegex = /^https?:\/\/[^\/]*bandcamp\.com\/[^\/]+(?:[?#].*)?$/;
-    this._isCollectionPage = collectionRegex.test(url) && !this.isWishlistPage;
+    this._isCollectionPage = collectionRegex.test(url) && !this.isWishlistPage && !this.isFollowersPage && !this.isFollowingPage;
 
     return this._isCollectionPage;
+  }
+
+  public static get isFollowersPage(): boolean {
+    if (typeof this._isFollowersPage !== 'undefined') {
+      return this._isFollowersPage;
+    }
+
+    const url = window.location.href;
+    const followersRegex = /^https?:\/\/[^\/]*bandcamp\.com\/[^\/]+\/followers(?:[?#].*)?$/;
+    this._isFollowersPage = followersRegex.test(url);
+
+    return this._isFollowersPage;
+  }
+
+  public static get isFollowingPage(): boolean {
+    if (typeof this._isFollowingPage !== 'undefined') {
+      return this._isFollowingPage;
+    }
+
+    const url = window.location.href;
+    const followingRegex = /^https?:\/\/[^\/]*bandcamp\.com\/[^\/]+\/following(?:[?#].*)?$/;
+    this._isFollowingPage = followingRegex.test(url);
+
+    return this._isFollowingPage;
   }
 
   /**
@@ -3711,6 +3739,8 @@ export class BandcampFacade {
     BandcampFacade._isAlbum = undefined;
     BandcampFacade._isWishlistPage = undefined;
     BandcampFacade._isCollectionPage = undefined;
+    BandcampFacade._isFollowersPage = undefined;
+    BandcampFacade._isFollowingPage = undefined;
     
     // Clear cached data and colors
     BandcampFacade._data = undefined;

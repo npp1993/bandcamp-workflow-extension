@@ -90,6 +90,12 @@ export class KeyboardSidebarController {
    * Initialize the sidebars
    */
   private init(): void {
+    // Don't show sidebar on followers/following pages
+    if (BandcampFacade.isFollowersPage || BandcampFacade.isFollowingPage) {
+      Logger.debug('KeyboardSidebarController: Skipping sidebar creation on followers/following page');
+      return;
+    }
+    
     this.createSidebars();
     this.setupBulkModeListener();
     this.render();
@@ -602,6 +608,14 @@ export class KeyboardSidebarController {
    * Render both sidebars
    */
   private render(): void {
+    // Hide all sidebars on followers/following pages
+    if (BandcampFacade.isFollowersPage || BandcampFacade.isFollowingPage) {
+      if (this.settingsSidebar) this.settingsSidebar.style.display = 'none';
+      if (this.hotkeysSidebar) this.hotkeysSidebar.style.display = 'none';
+      if (this.bulkSidebar) this.bulkSidebar.style.display = 'none';
+      return;
+    }
+    
     this.renderSettingsSidebar();
     this.renderHotkeysSidebar();
     this.renderBulkSidebar();
@@ -773,6 +787,8 @@ export class KeyboardSidebarController {
     const parts = [];
     if (BandcampFacade.isWishlistPage) parts.push('wishlist');
     if (BandcampFacade.isCollectionPage) parts.push('collection');
+    if (BandcampFacade.isFollowersPage) parts.push('followers');
+    if (BandcampFacade.isFollowingPage) parts.push('following');
     if (BandcampFacade.isAlbum) parts.push('album');
     if (BandcampFacade.isTrack) parts.push('track');
     if (BandcampFacade.isPageSupported) parts.push('supported');
