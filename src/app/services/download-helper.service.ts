@@ -7,6 +7,7 @@ import {Logger} from '../utils/logger';
 export class DownloadHelperService {
   private button: HTMLButtonElement;
   private observer: MutationObserver;
+  private eventListenerAttached: boolean = false;
 
   constructor() {
     this.observer = new MutationObserver(this.mutationCallback.bind(this));
@@ -84,30 +85,34 @@ export class DownloadHelperService {
     this.button.disabled = false;
     this.button.textContent = 'Download curl script';
     
-    this.button.addEventListener('click', () => {
-      const date = this.formatDate();
-      const downloadList = this.generateDownloadList();
-      const preamble = this.getDownloadPreamble();
-      const postamble = this.getDownloadPostamble();
-      const downloadDocument = preamble + downloadList + postamble;
+    // Only add event listener if not already attached
+    if (!this.eventListenerAttached) {
+      this.button.addEventListener('click', () => {
+        const date = this.formatDate();
+        const downloadList = this.generateDownloadList();
+        const preamble = this.getDownloadPreamble();
+        const postamble = this.getDownloadPostamble();
+        const downloadDocument = preamble + downloadList + postamble;
+        
+        this.downloadFile(`bandcamp_${date}.txt`, downloadDocument);
+      });
       
-      this.downloadFile(`bandcamp_${date}.txt`, downloadDocument);
-    });
+      this.eventListenerAttached = true;
+    }
   }
 
   /**
    * Disable the download button when links are not ready
    */
   private disableButton(): void {
-    // Clone the button to remove event listeners
-    if (this.button && this.button.parentNode) {
-      const newButton = this.button.cloneNode(true) as HTMLButtonElement;
-      this.button.parentNode.replaceChild(newButton, this.button);
-      this.button = newButton;
+    if (!this.button) {
+      return;
     }
     
     this.button.disabled = true;
     this.button.textContent = 'Preparing download...';
+    // Note: We keep the event listener attached even when disabled
+    // It will just do nothing since the button is disabled
   }
 
   /**
@@ -127,8 +132,6 @@ export class DownloadHelperService {
     
     const totalLinks = bulkLinks.length + singleLinks.length;
     
-    Logger.debug(`Found ${bulkLinks.length} bulk links, ${singleLinks.length} single links`);
-    
     if (totalLinks === 0) {
       return;
     }
@@ -140,8 +143,6 @@ export class DownloadHelperService {
       const isVisible = (link as HTMLElement).style.display !== 'none';
       return href && href.length > 0 && isVisible;
     });
-    
-    Logger.debug(`Found ${readyLinks.length} ready links out of ${totalLinks} total`);
     
     if (readyLinks.length > 0) {
       this.enableButton();
@@ -240,60 +241,43 @@ export class DownloadHelperService {
 # Configuration
 DEFAULT_BATCH_SIZE=3
 
+# Setup base folder for downloads
+SCRIPT_NAME=$(basename "$0" .txt)
+BASE_FOLDER="$SCRIPT_NAME"
+
+# Create the base folder if it doesn't exist
+mkdir -p "$BASE_FOLDER"
+
 # Function to download a file silently, with minimal output
 download_file() {
     local url="$1"
     local file_id="$2"
-    local filename=$(basename "$url" | sed 's/\\?.*//')
+    
+    # Change to the base folder before downloading
+    cd "$BASE_FOLDER"
     
     # Use curl with silent mode, only showing errors
     # -L: follow redirects
     # -O: save with remote filename
     # -J: use content-disposition header filename if available
     # -s: silent mode
+    local result=0
     if curl -L -O -J -s "$url"; then
-        return 0
+        result=0
     else
-        return 1
+        result=1
     fi
+    
+    # Return to parent directory
+    cd ..
+    
+    return $result
 }
 
-# Function to organize all downloaded files into the base folder
-organize_downloaded_files() {
-    echo ""
-    echo "=== Organizing downloaded files ==="
-    
-    # Get the script name without extension to use as base folder name
-    SCRIPT_NAME=$(basename "$0" .txt)
-    BASE_FOLDER="$SCRIPT_NAME"
-    
-    # Create the base folder if it doesn't exist
-    mkdir -p "$BASE_FOLDER"
-    
-    # Move all downloaded files to the base folder
-    echo "Moving downloaded files to $BASE_FOLDER/"
-    MOVED_COUNT=0
-    for file in *.zip *.flac *.mp3 *.wav *.m4a *.aiff *.ogg; do
-        if [ -f "$file" ]; then
-            mv "$file" "$BASE_FOLDER/" 2>/dev/null && ((MOVED_COUNT++))
-        fi
-    done
-    
-    if [ $MOVED_COUNT -gt 0 ]; then
-        echo "Moved $MOVED_COUNT files to $BASE_FOLDER/"
-    else
-        echo "No audio files found to organize."
-    fi
-}
-
-# Function to extract zip files in the current directory
+# Function to extract zip files in the base folder
 extract_zip_files() {
     echo ""
     echo "=== Looking for zip files to extract ==="
-    
-    # Get the script name without extension to use as base folder name
-    SCRIPT_NAME=$(basename "$0" .txt)
-    BASE_FOLDER="$SCRIPT_NAME"
     
     # Check for zip files in the base folder
     cd "$BASE_FOLDER" 2>/dev/null || {
@@ -394,13 +378,10 @@ done
 
 echo ""
 if [ $FAILED -eq 0 ]; then
-    echo "SUCCESS: Downloaded all $TOTAL_URLS files"
+    echo "SUCCESS: Downloaded all $TOTAL_URLS files to '$BASE_FOLDER' folder"
 else
     echo "WARNING: $FAILED of $TOTAL_URLS files failed to download"
 fi
-
-# Organize all downloaded files into the base folder
-organize_downloaded_files
 
 # Extract any zip files that were downloaded
 extract_zip_files
