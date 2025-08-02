@@ -91,9 +91,10 @@ export class ShuffleService {
     
     // Handle case where no track is currently selected (currentIndex = -1)
     if (currentIndex < 0 || currentIndex >= totalTracks) {
-      // Initialize shuffle order with first track (index 0) and return it
-      this.initializeShuffleOrder(pageType, totalTracks, 0);
-      return 0;
+      // When shuffle is enabled and no track is selected, start at a random position
+      const randomIndex = Math.floor(Math.random() * totalTracks);
+      this.initializeShuffleOrder(pageType, totalTracks, randomIndex);
+      return randomIndex;
     }
     
     // Get the appropriate shuffled order and position
@@ -154,10 +155,10 @@ export class ShuffleService {
     
     // Handle case where no track is currently selected (currentIndex = -1)
     if (currentIndex < 0 || currentIndex >= totalTracks) {
-      // Initialize shuffle order with last track and return it
-      const lastIndex = totalTracks - 1;
-      this.initializeShuffleOrder(pageType, totalTracks, lastIndex);
-      return lastIndex;
+      // When shuffle is enabled and no track is selected, start at a random position
+      const randomIndex = Math.floor(Math.random() * totalTracks);
+      this.initializeShuffleOrder(pageType, totalTracks, randomIndex);
+      return randomIndex;
     }
     
     // Get the appropriate shuffled order and position
