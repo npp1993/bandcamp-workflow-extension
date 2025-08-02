@@ -392,7 +392,11 @@ export class KeyboardSidebarController {
       bulkShortcuts.push({
         key: 'B / Escape',
         description: 'Exit',
-        action: () => BulkCartService.exitBulkMode()
+        action: () => {
+          BulkCartService.exitBulkMode();
+          // Refresh sidebar UI immediately
+          this.render();
+        }
       });
 
       bulkShortcuts.push({
@@ -736,16 +740,29 @@ export class KeyboardSidebarController {
    */
   private setupBulkModeListener(): void {
     let lastPageType = this.getCurrentPageType();
+    let wasOnWishlistPage = BandcampFacade.isWishlistPage;
     
     // Poll only for page navigation changes since button clicks and keyboard shortcuts
     // now trigger immediate UI updates
     setInterval(() => {
       const currentPageType = this.getCurrentPageType();
+      const isOnWishlistPage = BandcampFacade.isWishlistPage;
+      
+      // Check if user navigated away from wishlist page while in bulk mode
+      if (wasOnWishlistPage && !isOnWishlistPage && BulkCartService.isInBulkMode) {
+        Logger.debug('User navigated away from wishlist page while in bulk mode, exiting bulk mode');
+        BulkCartService.exitBulkMode();
+        // Refresh UI immediately after exiting bulk mode
+        this.render();
+      }
       
       if (currentPageType !== lastPageType) {
         lastPageType = currentPageType;
         this.render();
       }
+      
+      // Update the wishlist page state for next iteration
+      wasOnWishlistPage = isOnWishlistPage;
     }, 250);
   }
 

@@ -2,6 +2,7 @@ import {BandcampFacade} from '../facades/bandcamp.facade';
 import {Logger} from '../utils/logger';
 import {BulkCartService} from '../services/bulk-cart.service';
 import {ShuffleService} from '../services/shuffle.service';
+import {KeyboardSidebarController} from './keyboard-sidebar.controller';
 
 /**
  * Controller for collection-based pages (wishlist and collection)
@@ -364,6 +365,8 @@ export class WishlistController {
       case 'b':
         event.preventDefault();
         BulkCartService.exitBulkMode();
+        // Refresh sidebar UI immediately
+        KeyboardSidebarController.refreshUI();
         return true;
       case 'c':
         event.preventDefault();
