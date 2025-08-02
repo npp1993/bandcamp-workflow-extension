@@ -722,9 +722,16 @@ export class KeyboardSidebarController {
    * Setup bulk mode listener to re-render when bulk mode state changes
    */
   private setupBulkModeListener(): void {
+    let lastBulkModeState = BulkCartService.isInBulkMode;
+    
     // Poll for bulk mode changes since we don't have a direct event system
+    // Only re-render when the state actually changes
     setInterval(() => {
-      this.render();
+      const currentBulkModeState = BulkCartService.isInBulkMode;
+      if (currentBulkModeState !== lastBulkModeState) {
+        lastBulkModeState = currentBulkModeState;
+        this.render();
+      }
     }, 1000);
   }
 
