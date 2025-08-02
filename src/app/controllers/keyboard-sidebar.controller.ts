@@ -52,9 +52,21 @@ export class KeyboardSidebarController {
    * Initialize the keyboard sidebar controller
    */
   public static init(controllers: Controllers): KeyboardSidebarController {
-    if (!this.instance) {
-      this.instance = new KeyboardSidebarController(controllers);
+    // Check if existing instance has valid DOM elements
+    if (this.instance) {
+      const existingContainer = document.querySelector('.bandcamp-workflow-sidebars-container');
+      if (existingContainer) {
+        // Instance exists and DOM elements are present, but check if sidebars should be visible on this page
+        this.instance.updateVisibilityForCurrentPage();
+        return this.instance;
+      } else {
+        // Instance exists but DOM elements are missing, clean up and recreate
+        this.instance = null;
+      }
     }
+    
+    // Create new instance
+    this.instance = new KeyboardSidebarController(controllers);
     return this.instance;
   }
 
@@ -90,15 +102,31 @@ export class KeyboardSidebarController {
    * Initialize the sidebars
    */
   private init(): void {
-    // Don't show sidebar on followers/following pages
+    // Don't create sidebars on followers/following pages
     if (BandcampFacade.isFollowersPage || BandcampFacade.isFollowingPage) {
-      Logger.debug('KeyboardSidebarController: Skipping sidebar creation on followers/following page');
       return;
     }
     
     this.createSidebars();
     this.setupBulkModeListener();
     this.render();
+  }
+
+  /**
+   * Update sidebar visibility based on current page type
+   */
+  private updateVisibilityForCurrentPage(): void {
+    const container = document.querySelector('.bandcamp-workflow-sidebars-container') as HTMLElement;
+    if (!container) {
+      return;
+    }
+
+    // Hide sidebars on followers/following pages, show on others
+    if (BandcampFacade.isFollowersPage || BandcampFacade.isFollowingPage) {
+      container.style.display = 'none';
+    } else {
+      container.style.display = 'flex';
+    }
   }
 
   /**

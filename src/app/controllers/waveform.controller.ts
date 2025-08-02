@@ -202,8 +202,8 @@ export class WaveformController {
       // Set up playhead position tracking
       this.setupPlayheadTracking(container, canvas);
 
-      // Use BandcampFacade to insert below player
-      BandcampFacade.insertBelowPlayer(container);
+      // Insert below speed controller if it exists, otherwise below player
+      BandcampFacade.insertBelowSpeedController(container);
       
       this.currentWaveformContainer = container;
     } catch (error) {
@@ -372,7 +372,7 @@ export class WaveformController {
       container.dataset.intervalId = setInterval(animateDots, 500).toString();
       animateDots(); // Initial call
 
-      BandcampFacade.insertBelowPlayer(container);
+      BandcampFacade.insertBelowSpeedController(container);
       this.currentWaveformContainer = container;
     } catch (error) {
       Logger.error('[WaveformController] Error showing loading indicator:', error);
@@ -418,7 +418,7 @@ export class WaveformController {
       `;
       container.textContent = 'Waveform generation failed';
 
-      BandcampFacade.insertBelowPlayer(container);
+      BandcampFacade.insertBelowSpeedController(container);
       this.currentWaveformContainer = container;
 
       // Auto-remove error after 5 seconds

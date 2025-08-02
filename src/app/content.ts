@@ -104,7 +104,7 @@ function initializeExtension(): void {
   // Clean up existing instance if any
   if (pageController) {
     Logger.debug('Cleaning up existing PageController instance');
-    // TODO: Add cleanup method to PageController if needed
+    pageController.cleanup();
   }
 
   // Reset the BandcampFacade to clear any cached values

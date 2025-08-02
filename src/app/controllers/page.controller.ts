@@ -51,6 +51,12 @@ export class PageController {
       this.controllers.wishlist = new WishlistController();
     }
 
+    // Initialize keyboard sidebar controller for all pages except download pages
+    // This must be done before early return so it works on all page types
+    if (!isDownloadPage) {
+      this.controllers.keyboardSidebar = KeyboardSidebarController.init(this.controllers);
+    }
+
     // If not on a supported page or collection-based page, or if it's a download page, return early
     if ((!BandcampFacade.isPageSupported && !BandcampFacade.isCollectionBasedPage) || isDownloadPage) {
       return;
@@ -58,11 +64,18 @@ export class PageController {
 
     // Initialize other controllers only for supported pages
     if (BandcampFacade.isPageSupported) {
-      this.controllers.speed = new SpeedController();
+      // First set up the page layout 
+      BandcampFacade.arrange();
+      
+      // Only create speed controller if it doesn't already exist (prevents duplicates)
+      // Create it AFTER arrange() so it appears after the moved track table
+      if (!this.controllers.speed && !document.querySelector('.bandcamp-workflow-speed-grid')) {
+        this.controllers.speed = new SpeedController();
+        this.createSpeedRow();
+      }
+      
       this.controllers.copyInfo = new CopyInfoController();
       this.controllers.album = new AlbumController();
-      BandcampFacade.arrange();
-      this.createSpeedRow();
     }
 
     // Initialize waveform controller for supported page types (track, album, wishlist, collection), but not download pages
@@ -75,11 +88,6 @@ export class PageController {
       KeyboardController.start(this.controllers);
     }
 
-    // Initialize keyboard sidebar controller for all relevant pages, but not download pages
-    if ((BandcampFacade.isPageSupported || BandcampFacade.isCollectionBasedPage) && !isDownloadPage) {
-      this.controllers.keyboardSidebar = KeyboardSidebarController.init(this.controllers);
-    }
-
     // Initialize the advanced mouse playbar controller
     // This works on both regular pages and collection-based pages
     PlaybarController.start();
@@ -87,6 +95,40 @@ export class PageController {
 
   public static init(): PageController {
     return new PageController();
+  }
+
+  /**
+   * Clean up existing extension elements to prevent duplicates
+   * This is primarily needed for SPA navigation on collection-based pages
+   * Note: Sidebars are global UI components and persist across navigation
+   */
+  public cleanup(): void {
+    // Remove existing extension elements (excluding global sidebars)
+    const selectors = [
+      '.bandcamp-workflow-speed-grid', // Speed controller grids
+      '.bandcamp-waveform-container', // Waveform containers
+      '.bandcamp-waveform-loading', // Waveform loading indicators
+      '.bandcamp-waveform-error', // Waveform error indicators
+      '.bandcamp-workflow-download-all' // Download helper buttons
+    ];
+
+    selectors.forEach(selector => {
+      const elements = document.querySelectorAll(selector);
+      if (elements.length > 0) {
+        Logger.debug(`Cleaning up ${elements.length} extension element(s): ${selector}`);
+        elements.forEach(element => element.remove());
+      }
+    });
+
+    // Clean up controller-specific resources
+    if (this.controllers.wishlist) {
+      this.controllers.wishlist.cleanup();
+    }
+    
+    // Clean up waveform controller
+    WaveformController.cleanup();
+    
+    Logger.debug('PageController cleanup completed');
   }
 
   private createSpeedRow(): void {
@@ -101,6 +143,12 @@ export class PageController {
       bottomContent: this.controllers.speed.slider.node.getNode(),
       rightButton: this.controllers.speed.stretchButton.node.getNode(),
     });
-    BandcampFacade.insertBelowPlayer(grid.getNode());
+    
+    // Add a specific class for easier cleanup
+    const gridNode = grid.getNode();
+    gridNode.classList.add('bandcamp-workflow-speed-grid');
+    
+    // Insert below player (the arrangement will happen after this)
+    BandcampFacade.insertBelowPlayer(gridNode);
   }
 }

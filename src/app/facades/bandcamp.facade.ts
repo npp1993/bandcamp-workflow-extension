@@ -217,7 +217,7 @@ export class BandcampFacade {
     }
 
     const url = window.location.href;
-    const followersRegex = /^https?:\/\/[^\/]*bandcamp\.com\/[^\/]+\/followers(?:[?#].*)?$/;
+    const followersRegex = /^https?:\/\/[^\/]*bandcamp\.com\/[^\/]+\/followers(?:\/.*)?(?:[?#].*)?$/;
     this._isFollowersPage = followersRegex.test(url);
 
     return this._isFollowersPage;
@@ -229,7 +229,7 @@ export class BandcampFacade {
     }
 
     const url = window.location.href;
-    const followingRegex = /^https?:\/\/[^\/]*bandcamp\.com\/[^\/]+\/following(?:[?#].*)?$/;
+    const followingRegex = /^https?:\/\/[^\/]*bandcamp\.com\/[^\/]+\/following(?:\/.*)?(?:[?#].*)?$/;
     this._isFollowingPage = followingRegex.test(url);
 
     return this._isFollowingPage;
@@ -794,6 +794,32 @@ export class BandcampFacade {
   public static insertBelowPlayer(element: HTMLElement): void {
     const player = BandcampFacade.player;
     player.insertAdjacentElement('afterend', element);
+  }
+
+  public static insertBelowWaveform(element: HTMLElement): void {
+    // Look for existing waveform container first
+    const waveformContainer = document.querySelector('.bandcamp-waveform-container, .bandcamp-waveform-loading, .bandcamp-waveform-error');
+    
+    if (waveformContainer) {
+      // Insert after the waveform
+      waveformContainer.insertAdjacentElement('afterend', element);
+    } else {
+      // Fallback to inserting below player if no waveform exists
+      this.insertBelowPlayer(element);
+    }
+  }
+
+  public static insertBelowSpeedController(element: HTMLElement): void {
+    // Look for existing speed controller first
+    const speedController = document.querySelector('.bandcamp-workflow-speed-grid');
+    
+    if (speedController) {
+      // Insert after the speed controller
+      speedController.insertAdjacentElement('afterend', element);
+    } else {
+      // Fallback to inserting below player if no speed controller exists
+      this.insertBelowPlayer(element);
+    }
   }
 
   public static movePlaylist(): void {
