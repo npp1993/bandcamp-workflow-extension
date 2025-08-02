@@ -5,6 +5,7 @@ import {Controllers} from './page.controller';
 import {Logger} from '../utils/logger';
 import {BulkCartService} from '../services/bulk-cart.service';
 import {ShuffleService} from '../services/shuffle.service';
+import {KeyboardSidebarController} from './keyboard-sidebar.controller';
 
 /**
  * KeyboardController class handles keyboard shortcuts for the extension
@@ -85,6 +86,8 @@ export class KeyboardController {
           if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey && BandcampFacade.isCollectionBasedPage) {
             e.preventDefault();
             ShuffleService.toggleShuffle();
+            // Refresh sidebar UI immediately
+            KeyboardSidebarController.refreshUI();
           }
           break;
           
@@ -304,5 +307,7 @@ export class KeyboardController {
         Logger.warn('No wishlist items found for bulk cart mode');
       }
     }
+    // Refresh sidebar UI immediately
+    KeyboardSidebarController.refreshUI();
   }
 }

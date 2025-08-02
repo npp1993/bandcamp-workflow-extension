@@ -78,6 +78,15 @@ export class KeyboardSidebarController {
   }
 
   /**
+   * Force refresh the sidebar UI (for immediate updates when state changes via keyboard)
+   */
+  public static refreshUI(): void {
+    if (this.instance) {
+      this.instance.render();
+    }
+  }
+
+  /**
    * Initialize the sidebars
    */
   private init(): void {
@@ -167,6 +176,8 @@ export class KeyboardSidebarController {
         setter: (value: boolean) => {
           if (value !== ShuffleService.isShuffleEnabled) {
             ShuffleService.toggleShuffle();
+            // Immediately update the UI after the state change
+            this.render();
           }
         }
       });
@@ -191,6 +202,8 @@ export class KeyboardSidebarController {
               // Exit bulk mode
               BulkCartService.exitBulkMode();
             }
+            // Immediately update the UI after the state change
+            this.render();
           }
         }
       });
@@ -719,20 +732,35 @@ export class KeyboardSidebarController {
   }
 
   /**
-   * Setup bulk mode listener to re-render when bulk mode state changes
+   * Setup page navigation listener to re-render when user navigates between pages
    */
   private setupBulkModeListener(): void {
-    let lastBulkModeState = BulkCartService.isInBulkMode;
+    let lastPageType = this.getCurrentPageType();
     
-    // Poll for bulk mode changes since we don't have a direct event system
-    // Only re-render when the state actually changes
+    // Poll only for page navigation changes since button clicks and keyboard shortcuts
+    // now trigger immediate UI updates
     setInterval(() => {
-      const currentBulkModeState = BulkCartService.isInBulkMode;
-      if (currentBulkModeState !== lastBulkModeState) {
-        lastBulkModeState = currentBulkModeState;
+      const currentPageType = this.getCurrentPageType();
+      
+      if (currentPageType !== lastPageType) {
+        lastPageType = currentPageType;
         this.render();
       }
-    }, 1000);
+    }, 250);
+  }
+
+  /**
+   * Get a string representing the current page type for comparison
+   */
+  private getCurrentPageType(): string {
+    const parts = [];
+    if (BandcampFacade.isWishlistPage) parts.push('wishlist');
+    if (BandcampFacade.isCollectionPage) parts.push('collection');
+    if (BandcampFacade.isAlbum) parts.push('album');
+    if (BandcampFacade.isTrack) parts.push('track');
+    if (BandcampFacade.isPageSupported) parts.push('supported');
+    if (BandcampFacade.isCollectionBasedPage) parts.push('collection-based');
+    return parts.join('-') || 'unknown';
   }
 
   /**
