@@ -155,7 +155,7 @@ export class KeyboardSidebarController {
     container.className = 'bandcamp-workflow-sidebars-container';
     container.style.cssText = `
       position: fixed;
-      top: 70px;
+      top: 110px;
       right: 20px;
       z-index: 1000;
       display: flex;
@@ -188,7 +188,10 @@ export class KeyboardSidebarController {
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
       max-height: calc(100vh - 40px);
       overflow-y: auto;
-      width: 250px;
+      overflow-x: hidden;
+      min-width: 280px;
+      max-width: 320px;
+      width: max-content;
       font-family: Arial, sans-serif;
       font-size: 12px;
     `;
@@ -466,6 +469,8 @@ export class KeyboardSidebarController {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      white-space: nowrap;
+      overflow: hidden;
     `;
 
     const keySpan = document.createElement('span');
@@ -474,6 +479,7 @@ export class KeyboardSidebarController {
       font-weight: bold;
       color: #495057;
       min-width: 20px;
+      flex-shrink: 0;
     `;
 
     const descSpan = document.createElement('span');
@@ -481,6 +487,10 @@ export class KeyboardSidebarController {
     descSpan.style.cssText = `
       flex: 1;
       text-align: right;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin-left: 8px;
     `;
 
     button.appendChild(keySpan);
@@ -542,6 +552,8 @@ export class KeyboardSidebarController {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      white-space: nowrap;
+      overflow: hidden;
     `;
 
     const keySpan = document.createElement('span');
@@ -550,6 +562,7 @@ export class KeyboardSidebarController {
       font-weight: bold;
       color: #495057;
       min-width: 60px;
+      flex-shrink: 0;
     `;
 
     const descSpan = document.createElement('span');
@@ -557,6 +570,10 @@ export class KeyboardSidebarController {
     descSpan.style.cssText = `
       flex: 1;
       text-align: right;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin-left: 8px;
     `;
 
     button.appendChild(keySpan);

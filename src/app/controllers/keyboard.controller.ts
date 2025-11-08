@@ -106,10 +106,8 @@ export class KeyboardController {
             } else {
               // Regular mode: handle C and Shift+C normally
               if (e.shiftKey) {
-                // Shift+C: Add to cart and close tab (wishlist and track pages only)
-                if (BandcampFacade.isWishlistPage) {
-                  BandcampFacade.addCurrentTrackToCart(true); // closeTabAfterAdd = true
-                } else if (BandcampFacade.isTrack) {
+                // Shift+C: Add to cart and close tab (wishlist, track, and album pages)
+                if (BandcampFacade.isWishlistPage || BandcampFacade.isTrack || BandcampFacade.isAlbum) {
                   BandcampFacade.addCurrentTrackToCart(true); // closeTabAfterAdd = true
                 } else {
                   // On other pages, Shift+C behaves the same as C
