@@ -36,12 +36,13 @@ export class KeyboardSidebarController {
   private settingsSidebar: HTMLElement | null = null;
   private hotkeysSidebar: HTMLElement | null = null;
   private bulkSidebar: HTMLElement | null = null;
+  private sidebarsContainer: HTMLElement | null = null;
   private isVisible = true;
+  private static readonly STORAGE_KEY = 'bandcamp-workflow-sidebar-collapsed';
   
-  // Collapse state for each sidebar
-  private settingsCollapsed = false;
-  private hotkeysCollapsed = false;
-  private bulkCollapsed = false;
+  // Collapse state
+  private isSidebarsCollapsed = false;
+  private static readonly COOKIE_NAME = 'bcwf_sidebar_state';
 
   constructor(controllers: Controllers) {
     this.controllers = controllers;
@@ -106,10 +107,79 @@ export class KeyboardSidebarController {
     if (BandcampFacade.isFollowersPage || BandcampFacade.isFollowingPage) {
       return;
     }
+
+    // Load persisted state from cookies
+    const savedState = this.getCookie(KeyboardSidebarController.COOKIE_NAME);
+
+    if (savedState === 'true') {
+      this.isSidebarsCollapsed = true;
+    }
     
     this.createSidebars();
     this.setupBulkModeListener();
     this.render();
+    this.updateCollapseStateUI();
+
+    // Listen for visibility changes to sync state across tabs
+    document.addEventListener('visibilitychange', () => {
+      this.syncFromCookie();
+    });
+
+    // Also poll for changes every second to handle side-by-side windows where visibility doesn't change
+    setInterval(() => {
+      this.syncFromCookie();
+    }, 1000);
+  }
+
+  /**
+   * Sync state from cookie
+   */
+  private syncFromCookie(): void {
+    if (document.hidden) return;
+    
+    const currentCookie = this.getCookie(KeyboardSidebarController.COOKIE_NAME);
+    const newState = currentCookie === 'true';
+    
+    if (this.isSidebarsCollapsed !== newState) {
+      this.isSidebarsCollapsed = newState;
+      this.updateCollapseStateUI();
+    }
+  }
+
+  /**
+   * Get cookie value
+   */
+  private getCookie(name: string): string | null {
+    try {
+      const v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+      return v ? v[2] : null;
+    } catch (e) {
+      Logger.error('Error reading cookie:', e);
+      return null;
+    }
+  }
+
+  /**
+   * Set cookie value with domain handling for Bandcamp subdomains
+   */
+  private setCookie(name: string, value: string, days: number): void {
+    try {
+      const d = new Date();
+      d.setTime(d.getTime() + 24 * 60 * 60 * 1000 * days);
+      
+      let domainAttr = '';
+      const hostname = window.location.hostname;
+      
+      // Allow syncing across all bandcamp.com subdomains
+      if (hostname.includes('bandcamp.com')) {
+        domainAttr = ';domain=.bandcamp.com';
+      }
+      
+      const cookieString = `${name}=${value};path=/;expires=${d.toUTCString()}${domainAttr}`;
+      document.cookie = cookieString;
+    } catch (e) {
+      Logger.error('Error setting cookie:', e);
+    }
   }
 
   /**
@@ -135,66 +205,95 @@ export class KeyboardSidebarController {
   private createSidebars(): void {
     // Create settings sidebar (top)
     this.settingsSidebar = document.createElement('div');
-    this.settingsSidebar.className = 'bandcamp-workflow-settings-sidebar';
-    this.settingsSidebar.style.cssText = this.getSidebarBaseStyles();
+    this.settingsSidebar.className = 'bandcamp-workflow-sidebar bandcamp-workflow-settings-sidebar';
 
     // Create hotkeys sidebar (middle)
     this.hotkeysSidebar = document.createElement('div');
-    this.hotkeysSidebar.className = 'bandcamp-workflow-hotkeys-sidebar';
-    this.hotkeysSidebar.style.cssText = this.getSidebarBaseStyles();
+    this.hotkeysSidebar.className = 'bandcamp-workflow-sidebar bandcamp-workflow-hotkeys-sidebar';
 
     // Create bulk purchase sidebar (bottom, hidden by default)
     this.bulkSidebar = document.createElement('div');
-    this.bulkSidebar.className = 'bandcamp-workflow-bulk-sidebar';
-    this.bulkSidebar.style.cssText = this.getSidebarBaseStyles() + `
-      display: none;
-    `;
+    this.bulkSidebar.className = 'bandcamp-workflow-sidebar bandcamp-workflow-bulk-sidebar';
+    this.bulkSidebar.style.display = 'none';
 
     // Create a container for all sidebars
-    const container = document.createElement('div');
-    container.className = 'bandcamp-workflow-sidebars-container';
-    container.style.cssText = `
+    this.sidebarsContainer = document.createElement('div');
+    this.sidebarsContainer.className = 'bandcamp-workflow-sidebars-container';
+    if (this.isSidebarsCollapsed) {
+      this.sidebarsContainer.classList.add('collapsed');
+    }
+    this.sidebarsContainer.style.cssText = `
       position: fixed;
       top: 110px;
-      right: 20px;
+      right: 0;
       z-index: 1000;
       display: flex;
       flex-direction: column;
-      gap: 15px;
+      gap: 0;
     `;
 
-    container.appendChild(this.settingsSidebar);
-    container.appendChild(this.hotkeysSidebar);
-    container.appendChild(this.bulkSidebar);
-    document.body.appendChild(container);
+    // Create toggle tab
+    const toggleBtn = document.createElement('div');
+    toggleBtn.className = 'bandcamp-workflow-sidebar-toggle';
+    toggleBtn.innerHTML = `<span style="font-size: 16px;">${this.isSidebarsCollapsed ? '◀' : '▶'}</span>`;
+    toggleBtn.title = 'Toggle Sidebar';
+    
+    toggleBtn.addEventListener('click', () => {
+      this.toggleSidebarsCollapse(toggleBtn);
+    });
+
+    // Create wrapper for scrollable content
+    const scrollContainer = document.createElement('div');
+    scrollContainer.className = 'bandcamp-workflow-sidebar-scroll-container';
+
+    this.sidebarsContainer.appendChild(toggleBtn);
+    scrollContainer.appendChild(this.settingsSidebar);
+    scrollContainer.appendChild(this.hotkeysSidebar);
+    scrollContainer.appendChild(this.bulkSidebar);
+    this.sidebarsContainer.appendChild(scrollContainer);
+    
+    document.body.appendChild(this.sidebarsContainer);
   }
 
   /**
-   * Get base sidebar styles
+   * Toggle the global sidebar collapse state
    */
-  private getSidebarBaseStyles(): string {
-    return `
-      position: relative;
-      z-index: 1000;
-      background-color: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      border: 1px solid #d3d3d3;
-      border-radius: 8px;
-      padding: 15px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      box-sizing: border-box;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-      max-height: calc(100vh - 40px);
-      overflow-y: auto;
-      overflow-x: hidden;
-      min-width: 280px;
-      max-width: 320px;
-      width: max-content;
-      font-family: Arial, sans-serif;
-      font-size: 12px;
-    `;
+  public static toggleCollapse(): void {
+    if (this.instance) {
+      this.instance.toggleSidebarsCollapse(null);
+    }
+  }
+
+  /**
+   * Toggle the global sidebar collapse state
+   */
+  private toggleSidebarsCollapse(btn: HTMLElement | null): void {
+    if (!this.sidebarsContainer) return;
+    
+    this.isSidebarsCollapsed = !this.isSidebarsCollapsed;
+    
+    // Save state via cookie
+    this.setCookie(KeyboardSidebarController.COOKIE_NAME, this.isSidebarsCollapsed.toString(), 365);
+    
+    this.updateCollapseStateUI();
+  }
+
+  /**
+   * Update the UI to reflect current collapse state
+   */
+  private updateCollapseStateUI(): void {
+    if (!this.sidebarsContainer) return;
+
+    const toggleBtn = this.sidebarsContainer.querySelector('.bandcamp-workflow-sidebar-toggle');
+    if (toggleBtn) {
+      toggleBtn.innerHTML = `<span style="font-size: 16px;">${this.isSidebarsCollapsed ? '◀' : '▶'}</span>`;
+    }
+    
+    if (this.isSidebarsCollapsed) {
+      this.sidebarsContainer.classList.add('collapsed');
+    } else {
+      this.sidebarsContainer.classList.remove('collapsed');
+    }
   }
 
   /**
@@ -386,6 +485,13 @@ export class KeyboardSidebarController {
       });
     }
 
+    // Toggle sidebar
+    shortcuts.push({
+      key: ',',
+      description: 'Toggle sidebar',
+      action: () => KeyboardSidebarController.toggleCollapse()
+    });
+
     return shortcuts;
   }
 
@@ -490,7 +596,7 @@ export class KeyboardSidebarController {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      margin-left: 8px;
+      margin-left: 15px;
     `;
 
     button.appendChild(keySpan);
@@ -561,7 +667,7 @@ export class KeyboardSidebarController {
     keySpan.style.cssText = `
       font-weight: bold;
       color: #495057;
-      min-width: 60px;
+      min-width: 40px;
       flex-shrink: 0;
     `;
 
@@ -573,7 +679,7 @@ export class KeyboardSidebarController {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      margin-left: 8px;
+      margin-left: 15px;
     `;
 
     button.appendChild(keySpan);
@@ -595,14 +701,13 @@ export class KeyboardSidebarController {
   }
 
   /**
-   * Create a collapsible title with triangle icon
+   * Create a simple title
    */
-  private createCollapsibleTitle(text: string, isCollapsed: boolean, onToggle: () => void): HTMLElement {
+  private createTitle(text: string): HTMLElement {
     const titleContainer = document.createElement('div');
     titleContainer.style.cssText = `
       display: flex;
       align-items: center;
-      cursor: pointer;
       font-weight: bold;
       font-size: 13px;
       color: #495057;
@@ -612,39 +717,11 @@ export class KeyboardSidebarController {
       user-select: none;
     `;
 
-    // Create triangle icon
-    const triangle = document.createElement('span');
-    triangle.style.cssText = `
-      margin-right: 6px;
-      font-size: 10px;
-      transition: transform 0.2s ease;
-      transform: ${isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)'};
-      color: #6c757d;
-    `;
-    triangle.textContent = '▼';
-
     // Create title text
     const titleText = document.createElement('span');
     titleText.textContent = text;
 
-    titleContainer.appendChild(triangle);
     titleContainer.appendChild(titleText);
-
-    // Add click handler
-    titleContainer.addEventListener('click', () => {
-      onToggle();
-    });
-
-    // Add hover effect
-    titleContainer.addEventListener('mouseenter', () => {
-      titleContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
-      titleContainer.style.borderRadius = '4px';
-    });
-
-    titleContainer.addEventListener('mouseleave', () => {
-      titleContainer.style.backgroundColor = 'transparent';
-      titleContainer.style.borderRadius = '0px';
-    });
 
     return titleContainer;
   }
@@ -681,22 +758,16 @@ export class KeyboardSidebarController {
     }
 
     this.settingsSidebar.style.display = 'flex';
+    
+    // Add title
+    this.settingsSidebar.appendChild(this.createTitle('Settings'));
 
-    // Add collapsible title
-    const title = this.createCollapsibleTitle('Settings', this.settingsCollapsed, () => {
-      this.settingsCollapsed = !this.settingsCollapsed;
-      this.renderSettingsSidebar();
+    // Add settings
+    settings.forEach(setting => {
+      if (!setting.condition || setting.condition()) {
+        this.settingsSidebar!.appendChild(this.createToggleButton(setting));
+      }
     });
-    this.settingsSidebar.appendChild(title);
-
-    // Add settings (only if not collapsed)
-    if (!this.settingsCollapsed) {
-      settings.forEach(setting => {
-        if (!setting.condition || setting.condition()) {
-          this.settingsSidebar!.appendChild(this.createToggleButton(setting));
-        }
-      });
-    }
   }
 
   /**
@@ -740,20 +811,14 @@ export class KeyboardSidebarController {
     }
 
     this.hotkeysSidebar.style.display = 'flex';
+    
+    // Add title
+    this.hotkeysSidebar.appendChild(this.createTitle('Hotkeys'));
 
-    // Add collapsible title
-    const title = this.createCollapsibleTitle('Hotkeys', this.hotkeysCollapsed, () => {
-      this.hotkeysCollapsed = !this.hotkeysCollapsed;
-      this.renderHotkeysSidebar();
+    // Add shortcuts
+    visibleShortcuts.forEach(shortcut => {
+      this.hotkeysSidebar!.appendChild(this.createHotkeyButton(shortcut));
     });
-    this.hotkeysSidebar.appendChild(title);
-
-    // Add shortcuts (only if not collapsed)
-    if (!this.hotkeysCollapsed) {
-      visibleShortcuts.forEach(shortcut => {
-        this.hotkeysSidebar!.appendChild(this.createHotkeyButton(shortcut));
-      });
-    }
   }
 
   /**
@@ -779,19 +844,13 @@ export class KeyboardSidebarController {
       return;
     }
 
-    // Add collapsible title
-    const title = this.createCollapsibleTitle('Bulk Purchase', this.bulkCollapsed, () => {
-      this.bulkCollapsed = !this.bulkCollapsed;
-      this.renderBulkSidebar();
-    });
-    this.bulkSidebar.appendChild(title);
+    // Add title
+    this.bulkSidebar.appendChild(this.createTitle('Bulk Purchase'));
 
-    // Add bulk shortcuts (only if not collapsed)
-    if (!this.bulkCollapsed) {
-      bulkShortcuts.forEach(shortcut => {
-        this.bulkSidebar!.appendChild(this.createHotkeyButton(shortcut));
-      });
-    }
+    // Add bulk shortcuts
+    bulkShortcuts.forEach(shortcut => {
+      this.bulkSidebar!.appendChild(this.createHotkeyButton(shortcut));
+    });
   }
 
   /**

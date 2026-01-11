@@ -290,3 +290,102 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6) !important;
   }
 }
+
+/**
+ * ------------------------------------------------------------
+ * Sidebar
+ * ------------------------------------------------------------
+ */
+.bandcamp-workflow-sidebars-container {
+  /* Default styles */
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateX(0);
+}
+
+.bandcamp-workflow-sidebars-container.collapsed {
+  transform: translateX(100%);
+}
+
+.bandcamp-workflow-sidebars-container {
+  /* Layout container only - no visuals */
+  padding: 0;
+  width: max-content;
+  pointer-events: none; /* Allow clicks to pass through empty space if any */
+}
+/* Re-enable pointer events for children */
+.bandcamp-workflow-sidebars-container > * {
+  pointer-events: auto;
+}
+
+.bandcamp-workflow-sidebar-scroll-container {
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid #d3d3d3;
+  border-right: none;
+  border-radius: 8px 0 0 8px;
+  box-shadow: -4px 4px 20px rgba(0, 0, 0, 0.15);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 15px 0;
+  width: 220px;
+}
+
+.bandcamp-workflow-sidebar {
+  position: relative;
+  /* Removed z-index, background, border, radius, shadow */
+  padding: 0 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+  /* Removed max-height, overflow, widths */
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+}
+
+/* Add spacing between sidebar sections */
+.bandcamp-workflow-sidebar + .bandcamp-workflow-sidebar {
+  margin-top: 15px;
+  padding-top: 5px;
+  border-top: 1px solid #eaeaea;
+}
+
+/* Separator removed for unified look */
+/* .bandcamp-workflow-sidebar:not(:first-child) {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #eaeaea;
+} */
+
+.bandcamp-workflow-sidebar-toggle {
+  position: absolute;
+  left: -24px;
+  top: 40px; /* Adjusted position */
+  width: 24px;
+  height: 48px;
+  background-color: rgba(255, 255, 255, 0.95);
+  border: 1px solid #d3d3d3;
+  border-right: none;
+  border-radius: 6px 0 0 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: -2px 2px 5px rgba(0, 0, 0, 0.1);
+  z-index: 1001;
+  transition: background-color 0.2s;
+  color: #666;
+  font-size: 14px;
+  pointer-events: auto;
+}
+
+.bandcamp-workflow-sidebar-toggle:hover {
+  background-color: #f8f9fa;
+  color: #333;
+}
+
+/* When collapsed, adjust shadow to indicate it can be pulled back */
+.bandcamp-workflow-sidebars-container.collapsed .bandcamp-workflow-sidebar-toggle {
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
+}

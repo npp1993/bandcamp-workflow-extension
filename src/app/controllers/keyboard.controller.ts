@@ -122,6 +122,14 @@ export class KeyboardController {
           }
           break;
           
+          // Toggle Sidebar logic
+        case ',':
+          if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+             e.preventDefault();
+             KeyboardSidebarController.toggleCollapse();
+          }
+          break;
+
         case 'z':
           // Add current album to cart (album pages only)
           if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey && BandcampFacade.isAlbum) {
