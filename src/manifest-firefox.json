@@ -18,7 +18,6 @@
     }
   },
   "permissions": [
-    "storage",
     "*://*.bandcamp.com/*",
     "https://t4.bcbits.com/*"
   ],
