@@ -1,6 +1,6 @@
 {
   "name": "bandcamp-workflow-extension",
-  "version": "1.0",
+  "version": "1.5",
   "type": "module",
   "description": "A browser extension for Bandcamp that adds numerous features and keyboard shortcuts to improve your music browsing workflow",
   "license": "MIT",
