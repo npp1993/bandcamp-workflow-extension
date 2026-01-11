@@ -30,17 +30,69 @@ export class KeyboardController {
     document.addEventListener('keydown', this.handleKeyboardEvent);
     document.addEventListener('keyup', this.handleKeyUpEvent);
   }
+
+  /**
+   * Helper to determine if we should ignore a keyboard event (e.g. user is typing in an input)
+   */
+  private static shouldIgnoreEvent(e: KeyboardEvent): boolean {
+    // Helper to check a specific element
+    const isInputElement = (el: HTMLElement | null): boolean => {
+      if (!el || !el.tagName) return false;
+      
+      const tagName = el.tagName.toUpperCase();
+      
+      // Check standard input tags
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tagName)) {
+        return true;
+      }
+      
+      // Check contenteditable
+      if (el.isContentEditable) {
+        return true;
+      }
+      
+      // Check roles that indicate text input (e.g. custom search boxes)
+      const role = el.getAttribute('role');
+      if (role && ['textbox', 'searchbox', 'combobox'].includes(role)) {
+        return true;
+      }
+      
+      return false;
+    };
+
+    // 1. Check composed path to handle Shadow DOM
+    // The first element in composedPath() is the actual target, even inside an open Shadow DOM
+    const path = e.composedPath();
+    if (path.length > 0) {
+      if (isInputElement(path[0] as HTMLElement)) {
+        return true;
+      }
+    }
+
+    // 2. Fallback: Check deep active element (drill down into Shadow DOMs)
+    let active = document.activeElement;
+    while (active && active.shadowRoot && active.shadowRoot.activeElement) {
+      active = active.shadowRoot.activeElement;
+    }
+    
+    if (isInputElement(active as HTMLElement)) {
+      return true;
+    }
+
+    return false;
+  }
   
   /**
    * Main keyboard event handler
    */
   private static handleKeyboardEvent = (e: KeyboardEvent): void => {
     // Only process keyboard events when not in input fields
-    if (!['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as Element).tagName) && 
-        !(e.target as HTMLElement).isContentEditable) {
+    if (this.shouldIgnoreEvent(e)) {
+      return;
+    }
       
-      // First check if we're in bulk mode and handle bulk mode navigation
-      if (BulkCartService.isInBulkMode) {
+    // First check if we're in bulk mode and handle bulk mode navigation
+    if (BulkCartService.isInBulkMode) {
         const handled = WishlistController.handleBulkModeKeyboard(e);
         if (handled) {
           return;
@@ -227,7 +279,6 @@ export class KeyboardController {
           }
           break;
       }
-    }
   }
 
   /**
@@ -235,13 +286,13 @@ export class KeyboardController {
    */
   private static handleKeyUpEvent = (e: KeyboardEvent): void => {
     // Only process keyboard events when not in input fields
-    if (!['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as Element).tagName) && 
-        !(e.target as HTMLElement).isContentEditable) {
+    if (this.shouldIgnoreEvent(e)) {
+      return;
+    }
       
-      // Handle bulk mode keyup events (specifically for F key release)
-      if (BulkCartService.isInBulkMode) {
-        WishlistController.handleBulkModeKeyUp(e);
-      }
+    // Handle bulk mode keyup events (specifically for F key release)
+    if (BulkCartService.isInBulkMode) {
+      WishlistController.handleBulkModeKeyUp(e);
     }
   }
 
