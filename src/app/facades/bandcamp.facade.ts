@@ -1147,6 +1147,38 @@ export class BandcampFacade {
         // Include the item if it has any of these features
         return hasPlayButton || hasTralbumId || hasLink;
       });
+
+      // Distinguish albums from tracks visually
+      this._wishlistItems.forEach(item => {
+        let isAlbum = false;
+        
+        // Check data attributes first (most reliable if present)
+        const itemType = item.getAttribute('data-itemtype') || item.getAttribute('data-item-type');
+        
+        if (itemType) {
+          isAlbum = itemType === 'album' || itemType === 'package';
+        } else {
+          // Fallback: Check the main artwork link ONLY
+          // We must scope this to the art container because the details section often
+          // contains a link to the album ("from the album X") even for tracks.
+          const artLink = item.querySelector('.collection-item-art-container a');
+          
+          if (artLink) {
+            const href = artLink.getAttribute('href');
+            // If the main link goes to /album/, it's an album.
+            // Tracks almost always link to /track/.
+            if (href && href.includes('/album/')) {
+              isAlbum = true;
+            }
+          }
+        }
+        
+        if (isAlbum) {
+          item.classList.add('bandcamp-workflow-album');
+        } else {
+          item.classList.remove('bandcamp-workflow-album');
+        }
+      });
       
       // Extract and store trackIds for each item, and attach play listeners
       this._wishlistItems.forEach((item, index) => {

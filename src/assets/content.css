@@ -376,7 +376,7 @@
   z-index: 1001;
   transition: background-color 0.2s;
   color: #666;
-  font-size: 14px;
+  font-size: 12px;
   pointer-events: auto;
 }
 
@@ -388,4 +388,31 @@
 /* When collapsed, adjust shadow to indicate it can be pulled back */
 .bandcamp-workflow-sidebars-container.collapsed .bandcamp-workflow-sidebar-toggle {
   box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
+}
+
+/**
+ * ------------------------------------------------------------
+ * Wishlist Album Highlighting
+ * ------------------------------------------------------------
+ */
+.collection-item-container.bandcamp-workflow-album .collection-item-art-container {
+  box-shadow: 0 0 0 3px #1DA0C3 !important; /* Bandcamp Blue border using box-shadow to avoid layout shifts */
+  border-radius: 2px;
+}
+
+/* Optional: Add a label or indicator */
+.collection-item-container.bandcamp-workflow-album::after {
+  content: 'ALBUM';
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background-color: #1DA0C3;
+  color: white;
+  font-size: 9px;
+  font-weight: bold;
+  padding: 2px 4px;
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 10;
+  opacity: 0.9;
 }

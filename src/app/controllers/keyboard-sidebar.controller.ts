@@ -42,7 +42,7 @@ export class KeyboardSidebarController {
   
   // Collapse state
   private isSidebarsCollapsed = false;
-  private static readonly COOKIE_NAME = 'bcwf_sidebar_state';
+  private static readonly COOKIE_NAME = 'bandcamp-workflow-sidebar-state';
 
   constructor(controllers: Controllers) {
     this.controllers = controllers;
@@ -235,7 +235,7 @@ export class KeyboardSidebarController {
     // Create toggle tab
     const toggleBtn = document.createElement('div');
     toggleBtn.className = 'bandcamp-workflow-sidebar-toggle';
-    toggleBtn.innerHTML = `<span style="font-size: 16px;">${this.isSidebarsCollapsed ? '◀' : '▶'}</span>`;
+    toggleBtn.textContent = this.isSidebarsCollapsed ? '◀' : '▶';
     toggleBtn.title = 'Toggle Sidebar';
     
     toggleBtn.addEventListener('click', () => {
@@ -286,7 +286,7 @@ export class KeyboardSidebarController {
 
     const toggleBtn = this.sidebarsContainer.querySelector('.bandcamp-workflow-sidebar-toggle');
     if (toggleBtn) {
-      toggleBtn.innerHTML = `<span style="font-size: 16px;">${this.isSidebarsCollapsed ? '◀' : '▶'}</span>`;
+      toggleBtn.textContent = this.isSidebarsCollapsed ? '◀' : '▶';
     }
     
     if (this.isSidebarsCollapsed) {
