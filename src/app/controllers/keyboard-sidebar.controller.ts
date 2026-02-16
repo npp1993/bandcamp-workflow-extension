@@ -307,7 +307,7 @@ export class KeyboardSidebarController {
       settings.push({
         id: 'shuffle',
         label: 'Shuffle',
-        hotkey: 'S',
+        hotkey: 'Y',
         getter: () => ShuffleService.isShuffleEnabled,
         setter: (value: boolean) => {
           if (value !== ShuffleService.isShuffleEnabled) {

@@ -132,7 +132,7 @@ export class KeyboardController {
           }
           break;
 
-        case 's':
+        case 'y':
           // Only trigger shuffle toggle on collection-based pages if no modifier keys are pressed
           // This allows Ctrl+S (save), Command+S, etc. to work normally
           if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey && BandcampFacade.isCollectionBasedPage) {
