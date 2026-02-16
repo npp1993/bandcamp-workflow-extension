@@ -6,31 +6,20 @@ import {Logger} from '../utils/logger';
  */
 export class DownloadHelperService {
   private button: HTMLButtonElement;
-  private observer: MutationObserver;
   private eventListenerAttached: boolean = false;
-
-  constructor() {
-    this.observer = new MutationObserver(this.mutationCallback.bind(this));
-  }
+  private expectedItemCount: number = 0;
+  private pollInterval: ReturnType<typeof setInterval> | null = null;
 
   /**
    * Initialize the download helper
    */
   public init(): void {
+    this.expectedItemCount = this.getExpectedItemCount();
     this.createButton();
     this.checkDownloadLinks();
-    
-    // Simple observer - just watch for href changes on download links
-    const config = { attributes: true, attributeFilter: ['href'] };
-    
-    // Only observe existing download links, not the whole page
-    const existingLinks = document.querySelectorAll('a[href*="/download/"], .download-title .item-button');
-    existingLinks.forEach(link => {
-      this.observer.observe(link, config);
-    });
-    
-    // Single fallback check after 2 seconds for slow-loading pages
-    setTimeout(() => {
+
+    // Poll every 2 seconds until all links are ready
+    this.pollInterval = setInterval(() => {
       this.checkDownloadLinks();
     }, 2000);
   }
@@ -81,10 +70,16 @@ export class DownloadHelperService {
     if (!this.button) {
       return;
     }
-    
+
     this.button.disabled = false;
     this.button.textContent = 'Download curl script';
-    
+
+    // Stop polling once all links are ready
+    if (this.pollInterval) {
+      clearInterval(this.pollInterval);
+      this.pollInterval = null;
+    }
+
     // Only add event listener if not already attached
     if (!this.eventListenerAttached) {
       this.button.addEventListener('click', () => {
@@ -93,10 +88,10 @@ export class DownloadHelperService {
         const preamble = this.getDownloadPreamble();
         const postamble = this.getDownloadPostamble();
         const downloadDocument = preamble + downloadList + postamble;
-        
+
         this.downloadFile(`bandcamp_${date}.txt`, downloadDocument);
       });
-      
+
       this.eventListenerAttached = true;
     }
   }
@@ -104,50 +99,97 @@ export class DownloadHelperService {
   /**
    * Disable the download button when links are not ready
    */
-  private disableButton(): void {
+  private disableButton(readyCount: number): void {
     if (!this.button) {
       return;
     }
-    
+
     this.button.disabled = true;
-    this.button.textContent = 'Preparing download...';
-    // Note: We keep the event listener attached even when disabled
-    // It will just do nothing since the button is disabled
+    if (this.expectedItemCount > 0) {
+      this.button.textContent = `Preparing download... (${readyCount}/${this.expectedItemCount})`;
+    } else {
+      this.button.textContent = 'Preparing download...';
+    }
   }
 
   /**
    * Check if download links are ready
    */
   private checkDownloadLinks(): void {
-    this.mutationCallback();
+    this.updateButtonState();
   }
 
   /**
-   * Callback for MutationObserver
+   * Get the expected number of downloadable items on the page
    */
-  private mutationCallback(): void {
-    // Check for both bulk and single download links
-    const bulkLinks = document.querySelectorAll('li.download_list_item .download-title .item-button[href]');
-    const singleLinks = document.querySelectorAll('a[href*="/download/"]');
-    
-    const totalLinks = bulkLinks.length + singleLinks.length;
-    
-    if (totalLinks === 0) {
-      return;
+  private getExpectedItemCount(): number {
+    // Bulk download page: each li.download_list_item is one purchaseable item
+    const bulkItems = document.querySelectorAll('li.download_list_item');
+    if (bulkItems.length > 0) {
+      return bulkItems.length;
     }
-    
-    // Check if any links are ready (have valid href and not hidden)
-    const allLinks = [...Array.from(bulkLinks), ...Array.from(singleLinks)];
-    const readyLinks = allLinks.filter(link => {
+
+    // Single download page: just one item
+    const singleContainer = document.querySelector('.download-item-container');
+    if (singleContainer) {
+      return 1;
+    }
+
+    return 0;
+  }
+
+  /**
+   * Count how many items currently have a ready download link
+   */
+  private getReadyItemCount(): number {
+    // Bulk: count list items that have a visible .item-button with a valid href
+    const bulkItems = document.querySelectorAll('li.download_list_item');
+    if (bulkItems.length > 0) {
+      let ready = 0;
+      bulkItems.forEach(item => {
+        const btn = item.querySelector('.download-title .item-button[href]');
+        if (btn) {
+          const href = btn.getAttribute('href');
+          const isVisible = (btn as HTMLElement).style.display !== 'none';
+          if (href && href.length > 0 && isVisible) {
+            ready++;
+          }
+        }
+      });
+      return ready;
+    }
+
+    // Single: check for any download link
+    const singleLinks = document.querySelectorAll('a[href*="/download/"]');
+    return Array.from(singleLinks).filter(link => {
       const href = link.getAttribute('href');
       const isVisible = (link as HTMLElement).style.display !== 'none';
       return href && href.length > 0 && isVisible;
-    });
-    
-    if (readyLinks.length > 0) {
+    }).length;
+  }
+
+  /**
+   * Check readiness of all download links and update button state
+   */
+  private updateButtonState(): void {
+    // Re-check expected count in case items were added dynamically
+    const currentExpected = this.getExpectedItemCount();
+    if (currentExpected > this.expectedItemCount) {
+      this.expectedItemCount = currentExpected;
+    }
+
+    const readyCount = this.getReadyItemCount();
+
+    if (this.expectedItemCount === 0) {
+      return;
+    }
+
+    Logger.debug(`Download links ready: ${readyCount}/${this.expectedItemCount}`);
+
+    if (readyCount >= this.expectedItemCount) {
       this.enableButton();
     } else {
-      this.disableButton();
+      this.disableButton(readyCount);
     }
   }
 
@@ -222,8 +264,7 @@ export class DownloadHelperService {
 # Generated by Bandcamp Workflow Extension
 #
 # The following can be used to batch download your recent purchases.
-# All downloaded files and extracted folders will be organized in a folder
-# with the same name as this script (without the .txt extension).
+# All downloaded files and extracted folders will be organized in a "bandcamp" folder.
 # 
 # Usage (Mac/Linux):
 # 1) open Terminal
@@ -242,8 +283,7 @@ export class DownloadHelperService {
 DEFAULT_BATCH_SIZE=3
 
 # Setup base folder for downloads
-SCRIPT_NAME=$(basename "$0" .txt)
-BASE_FOLDER="$SCRIPT_NAME"
+BASE_FOLDER="bandcamp"
 
 # Create the base folder if it doesn't exist
 mkdir -p "$BASE_FOLDER"
