@@ -35,7 +35,7 @@ Browser extension (Chrome & Firefox) for Bandcamp that adds workflow enhancement
 
 - **Entry point:** `src/app/content.ts` bootstraps the extension, creates `PageController`, and overrides `history.pushState`/`replaceState` plus polling timers for SPA navigation.
 - **Orchestrator:** `PageController` (`src/app/controllers/page.controller.ts`) detects the Bandcamp page type and initializes the relevant sub-controllers (Album, Track, Wishlist, Speed, Waveform, Keyboard, Playbar, etc.).
-- **Facade:** `src/app/facades/bandcamp.facade.ts` is the **intended** single source of truth for DOM interaction and Bandcamp data access (`window.TralbumData`, page-type detection). New DOM scraping or state reading should go here. NOTE: this is the *target*, not the current reality — many controllers and services bypass it with direct `document.querySelector` (see **Known debt**), and the file itself is a ~4k-line god object.
+- **Facade:** `src/app/facades/bandcamp.facade.ts` is the single source of truth for DOM/data access (`window.TralbumData`, element accessors) and the public surface controllers call. It has been **decomposed** — feature logic now lives in focused modules under `src/app/facades/bandcamp/`: `page-detection.ts` (`is*` page-type getters), `release-navigation.ts` (album/track track navigation), `wishlist-playback.ts` (the wishlist/collection continuous-playback engine), and `transport.ts` (play/pause). The facade keeps **thin delegators** to these modules, so callers use `BandcampFacade.X` unchanged and the modules read/write facade-held state via `BandcampFacade`. New DOM scraping or state reading should go through the facade or the relevant module. NOTE: some controllers/services still bypass the facade with direct `document.querySelector` (see **Known debt**).
 - **Controllers** (`src/app/controllers/`) — Feature logic and UI orchestration.
 - **Services** (`src/app/services/`) — Business logic independent of UI (bulk cart, notifications, shuffle, waveform processing, wishlist).
 - **Views** (`src/app/views/`) — UI rendering using the Observer pattern (views observe controllers via `AbstractSubject`/`AbstractObserver`). Currently used only by the Speed feature (`SpeedController` + the speed views).
@@ -51,21 +51,21 @@ Browser extension (Chrome & Firefox) for Bandcamp that adds workflow enhancement
 
 ### SPA Navigation
 
-The extension detects Bandcamp's SPA navigation via `popstate`, `history.pushState`/`replaceState` overrides, and periodic URL checks, reinitializing (`PageController.cleanup()` then re-init) on URL changes. URL parameters (`?wishlist=true`, `?add_to_cart=true`, `?close_tab_after_add=true`), handled in `content.ts`, trigger automatic actions. NOTE: there are currently two overlapping `setInterval` URL pollers (1s and 2s) — redundant (see **Known debt**).
+The extension detects Bandcamp's SPA navigation via `popstate`, `history.pushState`/`replaceState` overrides, and a single periodic URL poll (1s), reinitializing (`PageController.cleanup()` then re-init) on URL changes. URL parameters (`?wishlist=true`, `?add_to_cart=true`, `?close_tab_after_add=true`), handled in `content.ts`, trigger automatic actions.
 
 ## Conventions
 
-- Prefer `BandcampFacade.is[PageType]` for page detection over manual URL parsing. (Known debt: URL-param handling in `content.ts` and several `/discover` checks inside the facade still parse URLs directly.)
+- Prefer `BandcampFacade.is[PageType]` for page detection over manual URL parsing. (Known debt: URL-param handling in `content.ts` still parses `location.search` directly.)
 - Access Bandcamp internal data (`window.TralbumData`) exclusively through `BandcampFacade`.
 - Use `Logger` from `src/app/utils/logger.ts` for all logging — never use `console` directly. Methods: `debug`, `warn`, `error`, `timing`, `startTiming` (**there is no `Logger.log`**). Debug is suppressed in production (WARN level).
 - No emojis in log statements or code comments.
 - DOM selectors should live in `src/app/utils/dom-selectors.ts` with fallback arrays for different Bandcamp UI variations. (Known debt: many call sites still hardcode inline selector strings instead.)
-- `src/app/constants.ts` holds global config (timeouts, seek steps, speed increments, the input CSS class). (Known debt: it's minimal — many timeout magic numbers and `bandcamp-workflow-*` class names are hardcoded across the code rather than centralized here.)
+- `src/app/constants.ts` holds global config (timeouts, seek steps, speed increments, and the extension's injected `bandcamp-workflow-*`/`bandcamp-waveform-*` class names). (Known debt: some timeout magic numbers are still inline rather than centralized here.)
 
 ## Known debt (refactor targets)
 
-- `bandcamp.facade.ts` is a ~4,153-line god object; `keyboard-sidebar.controller.ts` (~925) and `add-to-cart-utils.ts` (~885) are also oversized.
-- The facade "single source of truth" rule is widely violated — controllers/services query the DOM directly.
-- Selectors and timeout/class-name constants are scattered rather than centralized.
-- `DiscoveryController` (`src/app/controllers/discovery.controller.ts`) is dead code — defined but never wired into `PageController`.
-- Redundant SPA-navigation timers (two `setInterval`s) plus `setTimeout` reinit cascades.
+- `bandcamp.facade.ts` was a ~4,153-line god object; it's now ~1,360 lines (DOM/data foundation + delegators), with feature logic moved into `src/app/facades/bandcamp/` modules. Remaining feature logic still in the facade (cart actions, wishlist-toggle, `loadAllWishlistItems`, and the playback-tail helpers such as `verifyPlaybackWithEvents`/`ensureTrackVisible`/`hasCurrentlyPlayingTrack`) could still move out — the playback-tail helpers belong in `wishlist-playback.ts`.
+- `keyboard-sidebar.controller.ts` (~925) and `add-to-cart-utils.ts` (~885) are still oversized.
+- The facade "single source of truth" rule is still partly violated — some controllers/services query the DOM directly.
+- Selector centralization is partial: injected class names are centralized in `constants.ts`, but many inline selector strings remain across controllers/services.
+- The extracted `src/app/facades/bandcamp/*` modules carry `// @ts-nocheck` (matching the facade, which they reach into for shared state); re-enabling type-checking per module is a worthwhile future improvement.
