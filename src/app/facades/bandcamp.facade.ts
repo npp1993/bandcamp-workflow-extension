@@ -1,6 +1,7 @@
 // @ts-nocheck - Temporarily disable strict null checks for this large facade file
 import {SEEK_STEP, SPEED_GRID_CLASS, TIMEOUT, WAVEFORM_ELEMENT_SELECTOR} from '../constants';
 import {Logger} from '../utils/logger';
+import {PageDetection} from './bandcamp/page-detection';
 import {AlbumOnlyUtils} from '../utils/album-only-utils';
 import {AudioUtils} from '../utils/audio-utils';
 import {SeekUtils} from '../utils/seek-utils';
@@ -46,18 +47,6 @@ export enum BandcampWishlistState {
  */
 export class BandcampFacade {
   private static _data: BandcampData;
-
-  private static _isTrack: boolean;
-
-  private static _isAlbum: boolean;
-
-  private static _isWishlistPage: boolean;
-
-  private static _isCollectionPage: boolean;
-
-  private static _isFollowersPage: boolean;
-
-  private static _isFollowingPage: boolean;
 
   private static _colors: BandcampColors;
 
@@ -154,81 +143,34 @@ export class BandcampFacade {
   }
 
   public static get isTrack(): boolean {
-    if (typeof this._isTrack !== 'undefined') {
-      return this._isTrack;
-    }
-
-    this._isTrack = window.location.href.includes('/track/');
-
-    return this._isTrack;
+    return PageDetection.isTrack;
   }
 
   public static get isAlbum(): boolean {
-    if (typeof this._isAlbum !== 'undefined') {
-      return this._isAlbum;
-    }
-
-    this._isAlbum = !this.isTrack && document.getElementById('trackInfo') !== null;
-
-    return this._isAlbum;
+    return PageDetection.isAlbum;
   }
 
   public static get isWishlistPage(): boolean {
-    if (typeof this._isWishlistPage !== 'undefined') {
-      return this._isWishlistPage;
-    }
-
-    // Only activate wishlist controls when URL matches the specific format: bandcamp.com/username/wishlist
-    // This excludes collection pages (bandcamp.com/username) and other pages
-    const url = window.location.href;
-    const wishlistRegex = /^https?:\/\/[^\/]*bandcamp\.com\/[^\/]+\/wishlist(?:[?#].*)?$/;
-    this._isWishlistPage = wishlistRegex.test(url);
-
-    return this._isWishlistPage;
+    return PageDetection.isWishlistPage;
   }
 
   public static get isCollectionPage(): boolean {
-    if (typeof this._isCollectionPage !== 'undefined') {
-      return this._isCollectionPage;
-    }
-
-    // Detect collection pages: bandcamp.com/username (without /wishlist, /followers, or /following)
-    const url = window.location.href;
-    const collectionRegex = /^https?:\/\/[^\/]*bandcamp\.com\/[^\/]+(?:[?#].*)?$/;
-    this._isCollectionPage = collectionRegex.test(url) && !this.isWishlistPage && !this.isFollowersPage && !this.isFollowingPage;
-
-    return this._isCollectionPage;
+    return PageDetection.isCollectionPage;
   }
 
   public static get isFollowersPage(): boolean {
-    if (typeof this._isFollowersPage !== 'undefined') {
-      return this._isFollowersPage;
-    }
-
-    const url = window.location.href;
-    const followersRegex = /^https?:\/\/[^\/]*bandcamp\.com\/[^\/]+\/followers(?:\/.*)?(?:[?#].*)?$/;
-    this._isFollowersPage = followersRegex.test(url);
-
-    return this._isFollowersPage;
+    return PageDetection.isFollowersPage;
   }
 
   public static get isFollowingPage(): boolean {
-    if (typeof this._isFollowingPage !== 'undefined') {
-      return this._isFollowingPage;
-    }
-
-    const url = window.location.href;
-    const followingRegex = /^https?:\/\/[^\/]*bandcamp\.com\/[^\/]+\/following(?:\/.*)?(?:[?#].*)?$/;
-    this._isFollowingPage = followingRegex.test(url);
-
-    return this._isFollowingPage;
+    return PageDetection.isFollowingPage;
   }
 
   /**
    * Check if current page supports track transport controls (wishlist or collection)
    */
   public static get isCollectionBasedPage(): boolean {
-    return this.isWishlistPage || this.isCollectionPage;
+    return PageDetection.isCollectionBasedPage;
   }
 
   /**
@@ -266,14 +208,11 @@ export class BandcampFacade {
   }
 
   public static get isPageSupported(): boolean {
-    return BandcampFacade.isAlbum || BandcampFacade.isTrack;
+    return PageDetection.isPageSupported;
   }
 
   public static get isLoggedIn(): boolean {
-    return !document
-      .getElementById('pagedata')
-      .getAttribute('data-blob')
-      .includes('"fan_tralbum_data":null');
+    return PageDetection.isLoggedIn;
   }
 
   public static get currentTrackContainer(): HTMLSpanElement {
@@ -3268,12 +3207,7 @@ export class BandcampFacade {
     Logger.debug('BandcampFacade: Resetting cached values for SPA navigation');
     
     // Clear cached page type flags
-    BandcampFacade._isTrack = undefined;
-    BandcampFacade._isAlbum = undefined;
-    BandcampFacade._isWishlistPage = undefined;
-    BandcampFacade._isCollectionPage = undefined;
-    BandcampFacade._isFollowersPage = undefined;
-    BandcampFacade._isFollowingPage = undefined;
+    PageDetection.reset();
     
     // Clear cached data and colors
     BandcampFacade._data = undefined;
