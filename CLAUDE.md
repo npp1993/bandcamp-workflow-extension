@@ -35,7 +35,14 @@ Browser extension (Chrome & Firefox) for Bandcamp that adds workflow enhancement
 
 - **Entry point:** `src/app/content.ts` bootstraps the extension, creates `PageController`, and overrides `history.pushState`/`replaceState` plus polling timers for SPA navigation.
 - **Orchestrator:** `PageController` (`src/app/controllers/page.controller.ts`) detects the Bandcamp page type and initializes the relevant sub-controllers (Album, Track, Wishlist, Speed, Waveform, Keyboard, Playbar, etc.).
-- **Facade:** `src/app/facades/bandcamp.facade.ts` is the single source of truth for DOM/data access (`window.TralbumData`, element accessors) and the public surface controllers call. It has been **decomposed** — feature logic now lives in focused modules under `src/app/facades/bandcamp/`: `page-detection.ts` (`is*` page-type getters), `release-navigation.ts` (album/track track navigation), `wishlist-playback.ts` (the wishlist/collection continuous-playback engine), and `transport.ts` (play/pause). The facade keeps **thin delegators** to these modules, so callers use `BandcampFacade.X` unchanged and the modules read/write facade-held state via `BandcampFacade`. New DOM scraping or state reading should go through the facade or the relevant module. NOTE: some controllers/services still bypass the facade with direct `document.querySelector` (see **Known debt**).
+- **Facade:** `src/app/facades/bandcamp.facade.ts` (~545 lines, down from ~4,150) is the single source of truth for DOM/data access (`window.TralbumData`, element accessors, page DOM layout) and the public surface controllers call. Feature logic has been **decomposed** into focused modules under `src/app/facades/bandcamp/`:
+  - `page-detection.ts` — `is*` page-type getters
+  - `release-navigation.ts` — album/track track navigation
+  - `transport.ts` — play/pause (`togglePlayPause`)
+  - `track-actions.ts` — add-to-cart and wishlist toggling (`c`/`z`/`w`/`q`)
+  - `wishlist-playback.ts` — the wishlist/collection continuous-playback engine (loading, advance, error recovery, scroll, verification); large but single-responsibility (could be internally sub-split later)
+
+  The facade keeps **thin delegators** to these modules, so callers use `BandcampFacade.X` unchanged; the modules read/write facade-held state (e.g. `_wishlistItems`, `_currentWishlistIndex`) via `BandcampFacade`. The extracted modules carry `// @ts-nocheck` (they reach facade-private state at runtime). New DOM scraping or state reading should go through the facade or the relevant module. NOTE: some controllers/services still bypass the facade with direct `document.querySelector` (see **Known debt**).
 - **Controllers** (`src/app/controllers/`) — Feature logic and UI orchestration.
 - **Services** (`src/app/services/`) — Business logic independent of UI (bulk cart, notifications, shuffle, waveform processing, wishlist).
 - **Views** (`src/app/views/`) — UI rendering using the Observer pattern (views observe controllers via `AbstractSubject`/`AbstractObserver`). Currently used only by the Speed feature (`SpeedController` + the speed views).
@@ -64,7 +71,8 @@ The extension detects Bandcamp's SPA navigation via `popstate`, `history.pushSta
 
 ## Known debt (refactor targets)
 
-- `bandcamp.facade.ts` was a ~4,153-line god object; it's now ~1,360 lines (DOM/data foundation + delegators), with feature logic moved into `src/app/facades/bandcamp/` modules. Remaining feature logic still in the facade (cart actions, wishlist-toggle, `loadAllWishlistItems`, and the playback-tail helpers such as `verifyPlaybackWithEvents`/`ensureTrackVisible`/`hasCurrentlyPlayingTrack`) could still move out — the playback-tail helpers belong in `wishlist-playback.ts`.
+- `bandcamp.facade.ts` was a ~4,153-line god object; it's now ~545 lines (DOM/data foundation + page layout + delegators), with feature logic moved into the `src/app/facades/bandcamp/` modules. What remains is largely legitimate facade responsibility (data/element accessors, page DOM arrangement, `hasCurrentlyPlayingTrack`, `reset`, state, delegators). Optional further extraction: the layout/DOM-arrangement methods (`arrange`/`insertBelow*`/`movePlaylist`/`rectifyMargins`) and `playFirstTrack` could move to a `layout`/release module.
+- `wishlist-playback.ts` is ~2,200 lines — a single cohesive responsibility, but could be internally sub-split (loading vs. advance vs. error-recovery vs. scroll/verification).
 - `keyboard-sidebar.controller.ts` (~925) and `add-to-cart-utils.ts` (~885) are still oversized.
 - The facade "single source of truth" rule is still partly violated — some controllers/services query the DOM directly.
 - Selector centralization is partial: injected class names are centralized in `constants.ts`, but many inline selector strings remain across controllers/services.
