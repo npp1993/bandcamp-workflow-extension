@@ -1,31 +1,9 @@
 import {BandcampFacade} from '../facades/bandcamp.facade';
-import {ShuffleService} from '../services/shuffle.service';
 import {BulkCartService} from '../services/bulk-cart.service';
 import {Logger} from '../utils/logger';
 import {Controllers} from './page.controller';
-
-/**
- * Interface for keyboard shortcut definitions
- */
-interface KeyboardShortcut {
-  key: string;
-  description: string;
-  action: () => void;
-  condition?: () => boolean; // Optional condition for when shortcut is available
-  bulkModeOnly?: boolean; // If true, only show when bulk mode is enabled
-}
-
-/**
- * Interface for toggle setting definitions
- */
-interface ToggleSetting {
-  id: string;
-  label: string;
-  getter: () => boolean;
-  setter: (value: boolean) => void;
-  condition?: () => boolean; // Optional condition for when setting is available
-  hotkey?: string; // Optional hotkey display for the setting
-}
+import {SidebarContent} from './keyboard-sidebar/content';
+import {SidebarView} from './keyboard-sidebar/view';
 
 /**
  * Controller for managing the keyboard shortcuts and settings sidebars
@@ -299,432 +277,26 @@ export class KeyboardSidebarController {
   /**
    * Get available toggle settings for current page
    */
-  private getToggleSettings(): ToggleSetting[] {
-    const settings: ToggleSetting[] = [];
-
-    // Shuffle setting (available on collection-based pages)
-    if (BandcampFacade.isCollectionBasedPage) {
-      settings.push({
-        id: 'shuffle',
-        label: 'Shuffle',
-        hotkey: 'Y',
-        getter: () => ShuffleService.isShuffleEnabled,
-        setter: (value: boolean) => {
-          if (value !== ShuffleService.isShuffleEnabled) {
-            ShuffleService.toggleShuffle();
-            // Immediately update the UI after the state change
-            this.render();
-          }
-        }
-      });
-    }
-
-    // Bulk mode setting (available on wishlist pages only)
-    if (BandcampFacade.isWishlistPage) {
-      settings.push({
-        id: 'bulk-mode',
-        label: 'Bulk Purchase',
-        hotkey: 'B',
-        getter: () => BulkCartService.isInBulkMode,
-        setter: (value: boolean) => {
-          if (value !== BulkCartService.isInBulkMode) {
-            if (!BulkCartService.isInBulkMode) {
-              // Enter bulk mode
-              const wishlistItems = BandcampFacade.loadWishlistItems();
-              if (wishlistItems.length > 0) {
-                BulkCartService.enterBulkMode(wishlistItems);
-              }
-            } else {
-              // Exit bulk mode
-              BulkCartService.exitBulkMode();
-            }
-            // Immediately update the UI after the state change
-            this.render();
-          }
-        }
-      });
-    }
-
-    return settings;
-  }
 
   /**
    * Get available keyboard shortcuts for current page (excluding bulk shortcuts)
    */
-  private getKeyboardShortcuts(): KeyboardShortcut[] {
-    const shortcuts: KeyboardShortcut[] = [];
-
-    // Universal shortcuts (available on all pages)
-    shortcuts.push({
-      key: 'Space',
-      description: 'Play/Pause',
-      action: () => BandcampFacade.togglePlayPause()
-    });
-
-    // Track wishlist toggle (not on collection pages)
-    if (!BandcampFacade.isCollectionPage) {
-      shortcuts.push({
-        key: 'W',
-        description: BandcampFacade.isWishlistPage ? 'Toggle item wishlist' : 'Toggle track wishlist',
-        action: () => {
-          // This would call the same logic as the keyboard controller
-          if (BandcampFacade.isWishlistPage) {
-            BandcampFacade.toggleCurrentTrackWishlist();
-          } else if (BandcampFacade.isTrack) {
-            BandcampFacade.toggleWishlist();
-          }
-        }
-      });
-    }
-
-    // Album wishlist toggle (album pages only)
-    if (BandcampFacade.isAlbum) {
-      shortcuts.push({
-        key: 'Q',
-        description: 'Toggle album wishlist',
-        action: () => BandcampFacade.toggleWishlist()
-      });
-    }
-
-    // Navigation shortcuts (only when not in bulk mode and not on individual track pages)
-    if ((BandcampFacade.isCollectionBasedPage || BandcampFacade.isAlbum) && !BandcampFacade.isTrack) {
-      shortcuts.push({
-        key: 'N',
-        description: 'Next track',
-        action: () => {
-          if (BandcampFacade.isCollectionBasedPage) {
-            BandcampFacade.playNextWishlistTrack();
-          } else {
-            BandcampFacade.playNextReleaseTrack();
-          }
-        },
-        condition: () => !BulkCartService.isInBulkMode
-      });
-
-      shortcuts.push({
-        key: 'P',
-        description: 'Previous track',
-        action: () => {
-          if (BandcampFacade.isCollectionBasedPage) {
-            BandcampFacade.playPreviousWishlistTrack();
-          } else {
-            BandcampFacade.playPreviousReleaseTrack();
-          }
-        },
-        condition: () => !BulkCartService.isInBulkMode
-      });
-    }
-
-    // Seek shortcuts
-    shortcuts.push({
-      key: 'H / ←',
-      description: 'Seek backward 10s',
-      action: () => BandcampFacade.seekBackward()
-    });
-
-    shortcuts.push({
-      key: 'L / →',
-      description: 'Seek forward 10s',
-      action: () => BandcampFacade.seekForward()
-    });
-
-    shortcuts.push({
-      key: 'I',
-      description: 'Seek to start',
-      action: () => BandcampFacade.seekReset()
-    });
-
-    // Speed controls (album/track pages only)
-    if (BandcampFacade.isPageSupported && this.controllers.speed) {
-      shortcuts.push({
-        key: '↑',
-        description: 'Increase speed',
-        action: () => this.controllers.speed?.increase()
-      });
-
-      shortcuts.push({
-        key: '↓',
-        description: 'Decrease speed',
-        action: () => this.controllers.speed?.decrease()
-      });
-
-      shortcuts.push({
-        key: 'R',
-        description: 'Reset speed',
-        action: () => this.controllers.speed?.reset()
-      });
-    }
-
-    // Add to cart shortcuts (not on collection pages)
-    if (!BandcampFacade.isCollectionPage) {
-      // C - Add current track to cart (hidden in bulk mode since functionality is overridden)
-      shortcuts.push({
-        key: 'C',
-        description: BandcampFacade.isAlbum ? 'Add current track to cart' : 'Add to cart',
-        action: () => BandcampFacade.addCurrentTrackToCart(),
-        condition: () => !BulkCartService.isInBulkMode
-      });
-
-      // Shift+C - Add to cart & close tab (wishlist and album pages only, hidden in bulk mode)
-      if (BandcampFacade.isWishlistPage || BandcampFacade.isAlbum) {
-        shortcuts.push({
-          key: 'Shift+C',
-          description: 'Add to cart & close tab',
-          action: () => BandcampFacade.addCurrentTrackToCart(true),
-          condition: () => !BulkCartService.isInBulkMode
-        });
-      }
-    }
-
-    // Z - Add album to cart (album pages only)
-    if (BandcampFacade.isAlbum) {
-      shortcuts.push({
-        key: 'Z',
-        description: 'Add album to cart',
-        action: () => BandcampFacade.addCurrentAlbumToCart()
-      });
-    }
-
-    // Toggle sidebar
-    shortcuts.push({
-      key: ',',
-      description: 'Toggle sidebar',
-      action: () => KeyboardSidebarController.toggleCollapse()
-    });
-
-    return shortcuts;
-  }
 
   /**
    * Get bulk purchase mode shortcuts
    */
-  private getBulkShortcuts(): KeyboardShortcut[] {
-    const bulkShortcuts: KeyboardShortcut[] = [];
-
-    if (BandcampFacade.isWishlistPage) {
-      bulkShortcuts.push({
-        key: 'N',
-        description: 'Next item',
-        action: () => BulkCartService.navigateNext()
-      });
-
-      bulkShortcuts.push({
-        key: 'P',
-        description: 'Previous item',
-        action: () => BulkCartService.navigatePrevious()
-      });
-
-      bulkShortcuts.push({
-        key: 'F',
-        description: 'Toggle selection',
-        action: () => BulkCartService.toggleCurrentSelection()
-      });
-
-      bulkShortcuts.push({
-        key: 'A',
-        description: 'Select all',
-        action: () => BulkCartService.selectAllItems()
-      });
-
-      bulkShortcuts.push({
-        key: 'D',
-        description: 'Deselect all',
-        action: () => BulkCartService.deselectAllItems()
-      });
-
-      bulkShortcuts.push({
-        key: 'B / Escape',
-        description: 'Exit',
-        action: () => {
-          BulkCartService.exitBulkMode();
-          // Refresh sidebar UI immediately
-          this.render();
-        }
-      });
-
-      bulkShortcuts.push({
-        key: 'C',
-        description: 'Add selected to cart',
-        action: () => {
-          if (!BulkCartService.isProcessing) {
-            BulkCartService.processSelectedItems();
-          }
-        }
-      });
-    }
-
-    return bulkShortcuts;
-  }
 
   /**
    * Create a toggle button for a setting (using hotkey sidebar style)
    */
-  private createToggleButton(setting: ToggleSetting): HTMLElement {
-    const button = document.createElement('button');
-    button.className = `bandcamp-workflow-setting-${setting.id}`;
-    button.style.cssText = `
-      padding: 6px 10px;
-      cursor: pointer;
-      border: 1px solid #dee2e6;
-      border-radius: 4px;
-      font-size: 11px;
-      font-weight: normal;
-      transition: all 0.2s;
-      text-align: left;
-      width: 100%;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      white-space: nowrap;
-      overflow: hidden;
-    `;
-
-    const keySpan = document.createElement('span');
-    keySpan.textContent = setting.hotkey || '';
-    keySpan.style.cssText = `
-      font-weight: bold;
-      color: #495057;
-      min-width: 20px;
-      flex-shrink: 0;
-    `;
-
-    const descSpan = document.createElement('span');
-    descSpan.textContent = setting.label;
-    descSpan.style.cssText = `
-      flex: 1;
-      text-align: right;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      margin-left: 15px;
-    `;
-
-    button.appendChild(keySpan);
-    button.appendChild(descSpan);
-
-    const updateButton = () => {
-      const isEnabled = setting.getter();
-      if (isEnabled) {
-        button.style.backgroundColor = '#e3f2fd';
-        button.style.borderColor = '#2196f3';
-        button.style.color = '#1976d2';
-        descSpan.style.fontWeight = 'bold';
-      } else {
-        button.style.backgroundColor = '#f8f9fa';
-        button.style.borderColor = '#dee2e6';
-        button.style.color = '#333';
-        descSpan.style.fontWeight = 'normal';
-      }
-    };
-
-    button.addEventListener('click', () => {
-      setting.setter(!setting.getter());
-      updateButton();
-    });
-
-    button.addEventListener('mouseenter', () => {
-      if (!setting.getter()) {
-        button.style.backgroundColor = '#e9ecef';
-      }
-    });
-
-    button.addEventListener('mouseleave', () => {
-      updateButton();
-    });
-
-    updateButton();
-
-    return button;
-  }
 
   /**
    * Create a hotkey button
    */
-  private createHotkeyButton(shortcut: KeyboardShortcut): HTMLElement {
-    const button = document.createElement('button');
-    button.className = `bandcamp-workflow-hotkey-${shortcut.key.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
-    button.style.cssText = `
-      padding: 6px 10px;
-      cursor: pointer;
-      background-color: #f8f9fa;
-      color: #333;
-      border: 1px solid #dee2e6;
-      border-radius: 4px;
-      font-size: 11px;
-      font-weight: normal;
-      transition: background-color 0.2s;
-      text-align: left;
-      width: 100%;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      white-space: nowrap;
-      overflow: hidden;
-    `;
-
-    const keySpan = document.createElement('span');
-    keySpan.textContent = shortcut.key;
-    keySpan.style.cssText = `
-      font-weight: bold;
-      color: #495057;
-      min-width: 40px;
-      flex-shrink: 0;
-    `;
-
-    const descSpan = document.createElement('span');
-    descSpan.textContent = shortcut.description;
-    descSpan.style.cssText = `
-      flex: 1;
-      text-align: right;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      margin-left: 15px;
-    `;
-
-    button.appendChild(keySpan);
-    button.appendChild(descSpan);
-
-    button.addEventListener('click', () => {
-      shortcut.action();
-    });
-
-    button.addEventListener('mouseenter', () => {
-      button.style.backgroundColor = '#e9ecef';
-    });
-
-    button.addEventListener('mouseleave', () => {
-      button.style.backgroundColor = '#f8f9fa';
-    });
-
-    return button;
-  }
 
   /**
    * Create a simple title
    */
-  private createTitle(text: string): HTMLElement {
-    const titleContainer = document.createElement('div');
-    titleContainer.style.cssText = `
-      display: flex;
-      align-items: center;
-      font-weight: bold;
-      font-size: 13px;
-      color: #495057;
-      border-bottom: 1px solid #dee2e6;
-      padding-bottom: 5px;
-      margin-bottom: 5px;
-      user-select: none;
-    `;
-
-    // Create title text
-    const titleText = document.createElement('span');
-    titleText.textContent = text;
-
-    titleContainer.appendChild(titleText);
-
-    return titleContainer;
-  }
 
   /**
    * Render both sidebars
@@ -751,7 +323,7 @@ export class KeyboardSidebarController {
 
     this.settingsSidebar.innerHTML = '';
 
-    const settings = this.getToggleSettings();
+    const settings = SidebarContent.getToggleSettings(this.controllers, () => this.render());
     if (settings.length === 0) {
       this.settingsSidebar.style.display = 'none';
       return;
@@ -760,12 +332,12 @@ export class KeyboardSidebarController {
     this.settingsSidebar.style.display = 'flex';
     
     // Add title
-    this.settingsSidebar.appendChild(this.createTitle('Settings'));
+    this.settingsSidebar.appendChild(SidebarView.createTitle('Settings'));
 
     // Add settings
     settings.forEach(setting => {
       if (!setting.condition || setting.condition()) {
-        this.settingsSidebar!.appendChild(this.createToggleButton(setting));
+        this.settingsSidebar!.appendChild(SidebarView.createToggleButton(setting));
       }
     });
   }
@@ -778,7 +350,7 @@ export class KeyboardSidebarController {
 
     this.hotkeysSidebar.innerHTML = '';
 
-    const shortcuts = this.getKeyboardShortcuts();
+    const shortcuts = SidebarContent.getKeyboardShortcuts(this.controllers, () => this.render());
     const isInBulkMode = BulkCartService.isInBulkMode;
 
     // Filter shortcuts based on conditions and bulk mode
@@ -813,11 +385,11 @@ export class KeyboardSidebarController {
     this.hotkeysSidebar.style.display = 'flex';
     
     // Add title
-    this.hotkeysSidebar.appendChild(this.createTitle('Hotkeys'));
+    this.hotkeysSidebar.appendChild(SidebarView.createTitle('Hotkeys'));
 
     // Add shortcuts
     visibleShortcuts.forEach(shortcut => {
-      this.hotkeysSidebar!.appendChild(this.createHotkeyButton(shortcut));
+      this.hotkeysSidebar!.appendChild(SidebarView.createHotkeyButton(shortcut));
     });
   }
 
@@ -837,7 +409,7 @@ export class KeyboardSidebarController {
     this.bulkSidebar.style.display = 'flex';
     this.bulkSidebar.innerHTML = '';
 
-    const bulkShortcuts = this.getBulkShortcuts();
+    const bulkShortcuts = SidebarContent.getBulkShortcuts(this.controllers, () => this.render());
 
     if (bulkShortcuts.length === 0) {
       this.bulkSidebar.style.display = 'none';
@@ -845,11 +417,11 @@ export class KeyboardSidebarController {
     }
 
     // Add title
-    this.bulkSidebar.appendChild(this.createTitle('Bulk Purchase'));
+    this.bulkSidebar.appendChild(SidebarView.createTitle('Bulk Purchase'));
 
     // Add bulk shortcuts
     bulkShortcuts.forEach(shortcut => {
-      this.bulkSidebar!.appendChild(this.createHotkeyButton(shortcut));
+      this.bulkSidebar!.appendChild(SidebarView.createHotkeyButton(shortcut));
     });
   }
 
