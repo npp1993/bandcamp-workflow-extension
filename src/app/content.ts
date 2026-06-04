@@ -171,11 +171,6 @@ window.history.replaceState = function (
   setTimeout(handleUrlChange, 100); // Small delay to ensure DOM updates
 };
 
-// Periodic check as fallback for any missed navigation events
-setInterval(() => {
-  handleUrlChange();
-}, 2000); // Check every 2 seconds
-
 // Initialize on page load
 window.addEventListener('load', () => {
   Logger.debug('Page load event - initializing extension');
@@ -188,5 +183,5 @@ if (document.readyState === 'complete') {
   initializeExtension();
 }
 
-// Monitor for URL changes (SPA navigation)
+// Periodic fallback poll for SPA navigation missed by popstate / pushState hooks
 setInterval(handleUrlChange, 1000);

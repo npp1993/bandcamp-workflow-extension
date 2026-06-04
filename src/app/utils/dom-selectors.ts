@@ -2,26 +2,6 @@
  * Utility for common DOM selector patterns used throughout the extension
  */
 export class DOMSelectors {
-  /**
-   * Discovery page item selectors
-   */
-  public static readonly DISCOVERY_ITEMS = [
-    '.discover-item', 
-    '.discovery-item', 
-    '.discover-results .item',
-    '.discover-results li',
-    '.item[data-item-id]',
-  ];
-
-  /**
-   * Featured discovery item selectors
-   */
-  public static readonly FEATURED_DISCOVERY_ITEMS = [
-    '.featured-item', 
-    '.discover-featured .item',
-    '.featured-items .item',
-    '.featured',
-  ];
 
   /**
    * Wishlist item selectors (optimized based on effectiveness analysis)

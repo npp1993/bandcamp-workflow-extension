@@ -88,17 +88,6 @@ export class BandcampFacade {
   // Static list to keep track of problematic track IDs that return 404s
   private static _problemTrackIds: Set<string> = new Set();
 
-  // Phase 2 Performance Monitoring - track optimization effectiveness
-  private static _phase2MetricsEnabled = true;
-
-  private static _navigationDelaysSaved = 0;
-
-  private static _errorRecoveryDelaysSaved = 0;
-
-  private static _domSelectionOptimizations = 0;
-
-  private static _flagClearingOptimizations = 0;
-
   /**
    * Determine the page type for shuffle service
    */
@@ -456,8 +445,6 @@ export class BandcampFacade {
     // Phase 2: Reduced initial delay from 250ms to 100ms for faster response
     setTimeout(() => {
       const delayCompleteTime = Logger.startTiming('⏰ Initial delay completed');
-      // Track navigation optimization (150ms saved: 250ms → 100ms)
-      this.logReleasePageMetrics('Navigation', 150);
       
       const tracks = this.tracks;
       const currentTrackIndex = this.getCurrentTrackIndex();
@@ -540,8 +527,6 @@ export class BandcampFacade {
     // Phase 2: Reduced initial delay from 250ms to 100ms for faster response
     setTimeout(() => {
       const delayCompleteTime = Logger.startTiming('⏰ Initial delay completed');
-      // Track navigation optimization (150ms saved: 250ms → 100ms)
-      this.logReleasePageMetrics('Navigation', 150);
       
       const tracks = this.tracks;
       const currentTrackIndex = this.getCurrentTrackIndex();
@@ -734,30 +719,15 @@ export class BandcampFacade {
       const flagClearTime = Logger.startTiming('🏁 Release navigation flag clear');
       this._releaseNavigationInProgress = false;
       Logger.timing('Release navigation flag cleared', flagClearTime);
-      // Track flag clearing optimization (100ms saved: 250ms → 150ms)
-      this.logReleasePageMetrics('FlagClearing', 100);
       
       // Phase 2: Reduced delay for skip flag (350ms vs 500ms)
       setTimeout(() => {
         const secondClearTime = Logger.startTiming('🏁 Skip flag clear');
         this._skipInProgress = false;
         Logger.timing('Skip flag cleared', secondClearTime);
-        // Track flag clearing optimization (150ms saved: 500ms → 350ms)
-        this.logReleasePageMetrics('FlagClearing', 150);
         Logger.timing('playNextReleaseTrack fully completed', startTime);
       }, 350); // Reduced from 500ms to 350ms
     }, 150); // Reduced from 250ms to 150ms
-  }
-
-  /**
-   * Log performance metrics for release page navigation optimizations
-   *
-   * @param operation The type of operation being tracked
-   * @param timeSaved The amount of time saved in milliseconds
-   */
-  private static logReleasePageMetrics(operation: string, timeSaved: number): void {
-    Logger.debug(`Release Page Metrics: ${operation} optimization saved ${timeSaved}ms`);
-    Logger.debug('Release Page Performance: Phase 2 optimization applied');
   }
 
   // ============================================
@@ -1739,8 +1709,6 @@ export class BandcampFacade {
     // Use a reduced delay since event-based verification is faster
     setTimeout(() => {
       const delayCompleteTime = Logger.startTiming('⏰ Initial delay completed');
-      // Phase 2: Track navigation optimization (150ms saved: 250ms → 100ms)
-      this.logPhase2Metrics('Navigation', 150);
       
       let nextIndex: number;
       
@@ -1780,16 +1748,12 @@ export class BandcampFacade {
         const firstClearTime = Logger.startTiming('🏁 First flag clear');
         this._pendingNextTrackRequest = false;
         Logger.timing('Pending flag cleared', firstClearTime);
-        // Track flag clearing optimization (100ms saved: 250ms → 150ms)
-        this.logPhase2Metrics('FlagClearing', 100);
         
         // Phase 2: Reduced delay for skip flag (350ms vs 500ms)
         setTimeout(() => {
           const secondClearTime = Logger.startTiming('🏁 Skip flag clear');
           this._skipInProgress = false;
           Logger.timing('Skip flag cleared', secondClearTime);
-          // Track flag clearing optimization (150ms saved: 500ms → 350ms)
-          this.logPhase2Metrics('FlagClearing', 150);
           Logger.timing('playNextWishlistTrack fully completed', startTime);
         }, 350); // Reduced from 500ms to 350ms
       }, 150); // Reduced from 250ms to 150ms
@@ -1822,8 +1786,6 @@ export class BandcampFacade {
     // Phase 2: Reduced initial delay from 250ms to 100ms
     setTimeout(async () => {
       const delayCompleteTime = Logger.startTiming('⏰ Initial delay completed');
-      // Phase 2: Track navigation optimization (150ms saved: 250ms → 100ms)
-      this.logPhase2Metrics('Navigation', 150);
       
       // If we're trying to go to the previous track from the first track (index 0),
       // ensure all wishlist items are loaded to get the correct "last" track
@@ -1935,16 +1897,12 @@ export class BandcampFacade {
         const firstClearTime = Logger.startTiming('🏁 First flag clear');
         this._pendingNextTrackRequest = false;
         Logger.timing('Pending flag cleared', firstClearTime);
-        // Track flag clearing optimization (100ms saved: 250ms → 150ms)
-        this.logPhase2Metrics('FlagClearing', 100);
         
         // Phase 2: Reduced delay for skip flag (350ms vs 500ms)
         setTimeout(() => {
           const secondClearTime = Logger.startTiming('🏁 Skip flag clear');
           this._skipInProgress = false;
           Logger.timing('Skip flag cleared', secondClearTime);
-          // Track flag clearing optimization (150ms saved: 500ms → 350ms)
-          this.logPhase2Metrics('FlagClearing', 150);
           Logger.timing('playPreviousWishlistTrack fully completed', startTime);
         }, 350); // Reduced from 500ms to 350ms
       }, 150); // Reduced from 250ms to 150ms
@@ -2081,8 +2039,6 @@ export class BandcampFacade {
             if (!BandcampFacade._skipInProgress) {
               BandcampFacade._skipInProgress = true;
               // Phase 2: Reduced delay for network error recovery (from 500ms to 350ms)
-              // Track error recovery optimization (150ms saved: 500ms → 350ms)
-              this.logPhase2Metrics('ErrorRecovery', 150);
               setTimeout(() => {
                 BandcampFacade._skipInProgress = false;
                 BandcampFacade._errorRecoveryInProgress = false;
@@ -2099,8 +2055,6 @@ export class BandcampFacade {
             if (!BandcampFacade._skipInProgress) {
               BandcampFacade._skipInProgress = true;
               // Phase 2: Reduced delay for media format error recovery (from 500ms to 350ms)
-              // Track error recovery optimization (150ms saved: 500ms → 350ms)
-              this.logPhase2Metrics('ErrorRecovery', 150);
               setTimeout(() => {
                 BandcampFacade._skipInProgress = false;
                 BandcampFacade._errorRecoveryInProgress = false;
@@ -2116,8 +2070,6 @@ export class BandcampFacade {
             if (!BandcampFacade._skipInProgress) {
               BandcampFacade._skipInProgress = true;
               // Phase 2: Reduced delay for default error recovery (from 500ms to 350ms)
-              // Track error recovery optimization (150ms saved: 500ms → 350ms)
-              this.logPhase2Metrics('ErrorRecovery', 150);
               setTimeout(() => {
                 BandcampFacade._skipInProgress = false;
                 BandcampFacade._errorRecoveryInProgress = false;
@@ -2284,8 +2236,6 @@ export class BandcampFacade {
   public static findPlayButton(item: HTMLElement): HTMLElement | null {
     try {
       // Try multiple selectors for play buttons that might exist in the item
-      // Phase 2: Track DOM selection optimization usage
-      this.logPhase2Metrics('DOMSelection', 0);
       const button = DOMSelectors.findOneWithSelectors<HTMLElement>(DOMSelectors.PLAY_BUTTONS, item);
       if (button) {
         return button;
@@ -3040,481 +2990,6 @@ export class BandcampFacade {
   }
 
   /**
-   * Load more discovery items from the Bandcamp discovery page
-   *
-   * @returns Promise that resolves to true if more items were loaded
-   */
-  public static async loadMoreDiscoveryItems(): Promise<boolean> {
-    if (!window.location.href.includes('/discover')) {
-      Logger.warn('Not on discovery page, cannot load more items');
-      return false;
-    }
-
-    try {
-      Logger.debug('Loading more discovery items');
-      
-      // Look for the "load more" button on the discovery page
-      const loadMoreButton = document.querySelector('.show-more button, button.show-more, [data-bind*="loadMore"]');
-      
-      if (loadMoreButton) {
-        Logger.debug('Found load more button, clicking it');
-        (loadMoreButton as HTMLElement).click();
-        
-        // Wait for items to load
-        return new Promise<boolean>((resolve) => {
-          // Check if new items have been added after a short delay
-          setTimeout(() => {
-            const currentItems = DOMSelectors.findWithSelectors<HTMLElement>(DOMSelectors.DISCOVERY_ITEMS);
-            Logger.debug(`Found ${currentItems.length} discovery items after loading more`);
-            resolve(true);
-          }, 2000);
-        });
-      } else {
-        Logger.warn('No load more button found on discovery page');
-        return false;
-      }
-    } catch (error) {
-      Logger.error('Error loading more discovery items:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Get all discovery items from the current discovery page
-   *
-   * @returns Array of discovery item elements
-   */
-  public static getDiscoveryItems(): HTMLElement[] {
-    if (!window.location.href.includes('/discover')) {
-      return [];
-    }
-
-    try {
-      // Try different selectors for discovery items
-      const discoveryItems = DOMSelectors.findWithSelectors<HTMLElement>(DOMSelectors.DISCOVERY_ITEMS);
-      
-      if (discoveryItems.length > 0) {
-        Logger.debug(`Found ${discoveryItems.length} discovery items`);
-      }
-      
-      if (discoveryItems.length === 0) {
-        Logger.warn('No discovery items found');
-      }
-      
-      return discoveryItems;
-    } catch (error) {
-      Logger.error('Error getting discovery items:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Get featured discovery items from the current discovery page
-   *
-   * @returns Array of featured discovery item elements
-   */
-  public static getFeaturedDiscoveryItems(): HTMLElement[] {
-    if (!window.location.href.includes('/discover')) {
-      return [];
-    }
-
-    try {
-      // Try different selectors for featured discovery items
-      const items = DOMSelectors.findWithSelectors<HTMLElement>(DOMSelectors.FEATURED_DISCOVERY_ITEMS);
-      
-      if (items.length > 0) {
-        Logger.debug(`Found ${items.length} featured discovery items`);
-        return items;
-      }
-      
-      Logger.warn('No featured discovery items found');
-      return [];
-    } catch (error) {
-      Logger.error('Error getting featured discovery items:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Click on a discovery item by its index
-   *
-   * @param index The index of the discovery item to click
-   * @returns True if successful, false otherwise
-   */
-  public static clickDiscoveryItem(index: number): boolean {
-    if (!window.location.href.includes('/discover')) {
-      Logger.warn('Not on discovery page, cannot click discovery item');
-      return false;
-    }
-    
-    try {
-      const discoveryItems = DOMSelectors.findWithSelectors<HTMLElement>(DOMSelectors.DISCOVERY_ITEMS);
-      
-      if (!discoveryItems || discoveryItems.length === 0) {
-        Logger.warn('No discovery items found on page');
-        return false;
-      }
-      
-      if (index < 0 || index >= discoveryItems.length) {
-        Logger.warn(`Invalid discovery item index: ${index}. Available range: 0-${discoveryItems.length - 1}`);
-        return false;
-      }
-      
-      const item = discoveryItems[index] as HTMLElement;
-      item.click();
-      
-      Logger.debug(`Clicked on discovery item at index ${index}`);
-      return true;
-    } catch (error) {
-      Logger.error('Error clicking discovery item:', error);
-      return false;
-    }
-  }
-  
-  /**
-   * Click on a featured discovery item by its index
-   *
-   * @param index The index of the featured discovery item to click
-   *   @returns True if successful, false otherwise
-   */
-  public static clickFeaturedDiscoveryItem(index: number): boolean {
-    if (!window.location.href.includes('/discover')) {
-      Logger.warn('Not on discovery page, cannot click featured discovery item');
-      return false;
-    }
-    
-    try {
-      const featuredItems = DOMSelectors.findWithSelectors<HTMLElement>(DOMSelectors.FEATURED_DISCOVERY_ITEMS);
-      
-      if (!featuredItems || featuredItems.length === 0) {
-        Logger.warn('No featured discovery items found on page');
-        return false;
-      }
-      
-      if (index < 0 || index >= featuredItems.length) {
-        Logger.warn(`Invalid featured item index: ${index}. Available range: 0-${featuredItems.length - 1}`);
-        return false;
-      }
-      
-      const item = featuredItems[index] as HTMLElement;
-      item.click();
-      
-      Logger.debug(`Clicked on featured discovery item at index ${index}`);
-      return true;
-    } catch (error) {
-      Logger.error('Error clicking featured discovery item:', error);
-      return false;
-    }
-  }
-  
-  /**
-   * Get the available discovery filters
-   *
-   * @returns An object containing the available filters
-   */
-  public static getDiscoveryFilters(): Record<string, any> {
-    if (!window.location.href.includes('/discover')) {
-      Logger.warn('Not on discovery page, cannot get discovery filters');
-      return {};
-    }
-    
-    try {
-      const filters: Record<string, any> = {};
-      
-      // Get genre filters
-      const genreSelector = document.querySelector('.genre-selector, #genre-selector, [data-bind*="genre"]');
-      if (genreSelector) {
-        filters.genres = Array.from(genreSelector.querySelectorAll('option, li, a')).map((option) => ({
-          value: option.getAttribute('value') || option.getAttribute('data-value') || option.textContent,
-          label: option.textContent?.trim(),
-        }));
-      }
-      
-      // Get subgenre filters
-      const subgenreSelector = document.querySelector('.subgenre-selector, #subgenre-selector, [data-bind*="subgenre"]');
-      if (subgenreSelector) {
-        filters.subgenres = Array.from(subgenreSelector.querySelectorAll('option, li, a')).map((option) => ({
-          value: option.getAttribute('value') || option.getAttribute('data-value') || option.textContent,
-          label: option.textContent?.trim(),
-        }));
-      }
-      
-      // Get format filters
-      const formatSelector = document.querySelector('.format-selector, #format-selector, [data-bind*="format"]');
-      if (formatSelector) {
-        filters.formats = Array.from(formatSelector.querySelectorAll('option, li, a')).map((option) => ({
-          value: option.getAttribute('value') || option.getAttribute('data-value') || option.textContent,
-          label: option.textContent?.trim(),
-        }));
-      }
-      
-      // Get location filters
-      const locationSelector = document.querySelector('.location-selector, #location-selector, [data-bind*="location"]');
-      if (locationSelector) {
-        filters.locations = Array.from(locationSelector.querySelectorAll('option, li, a')).map((option) => ({
-          value: option.getAttribute('value') || option.getAttribute('data-value') || option.textContent,
-          label: option.textContent?.trim(),
-        }));
-      }
-      
-      // Get time filters
-      const timeSelector = document.querySelector('.time-selector, #time-selector, [data-bind*="time"]');
-      if (timeSelector) {
-        filters.times = Array.from(timeSelector.querySelectorAll('option, li, a')).map((option) => ({
-          value: option.getAttribute('value') || option.getAttribute('data-value') || option.textContent,
-          label: option.textContent?.trim(),
-        }));
-      }
-      
-      return filters;
-    } catch (error) {
-      Logger.error('Error getting discovery filters:', error);
-      return {};
-    }
-  }
-  
-  /**
-   * Apply a filter to the discovery page
-   *
-   * @param filterType The type of filter to apply (genre, subgenre, format, location, time)
-   * @param value The value to set for the filter
-   * @returns True if the filter was applied successfully
-   */
-  public static applyDiscoveryFilter(filterType: string, value: string): boolean {
-    if (!window.location.href.includes('/discover')) {
-      Logger.warn('Not on discovery page, cannot apply discovery filter');
-      return false;
-    }
-
-    try {
-      // Map filter type to selector
-      const selectorMap: Record<string, string> = {
-        genre: '.genre-selector, #genre-selector, [data-bind*="genre"]',
-        subgenre: '.subgenre-selector, #subgenre-selector, [data-bind*="subgenre"]',
-        format: '.format-selector, #format-selector, [data-bind*="format"]',
-        location: '.location-selector, #location-selector, [data-bind*="location"]',
-        time: '.time-selector, #time-selector, [data-bind*="time"]',
-      };
-      
-      const selector = selectorMap[filterType.toLowerCase()];
-      if (!selector) {
-        Logger.warn(`Unknown filter type: ${filterType}`);
-        return false;
-      }
-      
-      // Find the filter element
-      const filterElement = document.querySelector(selector);
-      if (!filterElement) {
-        Logger.warn(`Filter element not found for filter type: ${filterType}`);
-        return false;
-      }
-      
-      // Check if it's a select element
-      if (filterElement.tagName === 'SELECT') {
-        const selectElement = filterElement as HTMLSelectElement;
-        selectElement.value = value;
-        
-        // Trigger change event
-        const event = new Event('change', {bubbles: true});
-        selectElement.dispatchEvent(event);
-        
-        Logger.debug(`Applied ${filterType} filter with value: ${value}`);
-        return true;
-      }
-      
-      // Check if it's a list of options
-      const options = filterElement.querySelectorAll('option, li, a');
-      for (const option of Array.from(options)) {
-        const optionValue = option.getAttribute('value') || 
-                           option.getAttribute('data-value') || 
-                           option.textContent;
-        
-        if (optionValue === value || option.textContent === value) {
-          (option as HTMLElement).click();
-          Logger.debug(`Applied ${filterType} filter with value: ${value}`);
-          return true;
-        }
-      }
-      
-      Logger.warn(`Could not find option with value ${value} for filter type ${filterType}`);
-      return false;
-    } catch (error) {
-      Logger.error('Error applying discovery filter:', error);
-      return false;
-    }
-  }
-  
-  /**
-   * Save the current discovery page preferences with a name
-   *
-   * @param name The name to save the preferences under
-   * @returns True if saved successfully
-   */
-  public static saveDiscoveryPreference(name: string): boolean {
-    if (!window.location.href.includes('/discover')) {
-      Logger.warn('Not on discovery page, cannot save discovery preferences');
-      return false;
-    }
-    
-    try {
-      // Get current URL which contains all filter parameters
-      const currentUrl = window.location.href;
-      
-      // Get existing preferences
-      const existingPreferencesString = localStorage.getItem('bandcampPlusDiscoveryPreferences');
-      let preferences: Record<string, string> = {};
-      
-      if (existingPreferencesString) {
-        try {
-          preferences = JSON.parse(existingPreferencesString);
-        } catch (error) {
-          Logger.error('Error parsing existing preferences:', error);
-          preferences = {};
-        }
-      }
-      
-      // Save the new preference
-      preferences[name] = currentUrl;
-      
-      // Save back to localStorage
-      localStorage.setItem('bandcampPlusDiscoveryPreferences', JSON.stringify(preferences));
-      
-      Logger.debug(`Saved discovery preference '${name}' with URL: ${currentUrl}`);
-      return true;
-    } catch (error) {
-      Logger.error('Error saving discovery preference:', error);
-      return false;
-    }
-  }
-  
-  /**
-   * Load a saved discovery preference by name
-   *
-   * @param name The name of the preference to load
-   * @returns True if loaded successfully
-   */
-  public static async loadDiscoveryPreference(name: string): Promise<boolean> {
-    try {
-      // Get existing preferences
-      const existingPreferencesString = localStorage.getItem('bandcampPlusDiscoveryPreferences');
-      
-      if (!existingPreferencesString) {
-        Logger.warn('No saved discovery preferences found');
-        return false;
-      }
-      
-      let preferences: Record<string, string>;
-      
-      try {
-        preferences = JSON.parse(existingPreferencesString);
-      } catch (error) {
-        Logger.error('Error parsing discovery preferences:', error);
-        return false;
-      }
-      
-      const savedUrl = preferences[name];
-      
-      if (!savedUrl) {
-        Logger.warn(`No discovery preference found with name: ${name}`);
-        return false;
-      }
-      
-      // Navigate to the saved URL
-      Logger.debug(`Loading discovery preference '${name}' with URL: ${savedUrl}`);
-      window.location.href = savedUrl;
-      return true;
-    } catch (error) {
-      Logger.error('Error loading discovery preference:', error);
-      return false;
-    }
-  }
-  
-  /**
-   * Get all stored discovery preferences
-   *
-   * @returns A record of preference names and their URLs
-   */
-  public static getStoredDiscoveryPreferences(): Record<string, any> {
-    try {
-      // Get existing preferences
-      const existingPreferencesString = localStorage.getItem('bandcampPlusDiscoveryPreferences');
-      
-      if (!existingPreferencesString) {
-        return {};
-      }
-      
-      try {
-        return JSON.parse(existingPreferencesString);
-      } catch (error) {
-        Logger.error('Error parsing discovery preferences:', error);
-        return {};
-      }
-    } catch (error) {
-      Logger.error('Error getting stored discovery preferences:', error);
-      return {};
-    }
-  }
-  
-  /**
-   * Delete a saved discovery preference by name
-   *
-   * @param name The name of the preference to delete
-   * @returns True if deleted successfully
-   */
-  public static deleteDiscoveryPreference(name: string): boolean {
-    try {
-      // Get existing preferences
-      const existingPreferencesString = localStorage.getItem('bandcampPlusDiscoveryPreferences');
-      
-      if (!existingPreferencesString) {
-        Logger.warn('No saved discovery preferences found');
-        return false;
-      }
-      
-      let preferences: Record<string, string>;
-      
-      try {
-        preferences = JSON.parse(existingPreferencesString);
-      } catch (error) {
-        Logger.error('Error parsing discovery preferences:', error);
-        return false;
-      }
-      
-      if (!preferences[name]) {
-        Logger.warn(`No discovery preference found with name: ${name}`);
-        return false;
-      }
-      
-      // Delete the preference
-      delete preferences[name];
-      
-      // Save back to localStorage
-      localStorage.setItem('bandcampPlusDiscoveryPreferences', JSON.stringify(preferences));
-      
-      Logger.debug(`Deleted discovery preference: ${name}`);
-      return true;
-    } catch (error) {
-      Logger.error('Error deleting discovery preference:', error);
-      return false;
-    }
-  }
-  
-  /**
-   * Navigate to the Bandcamp discovery page
-   *
-   * @returns True if navigation was initiated successfully
-   */
-  public static navigateToDiscovery(): boolean {
-    try {
-      window.location.href = 'https://bandcamp.com/discover';
-      return true;
-    } catch (error) {
-      Logger.error('Error navigating to discovery page:', error);
-      return false;
-    }
-  }
-
-  /**
    * Load all wishlist items by clicking the "view all items" button
    *
    * @returns Promise that resolves to true if all items were loaded successfully
@@ -3821,41 +3296,6 @@ export class BandcampFacade {
     ShuffleService.reset();
     
     Logger.debug('BandcampFacade: Reset completed');
-  }
-
-  /**
-   * Log Phase 2 performance metrics for monitoring optimization effectiveness
-   */
-  private static logPhase2Metrics(category: string, timeSavedMs: number): void {
-    if (!this._phase2MetricsEnabled) {
-      return;
-    }
-    
-    Logger.timing(`[Phase 2 Optimization] ${category}: ${timeSavedMs}ms saved`);
-    
-    // Accumulate metrics by category
-    switch (category) {
-      case 'Navigation':
-        this._navigationDelaysSaved += timeSavedMs;
-        break;
-      case 'ErrorRecovery':
-        this._errorRecoveryDelaysSaved += timeSavedMs;
-        break;
-      case 'DOMSelection':
-        this._domSelectionOptimizations += 1;
-        break;
-      case 'FlagClearing':
-        this._flagClearingOptimizations += 1;
-        break;
-    }
-  }
-
-  /**
-   * Get Phase 2 performance summary for debugging
-   */
-  private static getPhase2PerformanceSummary(): string {
-    const totalSaved = this._navigationDelaysSaved + this._errorRecoveryDelaysSaved;
-    return `Phase 2 Summary: ${totalSaved}ms saved (Nav: ${this._navigationDelaysSaved}ms, Error: ${this._errorRecoveryDelaysSaved}ms, DOM: ${this._domSelectionOptimizations}, Flags: ${this._flagClearingOptimizations})`;
   }
 
   /**
