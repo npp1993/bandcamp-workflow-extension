@@ -1060,18 +1060,18 @@ export class WishlistPlayback {
         Logger.debug('Found audio element, setting up ended event listener');
         
         // Remove any existing event listeners first to avoid duplicates
-        audio.removeEventListener('ended', BandcampFacade.handleTrackEnded);
+        audio.removeEventListener('ended', this.handleTrackEnded);
         
         // Add event listener for the audio element to detect when a track ends
-        audio.addEventListener('ended', BandcampFacade.handleTrackEnded);
+        audio.addEventListener('ended', this.handleTrackEnded);
         
         // Also monitor for errors in playback
-        audio.removeEventListener('error', BandcampFacade.handleAudioError);
-        audio.addEventListener('error', BandcampFacade.handleAudioError);
+        audio.removeEventListener('error', this.handleAudioError);
+        audio.addEventListener('error', this.handleAudioError);
         
         // Add a loadstart event listener to catch and fix missing track IDs before they cause errors
-        audio.removeEventListener('loadstart', BandcampFacade.handleAudioLoadStart);
-        audio.addEventListener('loadstart', BandcampFacade.handleAudioLoadStart);
+        audio.removeEventListener('loadstart', this.handleAudioLoadStart);
+        audio.addEventListener('loadstart', this.handleAudioLoadStart);
         
         Logger.debug('Continuous playback setup complete');
       };

@@ -1,5 +1,5 @@
 // @ts-nocheck - Temporarily disable strict null checks for this large facade file
-import {SEEK_STEP, SPEED_GRID_CLASS, TIMEOUT, WAVEFORM_ELEMENT_SELECTOR} from '../constants';
+import {SPEED_GRID_CLASS, TIMEOUT, WAVEFORM_ELEMENT_SELECTOR} from '../constants';
 import {Logger} from '../utils/logger';
 import {PageDetection} from './bandcamp/page-detection';
 import {ReleaseNavigation} from './bandcamp/release-navigation';
