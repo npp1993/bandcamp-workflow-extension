@@ -1,4 +1,3 @@
-// @ts-nocheck - consistent with BandcampFacade; reads/writes facade-private playback state at runtime
 /**
  * Wishlist / collection continuous-playback engine.
  *
@@ -309,7 +308,7 @@ export class WishlistPlayback {
         const audio = AudioUtils.getAudioElement();
         if (audio && audio.src && !audio.paused) {
           // Extract track ID from the current audio source
-          let currentTrackId = null;
+          let currentTrackId: string | null = null;
           if (audio.src.includes('track_id=')) {
             const urlParams = new URLSearchParams(audio.src.split('?')[1]);
             currentTrackId = urlParams.get('track_id');
@@ -407,7 +406,7 @@ export class WishlistPlayback {
         // Look for album links
         const albumLinks = DOMSelectors.findWithSelectors<HTMLAnchorElement>(['a[href*="/album/"]'], item);
         if (albumLinks.length > 0) {
-          const url = albumLinks[0].getAttribute('href');
+          const url = albumLinks[0].getAttribute('href') || '';
           // Store the album URL as a fallback
           item.setAttribute('data-album-url', url);
           
@@ -433,7 +432,7 @@ export class WishlistPlayback {
         if (!trackId) {
           const trackLinks = DOMSelectors.findWithSelectors<HTMLAnchorElement>(['a[href*="/track/"]'], item);
           if (trackLinks.length > 0) {
-            const url = trackLinks[0].getAttribute('href');
+            const url = trackLinks[0].getAttribute('href') || '';
             // Store the track URL as a fallback
             item.setAttribute('data-track-url', url);
             
@@ -507,7 +506,7 @@ export class WishlistPlayback {
         const scriptElements = DOMSelectors.findWithSelectors<HTMLScriptElement>(DOMSelectors.JSON_LD_SCRIPTS, item);
         for (const script of scriptElements) {
           try {
-            const jsonData = JSON.parse(script.textContent);
+            const jsonData = JSON.parse(script.textContent || '');
             if (jsonData) {
               // Check for URL
               if (jsonData.url) {
@@ -570,7 +569,7 @@ export class WishlistPlayback {
         if (!item.hasAttribute('data-track-href')) {
           const anyLink = item.querySelector('a');
           if (anyLink) {
-            item.setAttribute('data-track-href', anyLink.getAttribute('href'));
+            item.setAttribute('data-track-href', anyLink.getAttribute('href') || '');
           }
         }
       } 

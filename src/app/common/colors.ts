@@ -20,8 +20,13 @@ export class Colors {
       return this._fillColor;
     }
 
-    const background = BandcampFacade.colors.body_color;
-    const color = BandcampFacade.colors.bg_color;
+    const colors = BandcampFacade.colors;
+    if (!colors) {
+      this._fillColor = '#000000'; // fallback color
+      return this._fillColor;
+    }
+    const background = colors.body_color;
+    const color = colors.bg_color;
     const colorRgb = this.convertHexToRgb(color);
     const backgroundRgb = this.convertHexToRgb(background);
     
@@ -41,11 +46,11 @@ export class Colors {
   }
 
   public static getStrokeColor(): string {
-    return BandcampFacade.colors.link_color;
+    return BandcampFacade.colors?.link_color ?? '';
   }
 
   public static getLoadingColor(): Rgb {
-    const color = this.convertHexToRgb(BandcampFacade.colors.link_color);
+    const color = this.convertHexToRgb(BandcampFacade.colors?.link_color ?? '');
     return color ?? { r: 0, g: 0, b: 0 }; // fallback to black
   }
 

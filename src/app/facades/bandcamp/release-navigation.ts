@@ -1,4 +1,3 @@
-// @ts-nocheck - consistent with BandcampFacade; reads/writes facade-private navigation state at runtime
 /**
  * Release-page (album / track) track navigation.
  *

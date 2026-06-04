@@ -1,4 +1,3 @@
-// @ts-nocheck - Temporarily disable strict null checks for this large facade file
 import {SPEED_GRID_CLASS, TIMEOUT, WAVEFORM_ELEMENT_SELECTOR} from '../constants';
 import {Logger} from '../utils/logger';
 import {PageDetection} from './bandcamp/page-detection';
@@ -44,38 +43,38 @@ export enum BandcampWishlistState {
  * Class to handle the BandcampFacade module.
  */
 export class BandcampFacade {
-  private static _data: BandcampData;
+  private static _data?: BandcampData;
 
-  private static _colors: BandcampColors;
+  private static _colors?: BandcampColors;
 
-  private static _audio: HTMLAudioElement;
+  private static _audio?: HTMLAudioElement;
 
-  private static _wishlistItems: HTMLElement[] = [];
+  // Internal playback/navigation state shared with the bandcamp/* modules (intentionally not private).
+  static _wishlistItems: HTMLElement[] = [];
 
-  private static _currentWishlistIndex = -1;
+  static _currentWishlistIndex = -1;
 
-  private static _pendingNextTrackRequest = false;
+  static _pendingNextTrackRequest = false;
 
-  private static _errorRecoveryInProgress = false;
+  static _errorRecoveryInProgress = false;
 
-  private static _skipInProgress = false;
+  static _skipInProgress = false;
 
-  private static _consecutiveErrors = 0;
+  static _consecutiveErrors = 0;
 
-  private static _maxConsecutiveErrors = 3;
+  static _maxConsecutiveErrors = 3;
 
   private static _errorLogSuppressed = false;
 
-  private static _releaseNavigationInProgress = false;
+  static _releaseNavigationInProgress = false;
   
   // Flag to track when we're doing programmatic navigation (vs manual user clicks)
-  private static _programmaticNavigationInProgress = false;
-  // _playAttemptMade is already declared at line 59
+  static _programmaticNavigationInProgress = false;
 
   // Static list to keep track of problematic track IDs that return 404s
-  private static _problemTrackIds: Set<string> = new Set();
+  static _problemTrackIds: Set<string> = new Set();
 
-  public static get data(): BandcampData {
+  public static get data(): BandcampData | null {
     if (this._data) {
       return this._data;
     }
@@ -89,9 +88,10 @@ export class BandcampFacade {
     if (!dataBlob) {
       return null;
     }
-    this._data = JSON.parse(dataBlob);
+    const data = JSON.parse(dataBlob) as BandcampData;
+    this._data = data;
 
-    return this._data;
+    return data;
   }
 
   public static get isTrack(): boolean {
@@ -132,7 +132,7 @@ export class BandcampFacade {
     return this._currentWishlistIndex;
   }
 
-  public static get colors(): BandcampColors {
+  public static get colors(): BandcampColors | undefined {
     if (this._colors) {
       return this._colors;
     }
@@ -141,10 +141,13 @@ export class BandcampFacade {
 
     if (!node) {
       setTimeout(() => this.colors, TIMEOUT);
-      return;
+      return undefined;
     }
 
-    this._colors = JSON.parse(node.getAttribute('data-design'));
+    const design = node.getAttribute('data-design');
+    if (design) {
+      this._colors = JSON.parse(design);
+    }
 
     return this._colors;
   }
@@ -168,7 +171,7 @@ export class BandcampFacade {
   }
 
   public static get currentTrackContainer(): HTMLSpanElement {
-    return document.querySelector('#trackInfo span.title');
+    return document.querySelector('#trackInfo span.title') as HTMLSpanElement;
   }
 
   public static get trackTable(): HTMLTableElement | null {
@@ -176,7 +179,11 @@ export class BandcampFacade {
   }
 
   public static get tracks(): HTMLTableRowElement[] {
-    const tracks = this.trackTable.querySelectorAll('.track_row_view');
+    const table = this.trackTable;
+    if (!table) {
+      return [];
+    }
+    const tracks = table.querySelectorAll('.track_row_view');
     return Array.from(tracks as NodeListOf<HTMLTableRowElement>);
   }
 
@@ -193,7 +200,7 @@ export class BandcampFacade {
   public static getTrackInfo(): string {
     let payload = '';
 
-    const artist = document.getElementById('name-section').children[1]
+    const artist = document.getElementById('name-section')!.children[1]
       .children[0] as HTMLSpanElement;
     payload += artist.innerText;
 
@@ -324,7 +331,9 @@ export class BandcampFacade {
 
     const player = BandcampFacade.player;
     const tracks = BandcampFacade.trackTable;
-    player.insertAdjacentElement('afterend', tracks);
+    if (tracks) {
+      player.insertAdjacentElement('afterend', tracks);
+    }
   }
 
   public static playFirstTrack(): void {
@@ -514,7 +523,7 @@ export class BandcampFacade {
    * Check if there's a track currently playing or selected
    * @returns boolean indicating if a track is currently active
    */
-  private static hasCurrentlyPlayingTrack(): boolean {
+  static hasCurrentlyPlayingTrack(): boolean {
     try {
       // Check if there's a track marked as currently playing
       const currentTrackRow = document.querySelector('.track_row_view.current_track, .track_row_view.playing');

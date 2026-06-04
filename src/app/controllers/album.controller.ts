@@ -17,7 +17,7 @@ export class AlbumController {
       return;
     }
 
-    this.isLiked = BandcampFacade.data.fan_tralbum_data.is_wishlisted;
+    this.isLiked = BandcampFacade.data?.fan_tralbum_data.is_wishlisted ?? false;
 
     this.observeButton();
     this.addTracks();

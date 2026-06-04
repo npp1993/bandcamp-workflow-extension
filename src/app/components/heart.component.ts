@@ -8,7 +8,7 @@ export class HeartComponent {
 
   constructor() {
     this.node = document.createElement('button');
-    this.colors = BandcampFacade.colors;
+    this.colors = BandcampFacade.colors!;
     this.addStyles();
     this.renderLoading();
   }

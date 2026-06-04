@@ -1,4 +1,3 @@
-// @ts-nocheck - consistent with BandcampFacade; reaches facade foundation/state at runtime
 /**
  * Current-track actions: add-to-cart and wishlist toggling.
  *

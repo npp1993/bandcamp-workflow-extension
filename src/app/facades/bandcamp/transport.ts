@@ -1,4 +1,3 @@
-// @ts-nocheck - consistent with BandcampFacade; reaches facade foundation/state at runtime
 /**
  * Play/pause transport, extracted from BandcampFacade.
  *
