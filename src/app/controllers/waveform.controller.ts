@@ -3,6 +3,12 @@ import {BandcampFacade} from '../facades/bandcamp.facade';
 import {AudioUtils} from '../utils/audio-utils';
 import {SeekUtils} from '../utils/seek-utils';
 import {Logger} from '../utils/logger';
+import {
+  WAVEFORM_CONTAINER_CLASS,
+  WAVEFORM_ELEMENT_SELECTOR,
+  WAVEFORM_ERROR_CLASS,
+  WAVEFORM_LOADING_CLASS,
+} from '../constants';
 
 /**
  * Controller for waveform integration with Bandcamp pages
@@ -131,8 +137,8 @@ export class WaveformController {
 
       // Skip if audio source hasn't changed and we already have a waveform
       if (audio.src === this.lastAudioSrc && this.currentWaveformContainer && 
-          !this.currentWaveformContainer.classList.contains('bandcamp-waveform-loading') &&
-          !this.currentWaveformContainer.classList.contains('bandcamp-waveform-error')) {
+          !this.currentWaveformContainer.classList.contains(WAVEFORM_LOADING_CLASS) &&
+          !this.currentWaveformContainer.classList.contains(WAVEFORM_ERROR_CLASS)) {
         return;
       }
 
@@ -191,7 +197,7 @@ export class WaveformController {
     try {
       // Create container for the waveform
       const container = document.createElement('div');
-      container.className = 'bandcamp-waveform-container';
+      container.className = WAVEFORM_CONTAINER_CLASS;
 
       // Add canvas to container
       container.appendChild(canvas);
@@ -294,7 +300,7 @@ export class WaveformController {
   private static removeCurrentWaveform(): void {
     // Remove any existing waveform containers (including loading and error states)
     const existingContainers = document.querySelectorAll(
-      '.bandcamp-waveform-container, .bandcamp-waveform-loading, .bandcamp-waveform-error',
+      WAVEFORM_ELEMENT_SELECTOR,
     );
     
     existingContainers.forEach((container) => {
@@ -329,7 +335,7 @@ export class WaveformController {
   private static showLoadingIndicator(): void {
     try {
       const container = document.createElement('div');
-      container.className = 'bandcamp-waveform-loading';
+      container.className = WAVEFORM_LOADING_CLASS;
       container.style.cssText = `
         margin: 10px 0;
         padding: 15px;
@@ -383,7 +389,7 @@ export class WaveformController {
    * Remove loading indicator
    */
   private static removeLoadingIndicator(): void {
-    const loadingElement = document.querySelector('.bandcamp-waveform-loading');
+    const loadingElement = document.querySelector(`.${WAVEFORM_LOADING_CLASS}`);
     if (loadingElement && loadingElement.parentNode) {
       // Clear animation interval if it exists
       const intervalId = (loadingElement as HTMLElement).dataset.intervalId;
@@ -406,7 +412,7 @@ export class WaveformController {
   private static showErrorIndicator(): void {
     try {
       const container = document.createElement('div');
-      container.className = 'bandcamp-waveform-error';
+      container.className = WAVEFORM_ERROR_CLASS;
       container.style.cssText = `
         margin: 10px 0;
         padding: 10px;
@@ -537,7 +543,7 @@ export class WaveformController {
       pageSupported: this.isPageSupported(),
       cacheStats: WaveformService.getCacheStats(),
       existingContainers: document.querySelectorAll(
-        '.bandcamp-waveform-container, .bandcamp-waveform-loading, .bandcamp-waveform-error',
+        WAVEFORM_ELEMENT_SELECTOR,
       ).length,
     };
   }

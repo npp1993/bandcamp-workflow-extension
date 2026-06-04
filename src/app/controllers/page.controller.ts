@@ -10,6 +10,7 @@ import {DownloadHelperController} from './download-helper.controller';
 import {WaveformController} from './waveform.controller';
 import {KeyboardSidebarController} from './keyboard-sidebar.controller';
 import {Logger} from '../utils/logger';
+import {DOWNLOAD_ALL_CLASS, SPEED_GRID_CLASS, WAVEFORM_ELEMENT_SELECTOR} from '../constants';
 
 export interface Controllers {
   speed: SpeedController | null;
@@ -69,7 +70,7 @@ export class PageController {
       
       // Only create speed controller if it doesn't already exist (prevents duplicates)
       // Create it AFTER arrange() so it appears after the moved track table
-      if (!this.controllers.speed && !document.querySelector('.bandcamp-workflow-speed-grid')) {
+      if (!this.controllers.speed && !document.querySelector(`.${SPEED_GRID_CLASS}`)) {
         this.controllers.speed = new SpeedController();
         this.createSpeedRow();
       }
@@ -105,11 +106,9 @@ export class PageController {
   public cleanup(): void {
     // Remove existing extension elements (excluding global sidebars)
     const selectors = [
-      '.bandcamp-workflow-speed-grid', // Speed controller grids
-      '.bandcamp-waveform-container', // Waveform containers
-      '.bandcamp-waveform-loading', // Waveform loading indicators
-      '.bandcamp-waveform-error', // Waveform error indicators
-      '.bandcamp-workflow-download-all' // Download helper buttons
+      `.${SPEED_GRID_CLASS}`, // Speed controller grids
+      WAVEFORM_ELEMENT_SELECTOR, // Waveform container/loading/error elements
+      `.${DOWNLOAD_ALL_CLASS}`, // Download helper buttons
     ];
 
     selectors.forEach(selector => {
@@ -146,7 +145,7 @@ export class PageController {
     
     // Add a specific class for easier cleanup
     const gridNode = grid.getNode();
-    gridNode.classList.add('bandcamp-workflow-speed-grid');
+    gridNode.classList.add(SPEED_GRID_CLASS);
     
     // Insert below player (the arrangement will happen after this)
     BandcampFacade.insertBelowPlayer(gridNode);

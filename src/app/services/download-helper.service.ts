@@ -1,4 +1,5 @@
 import {Logger} from '../utils/logger';
+import {DOWNLOAD_ALL_CLASS} from '../constants';
 
 /**
  * Service for helping download Bandcamp purchased tracks
@@ -55,7 +56,7 @@ export class DownloadHelperService {
 
     this.button = document.createElement('button');
     this.button.title = "Generates a file for automating downloads using 'cURL'";
-    this.button.className = 'bandcamp-workflow-download-all';
+    this.button.className = DOWNLOAD_ALL_CLASS;
     this.button.disabled = true;
     this.button.textContent = 'Preparing download...';
 

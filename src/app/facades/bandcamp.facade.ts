@@ -1,5 +1,5 @@
 // @ts-nocheck - Temporarily disable strict null checks for this large facade file
-import {SEEK_STEP, TIMEOUT} from '../constants';
+import {SEEK_STEP, SPEED_GRID_CLASS, TIMEOUT, WAVEFORM_ELEMENT_SELECTOR} from '../constants';
 import {Logger} from '../utils/logger';
 import {AlbumOnlyUtils} from '../utils/album-only-utils';
 import {AudioUtils} from '../utils/audio-utils';
@@ -768,7 +768,7 @@ export class BandcampFacade {
 
   public static insertBelowWaveform(element: HTMLElement): void {
     // Look for existing waveform container first
-    const waveformContainer = document.querySelector('.bandcamp-waveform-container, .bandcamp-waveform-loading, .bandcamp-waveform-error');
+    const waveformContainer = document.querySelector(WAVEFORM_ELEMENT_SELECTOR);
     
     if (waveformContainer) {
       // Insert after the waveform
@@ -781,7 +781,7 @@ export class BandcampFacade {
 
   public static insertBelowSpeedController(element: HTMLElement): void {
     // Look for existing speed controller first
-    const speedController = document.querySelector('.bandcamp-workflow-speed-grid');
+    const speedController = document.querySelector(`.${SPEED_GRID_CLASS}`);
     
     if (speedController) {
       // Insert after the speed controller
