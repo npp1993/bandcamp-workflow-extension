@@ -114,11 +114,8 @@ export class WaveformController {
       return;
     }
 
-    if (this.currentWaveformContainer?.classList.contains(WAVEFORM_LOADING_CLASS)) {
-      return;
-    }
-
-    this.removeCurrentWaveform();
+    // showLoadingIndicator drops the stale waveform and is idempotent, so a
+    // spinner already up for this change is left running.
     this.showLoadingIndicator();
   }
 
@@ -193,10 +190,8 @@ export class WaveformController {
       this.isGenerating = true;
       this.lastAudioSrc = audioSrc;
 
-      // Remove existing waveform first
-      this.removeCurrentWaveform();
-
-      // Show loading indicator
+      // Show loading indicator (clears any rendered waveform, and reuses the
+      // spinner if the immediate track-change clear already mounted one).
       this.showLoadingIndicator();
 
       // Generate the waveform
@@ -427,6 +422,16 @@ export class WaveformController {
    */
   private static showLoadingIndicator(): void {
     try {
+      // Idempotent: if the spinner is already up (e.g. the immediate
+      // track-change clear mounted it), reuse it rather than tearing it down and
+      // recreating the element + its animation.
+      if (this.currentWaveformContainer?.classList.contains(WAVEFORM_LOADING_CLASS)) {
+        return;
+      }
+
+      // Drop any rendered waveform/error before showing the spinner.
+      this.removeCurrentWaveform();
+
       const container = document.createElement('div');
       container.className = WAVEFORM_LOADING_CLASS;
       // Fills the reserved slot (min-height inherited from the host) and centers
