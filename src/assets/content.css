@@ -258,6 +258,26 @@
   }
 }
 
+/* Reserved waveform slot: holds the loading/waveform/error state at a fixed
+   height so starting playback never shifts the rest of the page down. The exact
+   height is set inline from the column width (the canvas is a 10:1 ratio); the
+   72px here is only a fallback. */
+.bandcamp-waveform-host {
+  margin: 10px 0;
+  min-height: 72px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* The host owns the vertical spacing, so its child state element must not add
+   its own margin (which would make the slot taller than the reserved height). */
+.bandcamp-waveform-host > * {
+  margin: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
 /**
  * ------------------------------------------------------------
  * Toast Notifications

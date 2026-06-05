@@ -7,6 +7,7 @@ import {
   WAVEFORM_CONTAINER_CLASS,
   WAVEFORM_ELEMENT_SELECTOR,
   WAVEFORM_ERROR_CLASS,
+  WAVEFORM_HOST_CLASS,
   WAVEFORM_LOADING_CLASS,
 } from '../constants';
 
@@ -34,6 +35,10 @@ export class WaveformController {
       if (!this.isPageSupported()) {
         return;
       }
+
+      // Reserve the waveform slot now so starting playback later does not shift
+      // the rest of the page down.
+      this.ensureWaveformHost();
 
       // Set up audio event listeners to detect track changes
       this.setupAudioEventListeners();
@@ -208,12 +213,72 @@ export class WaveformController {
       // Set up playhead position tracking
       this.setupPlayheadTracking(container, canvas);
 
-      // Insert below speed controller if it exists, otherwise below player
-      BandcampFacade.insertBelowSpeedController(container);
-      
+      // Render into the reserved slot so the page does not shift; fall back to a
+      // direct insert if the slot could not be created.
+      this.mountInWaveformHost(container);
+
       this.currentWaveformContainer = container;
     } catch (error) {
       Logger.error('Error inserting waveform:', error);
+    }
+  }
+
+  /**
+   * Get (creating if needed) the persistent fixed-height slot that holds the
+   * waveform and its loading/error states. Reserving it up front means starting
+   * playback never pushes the rest of the page down. Track/album pages only.
+   *
+   * @returns The host element, or null if the page is unsupported
+   */
+  private static ensureWaveformHost(): HTMLElement | null {
+    if (!this.isPageSupported()) {
+      return null;
+    }
+
+    const existing = document.querySelector<HTMLElement>(`.${WAVEFORM_HOST_CLASS}`);
+    if (existing) {
+      return existing;
+    }
+
+    const host = document.createElement('div');
+    host.className = WAVEFORM_HOST_CLASS;
+
+    // Insert below the speed controller if it exists, otherwise below the player.
+    BandcampFacade.insertBelowSpeedController(host);
+    this.reserveHostHeight(host);
+
+    return host;
+  }
+
+  /**
+   * Reserve the exact height the rendered waveform will occupy. The canvas is
+   * 600x60 (a 10:1 ratio) and scales down to the column width via CSS, so the
+   * reserved height tracks the host's own width.
+   *
+   * @param host The waveform host element
+   */
+  private static reserveHostHeight(host: HTMLElement): void {
+    const width = host.clientWidth;
+    // canvas display width = min(intrinsic 600, content width); content width is
+    // the host width minus the container's 5px horizontal padding on each side.
+    const canvasWidth = width > 0 ? Math.min(600, width - 10) : 600;
+    // + container padding (5*2) and border (1*2)
+    const reserved = Math.round(canvasWidth / 10) + 12;
+    host.style.minHeight = `${reserved}px`;
+  }
+
+  /**
+   * Append a waveform state element (loading/waveform/error) into the reserved
+   * host slot, falling back to a direct page insert if the slot is unavailable.
+   *
+   * @param element The state element to mount
+   */
+  private static mountInWaveformHost(element: HTMLElement): void {
+    const host = this.ensureWaveformHost();
+    if (host) {
+      host.appendChild(element);
+    } else {
+      BandcampFacade.insertBelowSpeedController(element);
     }
   }
 
@@ -337,7 +402,6 @@ export class WaveformController {
       const container = document.createElement('div');
       container.className = WAVEFORM_LOADING_CLASS;
       container.style.cssText = `
-        margin: 10px 0;
         padding: 15px;
         background: rgba(0, 0, 0, 0.05);
         border-radius: 4px;
@@ -366,19 +430,19 @@ export class WaveformController {
       
       container.appendChild(loadingText);
       container.appendChild(dotsContainer);
-      
+
       // Animate dots
       let dotCount = 0;
       const animateDots = () => {
         dotCount = (dotCount + 1) % 4;
         dotsContainer.textContent = '.'.repeat(dotCount);
       };
-      
+
       // Start animation and store interval ID on container
       container.dataset.intervalId = setInterval(animateDots, 500).toString();
       animateDots(); // Initial call
 
-      BandcampFacade.insertBelowSpeedController(container);
+      this.mountInWaveformHost(container);
       this.currentWaveformContainer = container;
     } catch (error) {
       Logger.error('[WaveformController] Error showing loading indicator:', error);
@@ -414,7 +478,6 @@ export class WaveformController {
       const container = document.createElement('div');
       container.className = WAVEFORM_ERROR_CLASS;
       container.style.cssText = `
-        margin: 10px 0;
         padding: 10px;
         background: rgba(255, 0, 0, 0.1);
         border-radius: 4px;
@@ -424,7 +487,7 @@ export class WaveformController {
       `;
       container.textContent = 'Waveform generation failed';
 
-      BandcampFacade.insertBelowSpeedController(container);
+      this.mountInWaveformHost(container);
       this.currentWaveformContainer = container;
 
       // Auto-remove error after 5 seconds
@@ -522,7 +585,10 @@ export class WaveformController {
       
       // Remove any waveform containers
       this.removeCurrentWaveform();
-      
+
+      // Remove the reserved host slot (re-created on the next supported page)
+      document.querySelector(`.${WAVEFORM_HOST_CLASS}`)?.remove();
+
       // Clear expired cache
       WaveformService.clearExpiredCache();
     } catch (error) {

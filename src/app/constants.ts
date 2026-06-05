@@ -13,6 +13,9 @@ export const DOWNLOAD_ALL_CLASS = 'bandcamp-workflow-download-all';
 // Full-viewport overlay shown while the wishlist's lazy-loaded items are fetched,
 // so the user sees a clean spinner instead of the page scroll-loading up and down.
 export const WISHLIST_LOADING_CLASS = 'bandcamp-workflow-wishlist-loading';
+// Persistent fixed-height slot that holds the waveform (and its loading/error
+// states) on track/album pages, so starting playback never shifts the page down.
+export const WAVEFORM_HOST_CLASS = 'bandcamp-waveform-host';
 export const WAVEFORM_CONTAINER_CLASS = 'bandcamp-waveform-container';
 export const WAVEFORM_LOADING_CLASS = 'bandcamp-waveform-loading';
 export const WAVEFORM_ERROR_CLASS = 'bandcamp-waveform-error';
