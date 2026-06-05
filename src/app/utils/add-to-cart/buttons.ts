@@ -15,7 +15,6 @@ export class AddToCartButtons {
    */
   public static clickAddToCartButtonOnCurrentPage(): boolean {
     try {
-      let clicked = false;
       // Track vs album comes straight from TralbumData (the old body-text
       // 'album'/'track' scan false-matched on tracklists, descriptions, etc.).
       const isTrack = window.TralbumData?.item_type !== 'album';
@@ -25,8 +24,6 @@ export class AddToCartButtons {
       if (addToCartButtonByText) {
         Logger.debug('Found add to cart button by text content, clicking it');
         addToCartButtonByText.click();
-        clicked = true;
-
         // Auto-fill price after dialog opens
         AddToCartUtils.autoFillAddToCartPrice(isTrack);
         return true;
@@ -38,8 +35,6 @@ export class AddToCartButtons {
       if (addToCartButton) {
         Logger.debug('Found add to cart button by class selector, clicking it');
         addToCartButton.click();
-        clicked = true;
-
         // Auto-fill price after dialog opens
         AddToCartUtils.autoFillAddToCartPrice(isTrack);
         return true;
@@ -51,8 +46,6 @@ export class AddToCartButtons {
       if (addToCartLink) {
         Logger.debug('Found add to cart link, clicking it');
         addToCartLink.click();
-        clicked = true;
-
         // Auto-fill price after dialog opens
         AddToCartUtils.autoFillAddToCartPrice(isTrack);
         return true;

@@ -330,6 +330,20 @@ export class BandcampFacade {
     }
   }
 
+  /**
+   * The play control inside a release-page track row: td.play-col > a[role=button]
+   * > div.play_status (verified DOM). Returns the inner .play_status (the element
+   * the player's click handler binds to); the anchor is a fallback for other
+   * layouts.
+   *
+   * @param row A .track_row_view row element
+   * @returns The play control, or null if none is present
+   */
+  public static getRowPlayControl(row: HTMLElement): HTMLElement | null {
+    return (row.querySelector('td.play-col .play_status')
+      ?? row.querySelector('td.play-col a[role="button"]')) as HTMLElement | null;
+  }
+
   public static playFirstTrack(): void {
     try {
       Logger.debug('=== PLAY FIRST TRACK ANALYSIS START ===');
@@ -352,12 +366,7 @@ export class BandcampFacade {
       }
 
       Logger.debug(`First row found: ${firstRow.className}`);
-      // Precise play control: td.play-col > a[role=button] > div.play_status
-      // (verified against the live DOM), instead of a positional descent. Click
-      // the inner .play_status (what the player's handler binds to); the click
-      // bubbles to the anchor either way. Anchor is a fallback for other layouts.
-      const firstPlayButton = (firstRow.querySelector('td.play-col .play_status')
-        ?? firstRow.querySelector('td.play-col a[role="button"]')) as HTMLElement | null;
+      const firstPlayButton = BandcampFacade.getRowPlayControl(firstRow);
 
       if (!firstPlayButton) {
         Logger.warn('No first track play button found');
@@ -379,10 +388,10 @@ export class BandcampFacade {
 
       Logger.debug(`First track play button found: ${firstPlayButton.className}`);
       
-      // If the first track is already playing, don't click it again
-      if (firstRow.classList.contains('current_track') ||
-          firstRow.classList.contains('playing') ||
-          firstPlayButton.classList.contains('playing')) {
+      // If the first track is already playing, don't click it again. Gate on the
+      // play control's own 'playing' state, NOT the row's current_track class
+      // (current_track marks the selected row, which may be paused).
+      if (firstPlayButton.classList.contains('playing')) {
         Logger.debug('First track is already playing');
         Logger.debug('=== PLAY FIRST TRACK ANALYSIS END (already playing) ===');
         return;
