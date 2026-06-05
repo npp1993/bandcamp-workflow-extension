@@ -414,12 +414,16 @@ export class WaveformController {
       `;
 
       // Rotating spinner (Web Animations API, matching the wishlist overlay).
+      // Use the page's text color so it contrasts with the background on any theme.
+      const spinnerColor = BandcampFacade.colors?.text_color
+        ? `#${BandcampFacade.colors.text_color}`
+        : '#555555';
       const spinner = document.createElement('div');
       spinner.style.cssText = `
         width: 20px;
         height: 20px;
         border-radius: 50%;
-        border: 2px solid rgba(0, 0, 0, 0.25);
+        border: 2px solid ${spinnerColor};
         border-right-color: transparent;
       `;
       spinner.animate(
