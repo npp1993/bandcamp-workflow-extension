@@ -10,7 +10,7 @@ import {DownloadHelperController} from './download-helper.controller';
 import {WaveformController} from './waveform.controller';
 import {KeyboardSidebarController} from './keyboard-sidebar.controller';
 import {Logger} from '../utils/logger';
-import {DOWNLOAD_ALL_CLASS, SPEED_GRID_CLASS, WAVEFORM_ELEMENT_SELECTOR} from '../constants';
+import {DOWNLOAD_ALL_CLASS, SPEED_GRID_CLASS, WAVEFORM_ELEMENT_SELECTOR, WISHLIST_LOADING_CLASS} from '../constants';
 
 export interface Controllers {
   speed: SpeedController | null;
@@ -109,6 +109,7 @@ export class PageController {
       `.${SPEED_GRID_CLASS}`, // Speed controller grids
       WAVEFORM_ELEMENT_SELECTOR, // Waveform container/loading/error elements
       `.${DOWNLOAD_ALL_CLASS}`, // Download helper buttons
+      `.${WISHLIST_LOADING_CLASS}`, // Wishlist load overlay (if a load is interrupted by SPA nav)
     ];
 
     selectors.forEach(selector => {

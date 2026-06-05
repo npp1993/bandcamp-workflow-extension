@@ -2107,7 +2107,7 @@ export class WishlistPlayback {
    */
   private static async scrollLoadWishlistItems(targetCount: number): Promise<HTMLElement[]> {
     const SETTLE_MS = 350;       // pause between batches for Bandcamp to render
-    const MAX_STALL_ROUNDS = 4;  // stop after this many rounds with no new items
+    const MAX_STALL_ROUNDS = 8;  // stop after this many rounds with no new items (~2.8s slack for slow networks)
     const MAX_ROUNDS = 40;       // hard ceiling for very large wishlists
 
     const docHeight = (): number => Math.max(
@@ -2119,21 +2119,17 @@ export class WishlistPlayback {
     );
 
     let items = this.loadWishlistItems();
-    let lastCount = items.length;
     let stallRounds = 0;
 
-    for (let round = 0; round < MAX_ROUNDS; round++) {
-      if (items.length >= targetCount) {
-        break;
-      }
+    for (let round = 0; round < MAX_ROUNDS && items.length < targetCount; round++) {
+      const prevCount = items.length;
 
       // Pin to the (growing) bottom to trigger the next lazy batch.
       window.scrollTo(0, docHeight());
       await new Promise((resolve) => setTimeout(resolve, SETTLE_MS));
 
       items = this.loadWishlistItems();
-      if (items.length > lastCount) {
-        lastCount = items.length;
+      if (items.length > prevCount) {
         stallRounds = 0;
       } else if (++stallRounds >= MAX_STALL_ROUNDS) {
         Logger.debug(`Wishlist load stalled at ${items.length}/${targetCount}`);
@@ -2169,20 +2165,16 @@ export class WishlistPlayback {
       'opacity:0', 'transition:opacity 0.15s ease',
     ].join(';');
 
-    // Inject the spinner keyframes once.
-    if (!document.getElementById('bandcamp-workflow-spin-style')) {
-      const style = document.createElement('style');
-      style.id = 'bandcamp-workflow-spin-style';
-      style.textContent = '@keyframes bandcamp-workflow-spin{to{transform:rotate(360deg)}}';
-      document.head.appendChild(style);
-    }
-
     const spinner = document.createElement('div');
     spinner.style.cssText = [
       'width:34px', 'height:34px', 'border-radius:50%',
       `border:3px solid ${fg}`, 'border-right-color:transparent',
-      'animation:bandcamp-workflow-spin 0.7s linear infinite',
     ].join(';');
+    // Spin via the Web Animations API (matches HeartComponent; no injected <style>).
+    spinner.animate(
+      [{transform: 'rotate(0deg)'}, {transform: 'rotate(360deg)'}],
+      {duration: 700, iterations: Infinity},
+    );
 
     const label = document.createElement('div');
     label.textContent = 'Loading your wishlist…';
@@ -2192,10 +2184,10 @@ export class WishlistPlayback {
     overlay.appendChild(label);
     document.body.appendChild(overlay);
 
-    // Fade in on the next frame.
-    requestAnimationFrame(() => {
-      overlay.style.opacity = '1';
-    });
+    // Force a reflow so the opacity:0 -> 1 transition runs, synchronously (no rAF
+    // race with the hide path on fast loads).
+    void overlay.offsetHeight;
+    overlay.style.opacity = '1';
 
     return overlay;
   }
