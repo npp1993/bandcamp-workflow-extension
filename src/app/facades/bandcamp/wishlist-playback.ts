@@ -1334,61 +1334,16 @@ export class WishlistPlayback {
    */
   public static findPlayButton(item: HTMLElement): HTMLElement | null {
     try {
-      // Try multiple selectors for play buttons that might exist in the item
-      const button = DOMSelectors.findOneWithSelectors<HTMLElement>(DOMSelectors.PLAY_BUTTONS, item);
-      if (button) {
-        return button;
+      // Precise: a wishlist/collection item's play control is the art anchor
+      // (a.track_play_auxiliary, wrapping .item_link_play) - verified DOM, and
+      // the element the extension's own play listener is attached to.
+      const precise = item.querySelector('a.track_play_auxiliary, .item_link_play') as HTMLElement | null;
+      if (precise) {
+        return precise;
       }
-      
-      // Check for any element with an onclick handler that might be a play button
-      const clickElements = Array.from(item.querySelectorAll('*[onclick]'));
-      for (const element of clickElements) {
-        const onclick = element.getAttribute('onclick');
-        if (onclick && (onclick.includes('play') || onclick.includes('Play'))) {
-          return element as HTMLElement;
-        }
-      }
-      
-      // Look for elements with typical play button styling or icon classes
-      const elements = Array.from(item.querySelectorAll('*'));
-      for (const element of elements) {
-        // Check class names for play indicators
-        const classNames = element.className || '';
-        if (typeof classNames === 'string' && 
-            (classNames.includes('play') || 
-             classNames.includes('Play') || 
-             classNames.includes('control'))) {
-          return element as HTMLElement;
-        }
-        
-        // Check for typical play button icons (font awesome, etc)
-        const children = element.children;
-        for (let i = 0; i < children.length; i++) {
-          const child = children[i];
-          if (child.nodeName === 'I' || child.nodeName === 'SPAN') {
-            const childClass = child.className || '';
-            if (typeof childClass === 'string' && 
-                (childClass.includes('fa-play') || 
-                 childClass.includes('icon-play') || 
-                 childClass.includes('play-icon'))) {
-              return element as HTMLElement;
-            }
-          }
-        }
-      }
-      
-      // Final fallback - any element with 'play' in its attribute values
-      for (const element of elements) {
-        const attributes = Array.from(element.attributes);
-        for (const attr of attributes) {
-          if (attr.value.toLowerCase().includes('play')) {
-            return element as HTMLElement;
-          }
-        }
-      }
-      
-      // No play button found
-      return null;
+
+      // Fallback to the shared play-button selector list (covers other layouts).
+      return DOMSelectors.findOneWithSelectors<HTMLElement>(DOMSelectors.PLAY_BUTTONS, item);
     } catch (error) {
       ErrorHandler.withErrorHandling(() => {
         throw error; 
@@ -2006,61 +1961,21 @@ export class WishlistPlayback {
       
       Logger.debug('Need to load more items, looking for "view all items" button...');
       
-      // Look for "show-more" buttons
-      const showMoreButtons = Array.from(document.getElementsByClassName('show-more')) as HTMLElement[];
-      Logger.debug(`Found ${showMoreButtons.length} buttons with class="show-more"`);
-      
-      Logger.debug(`Wishlist tab active: ${wishlistTabIsActive}`);
-      
-      // Find buttons with "view all X items" text
-      const itemButtons = showMoreButtons.filter((button) => {
-        const text = button.textContent?.trim().toLowerCase() || '';
-        return /^view all \d+ items?$/.test(text);
-      });
-      
-      Logger.debug(`Found ${itemButtons.length} buttons with "view all X items" text`);
-      
-      // Extract counts from button text for sorting
-      const buttonDetails = itemButtons.map((button) => {
-        const text = button.textContent?.trim().toLowerCase() || '';
-        const match = text.match(/view all (\d+) items?/);
-        const count = match ? parseInt(match[1], 10) : 0;
-        
-        return {button, count, text};
-      });
-      
-      Logger.debug('Available item buttons:');
-      buttonDetails.forEach((details) => {
-        Logger.debug(`- "${details.text}" (count: ${details.count})`);
-      });
-      
-      // Match button with the count that matches the wishlist tab count
-      let wishlistButton = buttonDetails.find((details) => details.count === wishlistCount)?.button;
-      
-      // If we couldn't find a matching button by count, try other approaches
-      if (!wishlistButton && buttonDetails.length > 1) {
-        Logger.debug('Could not find button with count matching wishlist tab, using position approach');
-        
-        // On typical Bandcamp profiles, the tabs are: collection, wishlist, followers, following
-        // So the second "items" button should be for wishlist if there are two
-        if (buttonDetails.length >= 2) {
-          // Sort buttons by their numeric count
-          const buttonsByCount = showMoreButtons.filter((button) => {
-            const text = button.textContent?.trim().toLowerCase() || '';
-            return /^view all \d+ items?$/.test(text);
-          }).map((button) => {
-            const text = button.textContent?.trim().toLowerCase() || '';
-            const match = text.match(/view all (\d+) items?/);
-            const count = match ? parseInt(match[1], 10) : 999999;
-            return {button, count};
-          }).sort((a, b) => a.count - b.count);
-          
-          // Use the button with the smallest count (likely the wishlist)
-          if (buttonsByCount.length > 0) {
-            wishlistButton = buttonsByCount[0].button;
-            Logger.debug(`Found wishlist button by position approach: "${wishlistButton.textContent?.trim()}"`);
-          }
-        }
+      // The wishlist's "view all N items" button lives inside #wishlist-grid.
+      // The followers/fans/genres tabs render their own .show-more buttons, so
+      // target the grid directly instead of matching button text and then
+      // guessing which one is the wishlist by position/count.
+      let wishlistButton = document.querySelector('#wishlist-grid .show-more') as HTMLElement | null;
+
+      // Fallback (in case the grid id changes): a .show-more reading
+      // "view all N items", preferring the one whose N matches the wishlist tab.
+      if (!wishlistButton) {
+        const itemButtons = (Array.from(document.getElementsByClassName('show-more')) as HTMLElement[])
+          .filter((b) => /^view all \d+ items?$/.test((b.textContent ?? '').trim().toLowerCase()));
+        wishlistButton = itemButtons.find(
+          (b) => Number((b.textContent ?? '').match(/\d+/)?.[0]) === wishlistCount,
+        ) ?? itemButtons[0] ?? null;
+        Logger.debug(`#wishlist-grid .show-more not found; text fallback picked: "${wishlistButton?.textContent?.trim() ?? 'none'}"`);
       }
       
       if (!wishlistButton) {

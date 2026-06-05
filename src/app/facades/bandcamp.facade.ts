@@ -198,25 +198,19 @@ export class BandcampFacade {
   }
 
   public static getTrackInfo(): string {
-    let payload = '';
+    // Prefer the structured TralbumData (artist + current title) over scraping
+    // the DOM by positional descent, which breaks on any markup reorder.
+    const td = window.TralbumData ?? {};
 
-    const artist = document.getElementById('name-section')!.children[1]
-      .children[0] as HTMLSpanElement;
-    payload += artist.innerText;
+    const artist = (typeof td.artist === 'string' && td.artist.trim())
+      || document.querySelector('#name-section h3 span a, #name-section h3 span')?.textContent?.trim()
+      || '';
 
-    if (this.isTrack) {
-      const trackTitle = document.getElementsByClassName(
-        'trackTitle',
-      )[0] as HTMLTitleElement;
-      payload += ` ${trackTitle.innerText}`;
-    } else if (this.isAlbum) {
-      const albumTitle = document.getElementsByClassName(
-        'title-section',
-      )[0] as HTMLSpanElement;
-      payload += ` ${albumTitle.innerText}`;
-    }
+    const title = (td.current && typeof td.current.title === 'string' && td.current.title.trim())
+      || (document.querySelector('#name-section .trackTitle, #name-section .title-section') as HTMLElement | null)?.innerText?.trim()
+      || '';
 
-    return payload.trim();
+    return `${artist} ${title}`.trim();
   }
 
   public static arrange(): void {
@@ -349,7 +343,7 @@ export class BandcampFacade {
       }
 
       Logger.debug(`Track table found with ${tracks.children.length} children`);
-      const firstRow = tracks?.children[0]?.children[0] as HTMLTableRowElement;
+      const firstRow = tracks.querySelector('.track_row_view') as HTMLTableRowElement | null;
 
       if (!firstRow) {
         Logger.warn('No first track row found');
@@ -358,8 +352,12 @@ export class BandcampFacade {
       }
 
       Logger.debug(`First row found: ${firstRow.className}`);
-      const firstPlayButton = firstRow?.children[0]?.children[0]
-        ?.children[0] as HTMLDivElement;
+      // Precise play control: td.play-col > a[role=button] > div.play_status
+      // (verified against the live DOM), instead of a positional descent. Click
+      // the inner .play_status (what the player's handler binds to); the click
+      // bubbles to the anchor either way. Anchor is a fallback for other layouts.
+      const firstPlayButton = (firstRow.querySelector('td.play-col .play_status')
+        ?? firstRow.querySelector('td.play-col a[role="button"]')) as HTMLElement | null;
 
       if (!firstPlayButton) {
         Logger.warn('No first track play button found');
@@ -382,7 +380,9 @@ export class BandcampFacade {
       Logger.debug(`First track play button found: ${firstPlayButton.className}`);
       
       // If the first track is already playing, don't click it again
-      if (firstPlayButton.classList.contains('playing')) {
+      if (firstRow.classList.contains('current_track') ||
+          firstRow.classList.contains('playing') ||
+          firstPlayButton.classList.contains('playing')) {
         Logger.debug('First track is already playing');
         Logger.debug('=== PLAY FIRST TRACK ANALYSIS END (already playing) ===');
         return;

@@ -11,15 +11,23 @@ export class AlbumOnlyUtils {
    */
   public static checkForAlbumOnlyPurchase(): {isAlbumOnly: boolean; indicators?: string[];} {
     try {
-      const pageText = document.body.textContent || '';
-      
-      // Simple logic: if we can't find "Buy Digital Track", consider it album-only
-      const hasIndividualTrackPurchase = pageText.includes('Buy Digital Track');
+      // Look only at the purchase section's own buy controls (.buyItem), not the
+      // whole page, so the phrase appearing in a review/description/credits can't
+      // flip the result. A track is individually purchasable iff its buy section
+      // offers a "Digital Track" package.
+      const buySection = Array.from(
+        document.querySelectorAll('.buyItem .buyItemPackageTitle, .buyItem .buy-link'),
+      );
+      const hasIndividualTrackPurchase = buySection.some(
+        (el) => /digital track/i.test(el.textContent ?? ''),
+      );
       const isAlbumOnly = !hasIndividualTrackPurchase;
 
       return {
         isAlbumOnly,
-        indicators: isAlbumOnly ? ['Buy Digital Track not found'] : ['Buy Digital Track found'],
+        indicators: [hasIndividualTrackPurchase
+          ? 'Digital Track buy option present'
+          : 'No Digital Track buy option in buy section'],
       };
     } catch (error) {
       Logger.error('Error checking for album-only purchase:', error);

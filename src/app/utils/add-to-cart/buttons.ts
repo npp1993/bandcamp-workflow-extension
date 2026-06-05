@@ -16,13 +16,9 @@ export class AddToCartButtons {
   public static clickAddToCartButtonOnCurrentPage(): boolean {
     try {
       let clicked = false;
-      let isTrack = true; // Default to track, will try to detect
-
-      // Try to detect if this is a track or album page
-      const pageText = document.body.textContent?.toLowerCase() || '';
-      if (pageText.includes('album') && !pageText.includes('track')) {
-        isTrack = false;
-      }
+      // Track vs album comes straight from TralbumData (the old body-text
+      // 'album'/'track' scan false-matched on tracklists, descriptions, etc.).
+      const isTrack = window.TralbumData?.item_type !== 'album';
 
       // First, try to find add to cart buttons by text content (most reliable for modern Bandcamp)
       const addToCartButtonByText = this.findAddToCartButtonByText();
@@ -80,8 +76,20 @@ export class AddToCartButtons {
    * @returns The add to cart button element or null if not found
    */
   private static findAddToCartButtonByText(): HTMLElement | null {
-    // Look for buttons and links with add to cart related text, excluding the
-    // extension's own injected controls.
+    // Prefer the verified digital buy button in the purchase section
+    // (.buyItem.digital > h4.compound-button.main-button > button.buy-link =
+    // "Buy Digital Track/Album"), which opens the buy dialog. Language- and
+    // copy-independent, unlike the text scan below.
+    const digitalBuy = document.querySelector(
+      '.buyItem.digital .compound-button.main-button .buy-link',
+    ) as HTMLElement | null;
+    if (digitalBuy && digitalBuy.offsetParent !== null) {
+      Logger.debug('Found digital buy button via .buyItem.digital main-button');
+      return digitalBuy;
+    }
+
+    // Fallback: look for buttons and links with add-to-cart related text,
+    // excluding the extension's own injected controls.
     const allElements = Array.from(document.querySelectorAll('button, a, span[role="button"], div[role="button"], span.buyItem, .buyItem'))
       .filter((el) => !`${el.className || ''}`.includes('bandcamp-workflow'));
     

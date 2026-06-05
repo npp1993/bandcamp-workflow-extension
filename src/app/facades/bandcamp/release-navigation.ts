@@ -25,17 +25,22 @@ export class ReleaseNavigation {
     const targetTrack = tracks[trackIndex];
     
     try {
-      // Use the same approach as playFirstTrack which works
-      // Structure: track row -> children[0] -> children[0] -> children[0] = play button div
-      const playButton = targetTrack?.children[0]?.children[0]?.children[0] as HTMLDivElement;
-      
+      // Precise play control within the track row: td.play-col > a[role=button]
+      // > div.play_status (verified DOM), instead of a positional descent. Click
+      // the inner .play_status (the player's handler target); the anchor is a
+      // fallback for other layouts.
+      const playButton = (targetTrack.querySelector('td.play-col .play_status')
+        ?? targetTrack.querySelector('td.play-col a[role="button"]')) as HTMLElement | null;
+
       if (!playButton) {
-        Logger.debug(`No play button found for track ${trackIndex + 1} using playFirstTrack structure`);
+        Logger.debug(`No play button found for track ${trackIndex + 1} using play-col selector`);
         return;
       }
-      
+
       // Check if this track is already playing
-      if (playButton.classList.contains('playing')) {
+      if (targetTrack.classList.contains('current_track') ||
+          targetTrack.classList.contains('playing') ||
+          playButton.classList.contains('playing')) {
         Logger.debug(`Track ${trackIndex + 1} is already playing`);
         return;
       }
