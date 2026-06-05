@@ -65,33 +65,61 @@ export class WaveformController {
    */
   private static setupAudioEventListeners(): void {
     try {
-      // Listen for audio source changes with debouncing
-      const checkAudioChanges = () => {
-        const audio = AudioUtils.getAudioElement();
-        if (audio && audio.src && audio.src !== this.lastAudioSrc) {
-          this.debouncedGenerateWaveform();
-        }
+      // When an audio signal arrives, first drop the previous track's waveform
+      // immediately (showing the loading state), then debounce the expensive
+      // regeneration. The immediate clear is what stops the old waveform from
+      // lingering under the new track for the whole debounce + fetch window.
+      const onAudioSignal = (delay: number) => {
+        this.clearWaveformIfTrackChanged();
+        this.debouncedGenerateWaveform(delay);
       };
 
-      // Check for audio changes periodically
-      setInterval(checkAudioChanges, 1000);
+      // Check for audio source changes periodically (fallback for missed events)
+      setInterval(() => {
+        const audio = AudioUtils.getAudioElement();
+        if (audio && audio.src && audio.src !== this.lastAudioSrc) {
+          onAudioSignal(300);
+        }
+      }, 1000);
 
       // Listen for loadstart events on audio elements (existing and future)
       document.addEventListener('loadstart', (event) => {
         if (event.target instanceof HTMLAudioElement) {
-          this.debouncedGenerateWaveform(1000);
+          onAudioSignal(1000);
         }
       }, true);
 
       // Listen for play events
       document.addEventListener('play', (event) => {
         if (event.target instanceof HTMLAudioElement) {
-          this.debouncedGenerateWaveform(500);
+          onAudioSignal(500);
         }
       }, true);
     } catch (error) {
       Logger.error('Error setting up audio event listeners:', error);
     }
+  }
+
+  /**
+   * If the audio source changed since the current waveform was rendered, remove
+   * that now-stale waveform and show the loading spinner right away. This
+   * decouples clearing the old track's waveform (immediate) from rendering the
+   * new one (debounced + async), so the previous waveform never lingers under
+   * the new track. No-op when the source is unchanged or the loading state is
+   * already showing for this change.
+   */
+  private static clearWaveformIfTrackChanged(): void {
+    const audio = AudioUtils.getAudioElement();
+    if (!audio || !audio.src || audio.src === this.lastAudioSrc) {
+      return;
+    }
+
+    if (this.currentWaveformContainer?.classList.contains(WAVEFORM_LOADING_CLASS)) {
+      return;
+    }
+
+    this.removeCurrentWaveform();
+    this.showLoadingIndicator();
   }
 
   /**
