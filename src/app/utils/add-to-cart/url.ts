@@ -13,10 +13,33 @@ export class AddToCartUrl {
    * @returns The URL with wishlist=true parameter
    */
   public static addWishlistParameterToUrl(url: string): string {
-    if (url.includes('?')) {
-      return url + '&wishlist=true';
-    } else {
-      return url + '?wishlist=true';
+    return this.addParams(url, {wishlist: 'true'});
+  }
+
+
+  /**
+   * Add query parameters to a URL, correctly placing them before any #fragment
+   * (a naive `?`/`&` append puts them inside the fragment, where
+   * `location.search` never sees them).
+   *
+   * @param url The URL to modify
+   * @param params Key/value parameters to set
+   * @returns The URL with the parameters applied
+   */
+  private static addParams(url: string, params: Record<string, string>): string {
+    try {
+      const u = new URL(url, window.location.href);
+      for (const [key, value] of Object.entries(params)) {
+        u.searchParams.set(key, value);
+      }
+      return u.toString();
+    } catch {
+      // Fallback for non-parseable strings: insert before any fragment.
+      const [base, ...fragParts] = url.split('#');
+      const sep = base.includes('?') ? '&' : '?';
+      const query = Object.entries(params).map(([k, v]) => `${k}=${v}`).join('&');
+      const fragment = fragParts.length > 0 ? `#${fragParts.join('#')}` : '';
+      return `${base}${sep}${query}${fragment}`;
     }
   }
 
@@ -41,18 +64,11 @@ export class AddToCartUrl {
    * @returns The URL with add_to_cart=true parameter (and optionally close_tab_after_add=true)
    */
   public static addCartParameterToUrl(url: string, closeTabAfterAdd = false): string {
-    const params = ['add_to_cart=true'];
+    const params: Record<string, string> = {add_to_cart: 'true'};
     if (closeTabAfterAdd) {
-      params.push('close_tab_after_add=true');
+      params.close_tab_after_add = 'true';
     }
-    
-    const paramString = params.join('&');
-    
-    if (url.includes('?')) {
-      return url + '&' + paramString;
-    } else {
-      return url + '?' + paramString;
-    }
+    return this.addParams(url, params);
   }
 
 

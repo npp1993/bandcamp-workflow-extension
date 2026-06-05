@@ -1,7 +1,7 @@
+import {AddToCartUtils} from '../add-to-cart-utils';
 import {DOMSelectors} from '../dom-selectors';
 import {ErrorHandler} from '../error-handler';
 import {Logger} from '../logger';
-import {AddToCartUtils} from '../add-to-cart-utils';
 
 /**
  * Finding and clicking add-to-cart buttons/links.
@@ -80,8 +80,10 @@ export class AddToCartButtons {
    * @returns The add to cart button element or null if not found
    */
   private static findAddToCartButtonByText(): HTMLElement | null {
-    // Look for buttons and links with add to cart related text
-    const allElements = Array.from(document.querySelectorAll('button, a, span[role="button"], div[role="button"], span.buyItem, .buyItem'));
+    // Look for buttons and links with add to cart related text, excluding the
+    // extension's own injected controls.
+    const allElements = Array.from(document.querySelectorAll('button, a, span[role="button"], div[role="button"], span.buyItem, .buyItem'))
+      .filter((el) => !`${el.className || ''}`.includes('bandcamp-workflow'));
     
     // Physical formats to avoid (prioritize digital over physical)
     const physicalFormats = [
@@ -223,135 +225,95 @@ export class AddToCartButtons {
   }
 
 
+  // Labels that would advance toward or complete a purchase. The extension must
+  // add to cart only, so a button matching any of these is never clicked.
+  private static readonly PURCHASE_LABELS = /\b(buy now|pay|purchase|checkout|check out|place (your )?order|complete|confirm)\b/i;
+
   /**
-   * Automatically click the "Add to cart" button in the buy dialog
+   * Automatically click the buy dialog's "Add to cart" button.
+   *
+   * Targets Bandcamp's canonical, dialog-scoped add-to-cart control rather than
+   * guessing by color/class, and refuses any control whose label would advance
+   * toward checkout/payment.
    */
   public static clickAddToCartButton(): void {
-    try {
-      // Check if we should close the tab after adding to cart
-      const urlParams = new URLSearchParams(window.location.search);
-      const shouldCloseTab = urlParams.get('close_tab_after_add') === 'true';
+    const urlParams = new URLSearchParams(window.location.search);
+    const shouldCloseTab = urlParams.get('close_tab_after_add') === 'true';
 
-      // Look for the "Add to cart" button with multiple possible selectors
-      const addToCartSelectors = [
-        'button[title*="Add to cart"]',
-        '.add-to-cart-button',
-        '.cart-button',
-        'button[class*="cart"]',
-        'input[value*="Add to cart"]',
-        'button[value*="Add to cart"]',
-        // Based on the screenshot, look for blue button with cart icon
-        '.buynow-btn', // Common Bandcamp buy button class
-        'button[style*="background-color: rgb(27, 129, 229)"]', // Blue color from screenshot
-        'button[style*="background-color: #1b81e5"]', // Blue color hex
-      ];
-      
-      let addToCartButton: HTMLElement | null = null;
-      
-      // First try to find button by text content (most reliable)
-      const allButtons = Array.from(document.querySelectorAll('button, input[type="button"], input[type="submit"], a[role="button"]'));
-      
-      for (const button of allButtons) {
-        const text = button.textContent?.trim().toLowerCase() || '';
-        const value = (button as HTMLInputElement).value?.toLowerCase() || '';
-        const className = button.className || '';
-        
-        // Skip extension's own sidebar buttons to prevent infinite loop
-        if (className.includes('bandcamp-workflow-hotkey') || 
-            className.includes('bandcamp-workflow-setting') ||
-            className.includes('bandcamp-workflow')) {
-          continue;
-        }
-        
-        if (text.includes('add to cart') || value.includes('add to cart') || 
-            text.includes('🛒') || text.includes('cart')) {
-          addToCartButton = button as HTMLElement;
-          Logger.debug('Found "Add to cart" button by text:', text || value);
-          break;
-        }
-      }
-      
-      // If not found by text, try the selectors
-      if (!addToCartButton) {
-        for (const selector of addToCartSelectors) {
-          const buttons = Array.from(document.querySelectorAll(selector)) as HTMLElement[];
-          
-          for (const button of buttons) {
-            // Skip extension's own sidebar buttons
-            if (button.className.includes('bandcamp-workflow')) {
-              continue;
-            }
-            
-            if (button && button.offsetParent !== null) { // Check if visible
-              addToCartButton = button;
-              Logger.debug('Found "Add to cart" button by selector:', selector);
-              break;
-            }
-          }
-          
-          if (addToCartButton) {
-            break;
-          }
-        }
-      }
-      
-      // Last resort: look for any blue button in the dialog (common Bandcamp pattern)
-      if (!addToCartButton) {
-        const blueButtons = Array.from(document.querySelectorAll('button')) as HTMLElement[];
-        
-        for (const button of blueButtons) {
-          // Skip extension's own sidebar buttons
-          if (button.className.includes('bandcamp-workflow')) {
-            continue;
-          }
-          
-          const styles = window.getComputedStyle(button);
-          const bgColor = styles.backgroundColor;
-          
-          // Check for blue-ish background colors (Bandcamp's "Add to cart" is typically blue)
-          if (bgColor.includes('rgb(27, 129, 229)') || bgColor.includes('rgb(29, 161, 242)') || 
-              bgColor.includes('#1b81e5') || bgColor.includes('#1da1f2') ||
-              bgColor.includes('blue') || button.className.includes('primary')) {
-            addToCartButton = button;
-            Logger.debug('Found potential "Add to cart" button by blue color');
-            break;
-          }
-        }
-      }
-      
+    try {
+      const addToCartButton = this.findDialogAddToCartButton();
+
       if (addToCartButton) {
         Logger.debug('Clicking "Add to cart" button');
         addToCartButton.click();
-        
-        // Close tab immediately after clicking if requested
+
         if (shouldCloseTab) {
           Logger.debug('Closing tab after add to cart button click');
-          // Small delay to ensure the click is processed
-          setTimeout(() => {
-            window.close();
-          }, 100);
+          setTimeout(() => window.close(), 100);
         }
       } else {
         Logger.warn('Could not find "Add to cart" button to click automatically');
-        // If we can't find the button but should close tab, close anyway
         if (shouldCloseTab) {
           Logger.debug('Closing tab - could not find add to cart button');
-          setTimeout(() => {
-            window.close();
-          }, 1000); // Give more time in case something is still loading
+          setTimeout(() => window.close(), 1000);
         }
       }
     } catch (error) {
       Logger.error('Error clicking "Add to cart" button:', error);
-      // If there's an error but we should close tab, still close it
-      const urlParams = new URLSearchParams(window.location.search);
-      const shouldCloseTab = urlParams.get('close_tab_after_add') === 'true';
       if (shouldCloseTab) {
         Logger.debug('Closing tab after error');
-        setTimeout(() => {
-          window.close();
-        }, 1000);
+        setTimeout(() => window.close(), 1000);
       }
     }
+  }
+
+
+  /**
+   * Find the buy dialog's "Add to cart" button using precise, verified selectors.
+   * Never returns a checkout/pay/purchase control (see PURCHASE_LABELS) or the
+   * extension's own injected buttons.
+   *
+   * @returns The add-to-cart button, or null if none is present/visible
+   */
+  private static findDialogAddToCartButton(): HTMLElement | null {
+    const isOwn = (el: Element): boolean => this.labelClass(el).includes('bandcamp-workflow');
+    const isVisible = (el: HTMLElement): boolean => el.offsetParent !== null;
+    const safeLabel = (el: Element): boolean => !this.PURCHASE_LABELS.test(this.labelOf(el));
+
+    // 1. Canonical buy-dialog add-to-cart button (verified against live DOM).
+    const wrapperBtn = document.querySelector('.cart-button-wrapper button') as HTMLElement | null;
+    if (wrapperBtn && isVisible(wrapperBtn) && safeLabel(wrapperBtn)) {
+      Logger.debug('Found add-to-cart button via .cart-button-wrapper');
+      return wrapperBtn;
+    }
+
+    // 2. Scoped text fallback for markup drift: a visible button whose label is
+    //    explicitly "add to cart" (and is not a checkout control or our own UI).
+    const candidates = Array.from(
+      document.querySelectorAll('button, input[type="submit"], input[type="button"], a[role="button"]'),
+    );
+    for (const el of candidates) {
+      if (isOwn(el) || !isVisible(el as HTMLElement) || !safeLabel(el)) {
+        continue;
+      }
+      if (this.labelOf(el).toLowerCase().includes('add to cart')) {
+        Logger.debug('Found add-to-cart button by text fallback');
+        return el as HTMLElement;
+      }
+    }
+
+    return null;
+  }
+
+
+  /** The clickable's visible label (button text, falling back to input value). */
+  private static labelOf(el: Element): string {
+    const text = (el.textContent ?? '').trim();
+    return text || (el as HTMLInputElement).value || '';
+  }
+
+  /** The element's className as a string (className is non-string on some nodes). */
+  private static labelClass(el: Element): string {
+    return `${el.className ?? ''}`;
   }
 }

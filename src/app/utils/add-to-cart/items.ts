@@ -105,7 +105,13 @@ export class AddToCartItems {
           const albumLink = cleanLinks.find(link => link.href.includes('/album/'));
           if (albumLink) {
             const url = new URL(albumLink.href);
-            const trackSlug = trackTitle.toLowerCase()
+            // Best-effort match for Bandcamp's slug: strip accents (Café -> cafe)
+            // before dropping non-word characters, so non-ASCII titles don't
+            // collapse to an empty/garbled slug.
+            const trackSlug = trackTitle
+              .normalize('NFKD')
+              .replace(/[̀-ͯ]/g, '')
+              .toLowerCase()
               .replace(/\s+/g, '-')
               .replace(/[^\w-]/g, '')
               .replace(/-+/g, '-')
