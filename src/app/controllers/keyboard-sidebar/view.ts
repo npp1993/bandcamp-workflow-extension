@@ -100,9 +100,8 @@ export class SidebarView {
       width: 100%;
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      white-space: nowrap;
-      overflow: hidden;
+      align-items: flex-start;
+      gap: 12px;
     `;
 
     const keySpan = document.createElement('span');
@@ -110,19 +109,18 @@ export class SidebarView {
     keySpan.style.cssText = `
       font-weight: bold;
       color: #495057;
-      min-width: 40px;
       flex-shrink: 0;
+      white-space: nowrap;
     `;
 
     const descSpan = document.createElement('span');
     descSpan.textContent = shortcut.description;
+    // Wrap long descriptions instead of truncating them, so no shortcut label is
+    // ever cut off regardless of the sidebar width.
     descSpan.style.cssText = `
       flex: 1;
       text-align: right;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      margin-left: 15px;
+      overflow-wrap: anywhere;
     `;
 
     button.appendChild(keySpan);
