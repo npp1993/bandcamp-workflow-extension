@@ -401,46 +401,32 @@ export class WaveformController {
     try {
       const container = document.createElement('div');
       container.className = WAVEFORM_LOADING_CLASS;
+      // Fills the reserved slot (min-height inherited from the host) and centers
+      // the spinner; padding 0 so the box matches the empty/loaded waveform box.
       container.style.cssText = `
-        padding: 15px;
+        padding: 0;
         background: rgba(0, 0, 0, 0.05);
         border-radius: 4px;
-        text-align: center;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 8px;
         border: 1px solid rgba(190, 190, 190, 0.3);
       `;
-      
-      // Create loading dots animation
-      const loadingText = document.createElement('span');
-      loadingText.textContent = 'Generating waveform';
-      loadingText.style.cssText = `
-        color: #666;
-        font-size: 12px;
-      `;
-      
-      const dotsContainer = document.createElement('span');
-      dotsContainer.style.cssText = `
-        display: inline-block;
+
+      // Rotating spinner (Web Animations API, matching the wishlist overlay).
+      const spinner = document.createElement('div');
+      spinner.style.cssText = `
         width: 20px;
-        text-align: left;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid rgba(0, 0, 0, 0.25);
+        border-right-color: transparent;
       `;
-      
-      container.appendChild(loadingText);
-      container.appendChild(dotsContainer);
-
-      // Animate dots
-      let dotCount = 0;
-      const animateDots = () => {
-        dotCount = (dotCount + 1) % 4;
-        dotsContainer.textContent = '.'.repeat(dotCount);
-      };
-
-      // Start animation and store interval ID on container
-      container.dataset.intervalId = setInterval(animateDots, 500).toString();
-      animateDots(); // Initial call
+      spinner.animate(
+        [{transform: 'rotate(0deg)'}, {transform: 'rotate(360deg)'}],
+        {duration: 700, iterations: Infinity},
+      );
+      container.appendChild(spinner);
 
       this.mountInWaveformHost(container);
       this.currentWaveformContainer = container;

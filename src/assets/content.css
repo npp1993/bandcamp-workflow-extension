@@ -274,10 +274,13 @@
 }
 
 /* The host owns the vertical spacing, so its child state element must not add
-   its own margin (which would make the slot taller than the reserved height). */
+   its own margin (which would make the slot taller than the reserved height).
+   min-height: inherit makes each state box (loading/waveform/error) fill the
+   reserved height, so they are all the same size as the empty box. */
 .bandcamp-waveform-host > * {
   margin: 0;
   width: 100%;
+  min-height: inherit;
   box-sizing: border-box;
 }
 
