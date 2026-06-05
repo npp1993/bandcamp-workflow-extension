@@ -26,6 +26,12 @@ export class WaveformController {
 
   private static generationPromise: Promise<void> | null = null;
 
+  // Monotonic id for the most recently requested generation. Bumped on every
+  // generateWaveformIfNeeded so a slow/in-flight fetch for a track the user
+  // already skipped past can detect it has been superseded and discard its
+  // result, rather than blocking the current track's waveform behind it.
+  private static generationToken = 0;
+
   /**
    * Initialize waveform functionality on the current page
    */
@@ -153,12 +159,6 @@ export class WaveformController {
         return;
       }
 
-      // If a generation is already in progress, wait for it to complete
-      if (this.generationPromise) {
-        await this.generationPromise;
-        return;
-      }
-
       // Check if audio is available and ready
       const audio = AudioUtils.getAudioElement();
       if (!audio || !audio.src) {
@@ -166,38 +166,56 @@ export class WaveformController {
       }
 
       // Skip if audio source hasn't changed and we already have a waveform
-      if (audio.src === this.lastAudioSrc && this.currentWaveformContainer && 
+      if (audio.src === this.lastAudioSrc && this.currentWaveformContainer &&
           !this.currentWaveformContainer.classList.contains(WAVEFORM_LOADING_CLASS) &&
           !this.currentWaveformContainer.classList.contains(WAVEFORM_ERROR_CLASS)) {
         return;
       }
 
-      // Create the generation promise to prevent concurrent executions
-      this.generationPromise = this.performWaveformGeneration(audio.src);
+      // Newest request wins. We do NOT wait for an in-flight generation to
+      // finish: a slow/stalled fetch for a previous track (up to the 30s fetch
+      // timeout) would otherwise block the current track's waveform, leaving the
+      // spinner up while audio plays fine. Instead we start generating the
+      // current src immediately and let the stale generation discard itself via
+      // the token check in performWaveformGeneration.
+      const src = audio.src;
+      const token = ++this.generationToken;
+      this.generationPromise = this.performWaveformGeneration(src, token);
       await this.generationPromise;
-      this.generationPromise = null;
+      if (token === this.generationToken) {
+        this.generationPromise = null;
+      }
     } catch (error) {
       Logger.error('Error in generateWaveformIfNeeded:', error);
-      this.generationPromise = null;
     }
   }
 
   /**
    * Perform the actual waveform generation process
    */
-  private static async performWaveformGeneration(audioSrc: string): Promise<void> {
+  private static async performWaveformGeneration(audioSrc: string, token: number): Promise<void> {
     try {
       this.isGenerating = true;
-      this.lastAudioSrc = audioSrc;
 
       // Show loading indicator (clears any rendered waveform, and reuses the
       // spinner if the immediate track-change clear already mounted one).
       this.showLoadingIndicator();
 
-      // Generate the waveform
-      const waveformCanvas = await WaveformService.generateWaveformForCurrentAudio();
+      // Generate the waveform for THIS specific src (not "current"), so a track
+      // change mid-fetch can't make us render the wrong track.
+      const waveformCanvas = await WaveformService.generateWaveformForAudioSrc(audioSrc);
 
-      // Remove loading indicator
+      // Superseded: the user skipped to another track while we were
+      // fetching/decoding. Discard this result and leave the spinner up for the
+      // newer generation; do NOT advance lastAudioSrc, so the fallback interval
+      // keeps re-triggering until the current track actually renders.
+      if (token !== this.generationToken) {
+        return;
+      }
+
+      // We are the live request: commit. Setting lastAudioSrc only here (after a
+      // non-superseded result) keeps it in sync with what is actually on screen.
+      this.lastAudioSrc = audioSrc;
       this.removeLoadingIndicator();
 
       if (waveformCanvas) {
@@ -209,10 +227,14 @@ export class WaveformController {
       }
     } catch (error) {
       Logger.error('Error generating waveform:', error);
-      this.removeLoadingIndicator();
-      this.showErrorIndicator();
+      if (token === this.generationToken) {
+        this.removeLoadingIndicator();
+        this.showErrorIndicator();
+      }
     } finally {
-      this.isGenerating = false;
+      if (token === this.generationToken) {
+        this.isGenerating = false;
+      }
     }
   }
 
@@ -602,10 +624,12 @@ export class WaveformController {
         this.debounceTimer = null;
       }
       
-      // Reset generation promise
+      // Reset generation promise and supersede any in-flight generation so a
+      // late-resolving fetch can't re-insert a waveform after we navigated away.
+      this.generationToken++;
       this.generationPromise = null;
       this.isGenerating = false;
-      
+
       // Remove any waveform containers
       this.removeCurrentWaveform();
 

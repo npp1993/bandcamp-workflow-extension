@@ -27,15 +27,32 @@ export class WaveformService {
    * @returns Promise resolving to the waveform canvas element or null if failed
    */
   public static async generateWaveformForCurrentAudio(): Promise<HTMLCanvasElement | null> {
+    const audio = AudioUtils.getAudioElement();
+    if (!audio || !audio.src) {
+      return null;
+    }
+    return this.generateWaveformForAudioSrc(audio.src);
+  }
+
+  /**
+   * Generate a waveform for a specific audio source URL. Unlike
+   * generateWaveformForCurrentAudio this does NOT re-read the live audio
+   * element, so the caller controls exactly which track is rendered. That lets
+   * the controller tag each request and discard a stale result if the user
+   * skipped tracks mid-fetch, instead of rendering whatever happens to be
+   * playing when the fetch returns.
+   *
+   * @param audioSrc Complete audio source URL to render
+   * @returns Promise resolving to the waveform canvas element or null if failed
+   */
+  public static async generateWaveformForAudioSrc(audioSrc: string): Promise<HTMLCanvasElement | null> {
     try {
-      // Get the current audio element
-      const audio = AudioUtils.getAudioElement();
-      if (!audio || !audio.src) {
+      if (!audioSrc) {
         return null;
       }
 
       // Extract stream ID from audio source for caching
-      const streamId = this.extractStreamId(audio.src);
+      const streamId = this.extractStreamId(audioSrc);
       if (!streamId) {
         return null;
       }
@@ -47,7 +64,7 @@ export class WaveformService {
       }
 
       // Fetch audio buffer via background script using complete URL
-      const audioBuffer = await this.fetchAudioBuffer(audio.src);
+      const audioBuffer = await this.fetchAudioBuffer(audioSrc);
       if (!audioBuffer) {
         Logger.error('Failed to fetch audio buffer');
         return null;
