@@ -9,7 +9,6 @@
     "allowJs": true,
     "moduleResolution": "node",
     "types": [
-      "jest",
       "node",
       "chrome"
     ],
