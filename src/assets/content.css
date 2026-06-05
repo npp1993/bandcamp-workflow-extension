@@ -278,6 +278,16 @@
   box-sizing: border-box;
 }
 
+/* Before playback the slot is empty, so show the waveform box outline (matching
+   the container) so the reserved space reads as "the waveform goes here". Once a
+   loading/waveform/error child mounts, the host is no longer :empty and that
+   child's own box takes over - no double border. */
+.bandcamp-waveform-host:empty {
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(190, 190, 190, 0.3);
+  border-radius: 4px;
+}
+
 /**
  * ------------------------------------------------------------
  * Toast Notifications
