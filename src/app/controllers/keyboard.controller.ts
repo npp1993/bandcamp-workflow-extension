@@ -1,4 +1,5 @@
 import {BandcampFacade} from '../facades/bandcamp.facade';
+import {SEEK_STEP_LARGE} from '../constants';
 import {TrackController} from './track.controller';
 import {WishlistController} from './wishlist.controller';
 import {Controllers} from './page.controller';
@@ -228,20 +229,21 @@ export class KeyboardController {
           
         case 'h':
         case 'arrowleft':
-          // Only trigger seek backward if no modifier keys are pressed
-          if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+          // Seek backward; Shift seeks by the larger step. Other modifiers
+          // (Cmd/Ctrl/Alt) are left for the browser.
+          if (!e.metaKey && !e.ctrlKey && !e.altKey) {
             e.preventDefault();
-            BandcampFacade.seekBackward();
+            BandcampFacade.seekBackward(e.shiftKey ? SEEK_STEP_LARGE : undefined);
           }
           break;
-          
+
         case 'l':
         case 'arrowright':
-          // Only trigger seek forward if no modifier keys are pressed
-          // This allows Cmd+L (address bar), Ctrl+L, etc. to work normally
-          if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+          // Seek forward; Shift seeks by the larger step. Other modifiers
+          // (Cmd/Ctrl/Alt) are left for the browser (e.g. Cmd+L address bar).
+          if (!e.metaKey && !e.ctrlKey && !e.altKey) {
             e.preventDefault();
-            BandcampFacade.seekForward();
+            BandcampFacade.seekForward(e.shiftKey ? SEEK_STEP_LARGE : undefined);
           }
           break;
           

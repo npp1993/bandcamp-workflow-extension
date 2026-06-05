@@ -270,12 +270,12 @@ export class BandcampFacade {
     SeekUtils.seekReset(this.isCollectionBasedPage);
   }
 
-  public static seekForward(): void {
-    SeekUtils.seekForward(this.isCollectionBasedPage);
+  public static seekForward(step?: number): void {
+    SeekUtils.seekForward(this.isCollectionBasedPage, step);
   }
 
-  public static seekBackward(): void {
-    SeekUtils.seekBackward(this.isCollectionBasedPage);
+  public static seekBackward(step?: number): void {
+    SeekUtils.seekBackward(this.isCollectionBasedPage, step);
   }
 
   public static setSpeed(speed: number): void {

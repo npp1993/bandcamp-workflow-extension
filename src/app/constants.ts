@@ -1,5 +1,7 @@
 export const TIMEOUT = 1000;
 export const SEEK_STEP = 10;
+// Larger seek increment used with the Shift modifier (Shift+H / Shift+L).
+export const SEEK_STEP_LARGE = 30;
 export const SPEED_STEP = 0.01;
 export const INPUT_CLASS = 'bandcamp-workflow__input';
 export const DEFAULT_SPEED = 1;

@@ -3,6 +3,7 @@ import {ShuffleService} from '../../services/shuffle.service';
 import {BulkCartService} from '../../services/bulk-cart.service';
 import {Controllers} from '../page.controller';
 import {KeyboardSidebarController} from '../keyboard-sidebar.controller';
+import {SEEK_STEP_LARGE} from '../../constants';
 
 /**
  * Interface for keyboard shortcut definitions
@@ -156,6 +157,18 @@ export class SidebarContent {
       key: 'L / →',
       description: 'Seek forward 10s',
       action: () => BandcampFacade.seekForward()
+    });
+
+    shortcuts.push({
+      key: 'Shift+H',
+      description: 'Seek backward 30s',
+      action: () => BandcampFacade.seekBackward(SEEK_STEP_LARGE)
+    });
+
+    shortcuts.push({
+      key: 'Shift+L',
+      description: 'Seek forward 30s',
+      action: () => BandcampFacade.seekForward(SEEK_STEP_LARGE)
     });
 
     shortcuts.push({

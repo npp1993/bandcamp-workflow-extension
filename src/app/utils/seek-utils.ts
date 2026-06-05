@@ -30,11 +30,11 @@ export class SeekUtils {
   }
 
   /**
-   * Seek forward by the defined step
+   * Seek forward by the given step (defaults to SEEK_STEP)
    */
-  public static seekForward(isWishlistPage = false): void {
+  public static seekForward(isWishlistPage = false, step = SEEK_STEP): void {
     try {
-      const audioElement = isWishlistPage 
+      const audioElement = isWishlistPage
         ? AudioUtils.getWishlistAudioElement()
         : AudioUtils.getAudioElement();
 
@@ -43,7 +43,7 @@ export class SeekUtils {
         return;
       }
 
-      audioElement.currentTime += SEEK_STEP;
+      audioElement.currentTime += step;
       this.updateProgressUI(audioElement, isWishlistPage);
     } catch (error) {
       Logger.error('Error in seekForward:', error);
@@ -51,11 +51,11 @@ export class SeekUtils {
   }
 
   /**
-   * Seek backward by the defined step
+   * Seek backward by the given step (defaults to SEEK_STEP)
    */
-  public static seekBackward(isWishlistPage = false): void {
+  public static seekBackward(isWishlistPage = false, step = SEEK_STEP): void {
     try {
-      const audioElement = isWishlistPage 
+      const audioElement = isWishlistPage
         ? AudioUtils.getWishlistAudioElement()
         : AudioUtils.getAudioElement();
 
@@ -64,7 +64,7 @@ export class SeekUtils {
         return;
       }
 
-      audioElement.currentTime -= SEEK_STEP;
+      audioElement.currentTime -= step;
       this.updateProgressUI(audioElement, isWishlistPage);
     } catch (error) {
       Logger.error('Error in seekBackward:', error);
