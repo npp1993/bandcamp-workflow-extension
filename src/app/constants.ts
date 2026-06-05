@@ -10,6 +10,9 @@ export const DEFAULT_STRETCH = false;
 // different files) reference a single source and cannot drift apart.
 export const SPEED_GRID_CLASS = 'bandcamp-workflow-speed-grid';
 export const DOWNLOAD_ALL_CLASS = 'bandcamp-workflow-download-all';
+// Full-viewport overlay shown while the wishlist's lazy-loaded items are fetched,
+// so the user sees a clean spinner instead of the page scroll-loading up and down.
+export const WISHLIST_LOADING_CLASS = 'bandcamp-workflow-wishlist-loading';
 export const WAVEFORM_CONTAINER_CLASS = 'bandcamp-waveform-container';
 export const WAVEFORM_LOADING_CLASS = 'bandcamp-waveform-loading';
 export const WAVEFORM_ERROR_CLASS = 'bandcamp-waveform-error';

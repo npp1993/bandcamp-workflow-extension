@@ -13,6 +13,7 @@ import {AudioUtils} from '../../utils/audio-utils';
 import {DOMSelectors} from '../../utils/dom-selectors';
 import {ErrorHandler} from '../../utils/error-handler';
 import {ShuffleService} from '../../services/shuffle.service';
+import {WISHLIST_LOADING_CLASS} from '../../constants';
 
 export class WishlistPlayback {
   /**
@@ -2069,147 +2070,144 @@ export class WishlistPlayback {
       
       Logger.debug(`Clicking wishlist button: "${wishlistButton.textContent?.trim()}"`);
       
-      // Save the current scroll position more reliably
-      const originalScrollPosition = {
-        x: window.scrollX,
-        y: window.scrollY
-      };
-      Logger.debug(`Saved original scroll position: x=${originalScrollPosition.x}, y=${originalScrollPosition.y}`);
-      
-      // Click the wishlist "view all items" button
+      // Mask the lazy-load behind a full-viewport overlay so the user never sees
+      // the page scrolling. Save the scroll position to restore it afterward.
+      const originalScrollPosition = {x: window.scrollX, y: window.scrollY};
+      const overlay = this.showWishlistLoadingOverlay();
+
       try {
+        // Expand the wishlist; Bandcamp lazy-renders the rest as we near the bottom.
         wishlistButton.click();
         Logger.debug('Clicked wishlist "view all items" button');
-        
-        // Wait for content to load and verify we get the expected count
-        let attempts = 0;
-        const maxAttempts = 20; // Maximum 20 attempts
-        let items: HTMLElement[] = [];
-        
-        while (attempts < maxAttempts) {
-          attempts++;
-          
-          // Trigger lazy loading by scrolling to bottom and staying there longer
-          if (attempts <= 15) { // Scroll for more attempts
-            Logger.debug(`Scrolling to trigger lazy loading (attempt ${attempts})`);
-            
-            // Scroll to the very bottom of the page
-            const maxScroll = Math.max(
-              document.body.scrollHeight,
-              document.body.offsetHeight,
-              document.documentElement.clientHeight,
-              document.documentElement.scrollHeight,
-              document.documentElement.offsetHeight,
-            );
-            
-            window.scrollTo(0, maxScroll);
-            
-            // Stay at the bottom longer to ensure lazy loading triggers
-            await new Promise((resolve) => setTimeout(resolve, 800));
-            
-            // Check if more items loaded while at bottom
-            const itemsAtBottom = this.loadWishlistItems();
-            Logger.debug(`Found ${itemsAtBottom.length} items while at bottom`);
-            
-            // Scroll back to top temporarily to check loading
-            window.scrollTo(0, 0);
-            await new Promise((resolve) => setTimeout(resolve, 400));
-          }
-          
-          // Wait a bit before checking again
-          await new Promise((resolve) => setTimeout(resolve, 500));
-          
-          // Reload wishlist items and check count
-          items = this.loadWishlistItems();
-          Logger.debug(`Attempt ${attempts}: Found ${items.length} wishlist items (expected: ${wishlistCount})`);
-          
-          // If we have the expected count or more, we're done
-          if (items.length >= wishlistCount) {
-            Logger.debug(`Successfully loaded all ${items.length} wishlist items`);
-            break;
-          }
-          
-          // If this is not the last attempt, log that we're waiting
-          if (attempts < maxAttempts) {
-            Logger.debug(`Still loading items, waiting... (${items.length}/${wishlistCount})`);
-          }
-        }
-        
-        // If we still don't have all items, try alternative loading strategies
-        if (items.length < wishlistCount) {
-          Logger.debug(`Still missing items (${items.length}/${wishlistCount}), trying alternative strategies...`);
-          
-          // Strategy 1: Try scrolling in smaller increments
-          for (let i = 0; i < 5 && items.length < wishlistCount; i++) {
-            Logger.debug(`Alternative strategy 1 - incremental scroll ${i + 1}/5`);
-            const scrollStep = document.body.scrollHeight / 4;
-            window.scrollTo(0, scrollStep * (i + 1));
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-            items = this.loadWishlistItems();
-            Logger.debug(`After incremental scroll ${i + 1}: Found ${items.length} items`);
-          }
-          
-          // Strategy 2: Try staying at bottom for extended time
-          if (items.length < wishlistCount) {
-            Logger.debug('Alternative strategy 2 - extended bottom stay');
-            window.scrollTo(0, document.body.scrollHeight);
-            await new Promise((resolve) => setTimeout(resolve, 3000)); // Stay 3 seconds
-            items = this.loadWishlistItems();
-            Logger.debug(`After extended bottom stay: Found ${items.length} items`);
-          }
-          
-          // Strategy 3: Try triggering scroll events manually
-          if (items.length < wishlistCount) {
-            Logger.debug('Alternative strategy 3 - manual scroll events');
-            window.scrollTo(0, document.body.scrollHeight);
-            // Dispatch scroll events to trigger any lazy loading listeners
-            window.dispatchEvent(new Event('scroll'));
-            document.dispatchEvent(new Event('scroll'));
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-            items = this.loadWishlistItems();
-            Logger.debug(`After manual scroll events: Found ${items.length} items`);
-          }
-          
-          // Final scroll back to top before checking final counts
-          window.scrollTo(0, 0);
-        }
-        
-        // Restore original scroll position with smooth scrolling and delay
-        Logger.debug(`Restoring scroll position to: x=${originalScrollPosition.x}, y=${originalScrollPosition.y}`);
-        
-        // Use a slight delay to ensure DOM is stable after all the loading
-        setTimeout(() => {
-          try {
-            // Use smooth scrolling if the position is reasonable
-            if (originalScrollPosition.y < document.body.scrollHeight) {
-              window.scrollTo({
-                left: originalScrollPosition.x,
-                top: originalScrollPosition.y,
-                behavior: 'smooth'
-              });
-            } else {
-              // If original position is beyond new page height, scroll to top
-              Logger.debug('Original scroll position is beyond new page height, scrolling to top');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
-          } catch (scrollError) {
-            Logger.warn('Error restoring scroll position:', scrollError);
-            // Fallback to instant scroll
-            window.scrollTo(originalScrollPosition.x, originalScrollPosition.y);
-          }
-        }, 500); // 500ms delay to let DOM settle
-        
-        Logger.debug(`Final result: Loaded ${items.length} wishlist items after clicking "view all items" button`);
-        
+
+        const items = await this.scrollLoadWishlistItems(wishlistCount);
+        Logger.debug(`Final result: loaded ${items.length}/${wishlistCount} wishlist items`);
+
         // Return true if we got at least the expected count
         return items.length >= wishlistCount;
       } catch (clickError) {
-        Logger.warn('Error clicking wishlist "view all items" button:', clickError);
+        Logger.warn('Error expanding wishlist:', clickError);
         return false;
+      } finally {
+        // The overlay hid all movement, so restoring is instant (no smooth bounce).
+        window.scrollTo(originalScrollPosition.x, originalScrollPosition.y);
+        this.hideWishlistLoadingOverlay(overlay);
       }
     } catch (error) {
       Logger.error('Error loading all wishlist items:', error);
       return false;
     }
+  }
+
+  /**
+   * Progressively load all lazy-rendered wishlist items by pinning the page to its
+   * growing bottom (Bandcamp fetches the next batch as the bottom enters view).
+   * Only ever scrolls DOWN, never bounces to the top; resolves as soon as the
+   * target count is reached or the item count stops growing.
+   */
+  private static async scrollLoadWishlistItems(targetCount: number): Promise<HTMLElement[]> {
+    const SETTLE_MS = 350;       // pause between batches for Bandcamp to render
+    const MAX_STALL_ROUNDS = 4;  // stop after this many rounds with no new items
+    const MAX_ROUNDS = 40;       // hard ceiling for very large wishlists
+
+    const docHeight = (): number => Math.max(
+      document.body.scrollHeight,
+      document.body.offsetHeight,
+      document.documentElement.clientHeight,
+      document.documentElement.scrollHeight,
+      document.documentElement.offsetHeight,
+    );
+
+    let items = this.loadWishlistItems();
+    let lastCount = items.length;
+    let stallRounds = 0;
+
+    for (let round = 0; round < MAX_ROUNDS; round++) {
+      if (items.length >= targetCount) {
+        break;
+      }
+
+      // Pin to the (growing) bottom to trigger the next lazy batch.
+      window.scrollTo(0, docHeight());
+      await new Promise((resolve) => setTimeout(resolve, SETTLE_MS));
+
+      items = this.loadWishlistItems();
+      if (items.length > lastCount) {
+        lastCount = items.length;
+        stallRounds = 0;
+      } else if (++stallRounds >= MAX_STALL_ROUNDS) {
+        Logger.debug(`Wishlist load stalled at ${items.length}/${targetCount}`);
+        break;
+      }
+    }
+
+    return items;
+  }
+
+  /**
+   * Create and show a full-viewport overlay that masks the wishlist lazy-load so
+   * the page scrolling is invisible. Idempotent: reuses an existing overlay.
+   */
+  private static showWishlistLoadingOverlay(): HTMLElement {
+    const existing = document.querySelector(`.${WISHLIST_LOADING_CLASS}`);
+    if (existing) {
+      return existing as HTMLElement;
+    }
+
+    const colors = BandcampFacade.colors;
+    const bg = colors?.bg_color ? `#${colors.bg_color}` : '#ffffff';
+    const fg = colors?.text_color ? `#${colors.text_color}` : '#000000';
+
+    const overlay = document.createElement('div');
+    overlay.className = WISHLIST_LOADING_CLASS;
+    overlay.style.cssText = [
+      'position:fixed', 'inset:0', 'z-index:2147483646',
+      `background:${bg}`, `color:${fg}`,
+      'display:flex', 'flex-direction:column',
+      'align-items:center', 'justify-content:center',
+      'gap:18px', 'font-size:15px',
+      'opacity:0', 'transition:opacity 0.15s ease',
+    ].join(';');
+
+    // Inject the spinner keyframes once.
+    if (!document.getElementById('bandcamp-workflow-spin-style')) {
+      const style = document.createElement('style');
+      style.id = 'bandcamp-workflow-spin-style';
+      style.textContent = '@keyframes bandcamp-workflow-spin{to{transform:rotate(360deg)}}';
+      document.head.appendChild(style);
+    }
+
+    const spinner = document.createElement('div');
+    spinner.style.cssText = [
+      'width:34px', 'height:34px', 'border-radius:50%',
+      `border:3px solid ${fg}`, 'border-right-color:transparent',
+      'animation:bandcamp-workflow-spin 0.7s linear infinite',
+    ].join(';');
+
+    const label = document.createElement('div');
+    label.textContent = 'Loading your wishlist…';
+    label.style.opacity = '0.85';
+
+    overlay.appendChild(spinner);
+    overlay.appendChild(label);
+    document.body.appendChild(overlay);
+
+    // Fade in on the next frame.
+    requestAnimationFrame(() => {
+      overlay.style.opacity = '1';
+    });
+
+    return overlay;
+  }
+
+  /**
+   * Fade out and remove the wishlist loading overlay.
+   */
+  private static hideWishlistLoadingOverlay(overlay: HTMLElement | null): void {
+    if (!overlay) {
+      return;
+    }
+    overlay.style.opacity = '0';
+    setTimeout(() => overlay.remove(), 200);
   }
 }
