@@ -102,9 +102,9 @@ export class AddToCartPrice {
    * @returns The positive amount, or null if none could be parsed
    */
   private static parsePrice(raw: string): number | null {
-    // Keep only digits and separators, and drop any leading/trailing separators
-    // (e.g. a trailing "." from "...or more.").
-    const cleaned = raw.replace(/[^\d,.]/g, '').replace(/^[,.]+|[,.]+$/g, '');
+    // Keep only digits and separators, and drop a trailing separator (e.g. the
+    // "." from "...or more."). A leading separator is kept so ".50" reads as 0.50.
+    const cleaned = raw.replace(/[^\d,.]/g, '').replace(/[,.]+$/g, '');
     if (!cleaned) {
       return null;
     }
@@ -147,12 +147,8 @@ export class AddToCartPrice {
    */
   private static getDefaultPrice(isTrack: boolean): string {
     try {
-      const currencyText = [
-        document.querySelector('.nyp-symbol'),
-        document.querySelector('.nyp-summary-price'),
-        document.querySelector('.nyp-summary'),
-      ].map((el) => el?.textContent?.trim()).find(Boolean)
-        ?? document.body.textContent ?? '';
+      const dialogCurrency = document.querySelector('.nyp-symbol, .nyp-summary-price, .nyp-summary');
+      const currencyText = dialogCurrency?.textContent ?? document.body.textContent ?? '';
 
       if (currencyText.includes('€') || currencyText.includes('EUR')) {
         return isTrack ? '1.00' : '5.00';

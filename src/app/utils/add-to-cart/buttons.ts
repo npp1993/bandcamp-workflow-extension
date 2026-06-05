@@ -226,8 +226,10 @@ export class AddToCartButtons {
 
 
   // Labels that would advance toward or complete a purchase. The extension must
-  // add to cart only, so a button matching any of these is never clicked.
-  private static readonly PURCHASE_LABELS = /\b(buy now|pay|purchase|checkout|check out|place (your )?order|complete|confirm)\b/i;
+  // add to cart only, so a button matching any of these is never clicked. The
+  // dialog's add control is "Add to cart" (none of these), so this only ever
+  // blocks a mis-click; widen freely.
+  private static readonly PURCHASE_LABELS = /\b(buy now|pay|purchase|checkout|check out|order|continue|proceed|submit|get it now|place (your )?order|complete|confirm)\b/i;
 
   /**
    * Automatically click the buy dialog's "Add to cart" button.
@@ -276,7 +278,7 @@ export class AddToCartButtons {
    * @returns The add-to-cart button, or null if none is present/visible
    */
   private static findDialogAddToCartButton(): HTMLElement | null {
-    const isOwn = (el: Element): boolean => this.labelClass(el).includes('bandcamp-workflow');
+    const isOwn = (el: Element): boolean => `${el.className ?? ''}`.includes('bandcamp-workflow');
     const isVisible = (el: HTMLElement): boolean => el.offsetParent !== null;
     const safeLabel = (el: Element): boolean => !this.PURCHASE_LABELS.test(this.labelOf(el));
 
@@ -310,10 +312,5 @@ export class AddToCartButtons {
   private static labelOf(el: Element): string {
     const text = (el.textContent ?? '').trim();
     return text || (el as HTMLInputElement).value || '';
-  }
-
-  /** The element's className as a string (className is non-string on some nodes). */
-  private static labelClass(el: Element): string {
-    return `${el.className ?? ''}`;
   }
 }
