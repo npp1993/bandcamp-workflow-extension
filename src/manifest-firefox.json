@@ -1,7 +1,7 @@
 {
   "name": "Bandcamp Keyboard Shortcuts",
   "short_name": "BC Shortcuts",
-  "description": "Enhanced Bandcamp browsing experience with Vim-style hotkeys, waveform visualization, and quick wishlist/add-to-cart functionality.",
+  "description": "Keyboard shortcuts for an enhanced Bandcamp browsing workflow: Vim-style hotkeys, waveform seeking, speed, wishlist & cart.",
   "version": "1.8",
   "manifest_version": 2,
   "icons": {
