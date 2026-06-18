@@ -84,7 +84,7 @@ export class AddToCartButtons {
     // Fallback: look for buttons and links with add-to-cart related text,
     // excluding the extension's own injected controls.
     const allElements = Array.from(document.querySelectorAll('button, a, span[role="button"], div[role="button"], span.buyItem, .buyItem'))
-      .filter((el) => !`${el.className || ''}`.includes('bandcamp-workflow'));
+      .filter((el) => !`${el.className || ''}`.includes('bcks'));
     
     // Physical formats to avoid (prioritize digital over physical)
     const physicalFormats = [
@@ -279,7 +279,7 @@ export class AddToCartButtons {
    * @returns The add-to-cart button, or null if none is present/visible
    */
   private static findDialogAddToCartButton(): HTMLElement | null {
-    const isOwn = (el: Element): boolean => `${el.className ?? ''}`.includes('bandcamp-workflow');
+    const isOwn = (el: Element): boolean => `${el.className ?? ''}`.includes('bcks');
     const isVisible = (el: HTMLElement): boolean => el.offsetParent !== null;
     const safeLabel = (el: Element): boolean => !this.PURCHASE_LABELS.test(this.labelOf(el));
 

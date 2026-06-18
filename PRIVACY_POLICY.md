@@ -1,10 +1,10 @@
-# Privacy Policy for Bandcamp Workflow Extension
+# Privacy Policy for Bandcamp Keyboard Shortcuts
 
 *Last updated: July 7, 2025*
 
 ## Overview
 
-The Bandcamp Workflow Extension is designed with privacy in mind. This extension enhances your Bandcamp browsing experience while keeping all your data local to your device.
+The Bandcamp Keyboard Shortcuts is designed with privacy in mind. This extension enhances your Bandcamp browsing experience while keeping all your data local to your device.
 
 ## Data Collection
 
@@ -66,4 +66,4 @@ If we make changes to this privacy policy, we will update the "Last updated" dat
 If you have questions about this privacy policy or the extension's data practices, please contact:
 
 **Email:** nathaniel.pawelczyk@gmail.com  
-**GitHub:** https://github.com/npawelczyk/bandcamp-workflow-extension
+**GitHub:** https://github.com/npp1993/bandcamp-keyboard-shortcuts

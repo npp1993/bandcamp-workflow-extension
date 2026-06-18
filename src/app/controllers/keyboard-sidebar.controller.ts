@@ -16,11 +16,11 @@ export class KeyboardSidebarController {
   private bulkSidebar: HTMLElement | null = null;
   private sidebarsContainer: HTMLElement | null = null;
   private isVisible = true;
-  private static readonly STORAGE_KEY = 'bandcamp-workflow-sidebar-collapsed';
+  private static readonly STORAGE_KEY = 'bcks-sidebar-collapsed';
   
   // Collapse state
   private isSidebarsCollapsed = false;
-  private static readonly COOKIE_NAME = 'bandcamp-workflow-sidebar-state';
+  private static readonly COOKIE_NAME = 'bcks-sidebar-state';
 
   constructor(controllers: Controllers) {
     this.controllers = controllers;
@@ -33,7 +33,7 @@ export class KeyboardSidebarController {
   public static init(controllers: Controllers): KeyboardSidebarController {
     // Check if existing instance has valid DOM elements
     if (this.instance) {
-      const existingContainer = document.querySelector('.bandcamp-workflow-sidebars-container');
+      const existingContainer = document.querySelector('.bcks-sidebars-container');
       if (existingContainer) {
         // Instance exists and DOM elements are present, but check if sidebars should be visible on this page
         this.instance.updateVisibilityForCurrentPage();
@@ -164,7 +164,7 @@ export class KeyboardSidebarController {
    * Update sidebar visibility based on current page type
    */
   private updateVisibilityForCurrentPage(): void {
-    const container = document.querySelector('.bandcamp-workflow-sidebars-container') as HTMLElement;
+    const container = document.querySelector('.bcks-sidebars-container') as HTMLElement;
     if (!container) {
       return;
     }
@@ -183,20 +183,20 @@ export class KeyboardSidebarController {
   private createSidebars(): void {
     // Create settings sidebar (top)
     this.settingsSidebar = document.createElement('div');
-    this.settingsSidebar.className = 'bandcamp-workflow-sidebar bandcamp-workflow-settings-sidebar';
+    this.settingsSidebar.className = 'bcks-sidebar bcks-settings-sidebar';
 
     // Create hotkeys sidebar (middle)
     this.hotkeysSidebar = document.createElement('div');
-    this.hotkeysSidebar.className = 'bandcamp-workflow-sidebar bandcamp-workflow-hotkeys-sidebar';
+    this.hotkeysSidebar.className = 'bcks-sidebar bcks-hotkeys-sidebar';
 
     // Create bulk purchase sidebar (bottom, hidden by default)
     this.bulkSidebar = document.createElement('div');
-    this.bulkSidebar.className = 'bandcamp-workflow-sidebar bandcamp-workflow-bulk-sidebar';
+    this.bulkSidebar.className = 'bcks-sidebar bcks-bulk-sidebar';
     this.bulkSidebar.style.display = 'none';
 
     // Create a container for all sidebars
     this.sidebarsContainer = document.createElement('div');
-    this.sidebarsContainer.className = 'bandcamp-workflow-sidebars-container';
+    this.sidebarsContainer.className = 'bcks-sidebars-container';
     if (this.isSidebarsCollapsed) {
       this.sidebarsContainer.classList.add('collapsed');
     }
@@ -212,7 +212,7 @@ export class KeyboardSidebarController {
 
     // Create toggle tab
     const toggleBtn = document.createElement('div');
-    toggleBtn.className = 'bandcamp-workflow-sidebar-toggle';
+    toggleBtn.className = 'bcks-sidebar-toggle';
     toggleBtn.textContent = this.isSidebarsCollapsed ? '◀' : '▶';
     toggleBtn.title = 'Toggle Sidebar';
     
@@ -222,7 +222,7 @@ export class KeyboardSidebarController {
 
     // Create wrapper for scrollable content
     const scrollContainer = document.createElement('div');
-    scrollContainer.className = 'bandcamp-workflow-sidebar-scroll-container';
+    scrollContainer.className = 'bcks-sidebar-scroll-container';
 
     this.sidebarsContainer.appendChild(toggleBtn);
     scrollContainer.appendChild(this.settingsSidebar);
@@ -262,7 +262,7 @@ export class KeyboardSidebarController {
   private updateCollapseStateUI(): void {
     if (!this.sidebarsContainer) return;
 
-    const toggleBtn = this.sidebarsContainer.querySelector('.bandcamp-workflow-sidebar-toggle');
+    const toggleBtn = this.sidebarsContainer.querySelector('.bcks-sidebar-toggle');
     if (toggleBtn) {
       toggleBtn.textContent = this.isSidebarsCollapsed ? '◀' : '▶';
     }
@@ -477,7 +477,7 @@ export class KeyboardSidebarController {
    */
   private toggle(): void {
     this.isVisible = !this.isVisible;
-    const container = document.querySelector('.bandcamp-workflow-sidebars-container') as HTMLElement;
+    const container = document.querySelector('.bcks-sidebars-container') as HTMLElement;
     if (container) {
       container.style.display = this.isVisible ? 'flex' : 'none';
     }
@@ -487,7 +487,7 @@ export class KeyboardSidebarController {
    * Destroy the sidebars
    */
   private destroy(): void {
-    const container = document.querySelector('.bandcamp-workflow-sidebars-container');
+    const container = document.querySelector('.bcks-sidebars-container');
     if (container && container.parentElement) {
       container.parentElement.removeChild(container);
     }

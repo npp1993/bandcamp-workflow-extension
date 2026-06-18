@@ -1,5 +1,5 @@
 /**
- * Background script for Bandcamp Workflow Extension
+ * Background script for Bandcamp Keyboard Shortcuts
  * Handles CORS bypass for waveform generation and other background tasks
  */
 

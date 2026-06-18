@@ -243,9 +243,9 @@ export class WishlistPlayback {
         }
         
         if (isAlbum) {
-          item.classList.add('bandcamp-workflow-album');
+          item.classList.add('bcks-album');
         } else {
-          item.classList.remove('bandcamp-workflow-album');
+          item.classList.remove('bcks-album');
         }
       });
       

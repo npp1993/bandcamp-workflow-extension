@@ -20,7 +20,7 @@ Browser extension (Chrome & Firefox) for Bandcamp that adds workflow enhancement
 ## Verifying changes
 
 - The built extension can be loaded into a real Chrome and observed on live Bandcamp — prefer this over guessing. Verification needs a Chrome **signed into a Bandcamp account**: anonymous automated traffic hits a Fastly CAPTCHA wall, and wishlist/cart features require a session. A dedicated dev account is used for this.
-- After building, load `dist/chrome` as an unpacked extension, navigate to a relevant page (album / track / wishlist / collection), and confirm both the injected UI (elements whose class/id contains `bandcamp-workflow`, e.g. the Hotkeys/Settings sidebar) and the actual behavior.
+- After building, load `dist/chrome` as an unpacked extension, navigate to a relevant page (album / track / wishlist / collection), and confirm both the injected UI (elements whose class/id contains `bcks`, e.g. the Hotkeys/Settings sidebar) and the actual behavior.
 - **Production builds hardcode the `Logger` level to `WARN`** (`src/app/utils/logger.ts`), so `Logger.debug` output does NOT appear in a normal build's console. Verify behavior via the DOM/UI and screenshots, not debug logs.
 - For anything that genuinely cannot be observed, ask the user to verify.
 
@@ -67,7 +67,7 @@ The extension detects Bandcamp's SPA navigation via `popstate`, `history.pushSta
 - Use `Logger` from `src/app/utils/logger.ts` for all logging — never use `console` directly. Methods: `debug`, `warn`, `error`, `timing`, `startTiming` (**there is no `Logger.log`**). Debug is suppressed in production (WARN level).
 - No emojis in log statements or code comments.
 - DOM selectors should live in `src/app/utils/dom-selectors.ts` with fallback arrays for different Bandcamp UI variations. (Known debt: many call sites still hardcode inline selector strings instead.)
-- `src/app/constants.ts` holds global config (timeouts, seek steps, speed increments, and the extension's injected `bandcamp-workflow-*`/`bandcamp-waveform-*` class names). (Known debt: some timeout magic numbers are still inline rather than centralized here.)
+- `src/app/constants.ts` holds global config (timeouts, seek steps, speed increments, and the extension's injected `bcks-*`/`bcks-waveform-*` class names). (Known debt: some timeout magic numbers are still inline rather than centralized here.)
 
 ## Known debt (refactor targets)
 

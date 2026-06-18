@@ -1,4 +1,4 @@
-# Bandcamp Workflow Extension
+# Bandcamp Keyboard Shortcuts
 
 A browser extension for [Bandcamp](https://www.bandcamp.com/) that adds numerous features and Vim-style keybindings to improve your music browsing workflow.
 

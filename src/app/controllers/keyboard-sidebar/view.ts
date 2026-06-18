@@ -7,7 +7,7 @@ import {KeyboardShortcut, ToggleSetting} from './content';
 export class SidebarView {
   static createToggleButton(setting: ToggleSetting): HTMLElement {
     const button = document.createElement('button');
-    button.className = `bandcamp-workflow-setting-${setting.id}`;
+    button.className = `bcks-setting-${setting.id}`;
     button.style.cssText = `
       padding: 6px 10px;
       cursor: pointer;
@@ -85,7 +85,7 @@ export class SidebarView {
 
   static createHotkeyButton(shortcut: KeyboardShortcut): HTMLElement {
     const button = document.createElement('button');
-    button.className = `bandcamp-workflow-hotkey-${shortcut.key.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+    button.className = `bcks-hotkey-${shortcut.key.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
     button.style.cssText = `
       padding: 6px 10px;
       cursor: pointer;

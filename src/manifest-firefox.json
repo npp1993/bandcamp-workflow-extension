@@ -1,6 +1,6 @@
 {
-  "name": "Bandcamp Workflow Extension",
-  "short_name": "Bandcamp Workflow",
+  "name": "Bandcamp Keyboard Shortcuts",
+  "short_name": "BC Shortcuts",
   "description": "Enhanced Bandcamp browsing experience with Vim-style hotkeys, waveform visualization, and quick wishlist/add-to-cart functionality.",
   "version": "1.7",
   "manifest_version": 2,
@@ -10,7 +10,7 @@
     "128": "icons/icon128.png"
   },
   "browser_action": {
-    "default_title": "Bandcamp Workflow Extension",
+    "default_title": "Bandcamp Keyboard Shortcuts",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",

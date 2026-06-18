@@ -1,8 +1,8 @@
 /**
- * Centralized logging utility for Bandcamp Workflow Extension
+ * Centralized logging utility for Bandcamp Keyboard Shortcuts
  */
 export class Logger {
-  private static readonly PREFIX = '[Bandcamp Workflow Extension]';
+  private static readonly PREFIX = '[Bandcamp Keyboard Shortcuts]';
   
   // Log levels for filtering output
   public static readonly LOG_LEVELS = {

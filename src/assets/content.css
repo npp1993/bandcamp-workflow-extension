@@ -3,7 +3,7 @@
  * Inputs
  * ------------------------------------------------------------
  */
-.bandcamp-workflow__input {
+.bcks__input {
   margin: 0;
   width: 250px;
   background: transparent;
@@ -21,8 +21,8 @@
   --borderColor: rgba(190, 190, 190, 0.5);
 }
 
-.bandcamp-workflow__input,
-.bandcamp-workflow__input::-webkit-slider-thumb {
+.bcks__input,
+.bcks__input::-webkit-slider-thumb {
   -webkit-appearance: none;
 }
 
@@ -47,7 +47,7 @@
 /**
  * Chrome
  */
-.bandcamp-workflow__input::-webkit-slider-runnable-track {
+.bcks__input::-webkit-slider-runnable-track {
   box-sizing: border-box;
   height: var(--trackHeight);
   border: 1px solid var(--borderColor);
@@ -59,7 +59,7 @@
 /**
  * Firefox
  */
-.bandcamp-workflow__input::-moz-range-track {
+.bcks__input::-moz-range-track {
   box-sizing: border-box;
   height: var(--trackHeight);
   background: var(--backgroundColor);
@@ -75,7 +75,7 @@
 /**
  * Firefox
  */
-.bandcamp-workflow__input::-moz-range-progress {
+.bcks__input::-moz-range-progress {
   height: var(--trackHeight);
   background: var(--highlightColor);
 }
@@ -89,7 +89,7 @@
 /**
  * Chrome
  */
-.bandcamp-workflow__input::-webkit-slider-thumb {
+.bcks__input::-webkit-slider-thumb {
   box-sizing: border-box;
   width: var(--thumbWidth);
   height: var(--thumbHeight);
@@ -103,7 +103,7 @@
 /**
  * Firefox
  */
-.bandcamp-workflow__input::-moz-range-thumb {
+.bcks__input::-moz-range-thumb {
   box-sizing: border-box;
   width: var(--thumbWidth);
   height: var(--thumbHeight);
@@ -119,7 +119,7 @@
  * Download Helper Button
  * ------------------------------------------------------------
  */
-.bandcamp-workflow-download-all {
+.bcks-download-all {
   display: inline-block;
   padding: 8px 15px;
   background-color: #619aa9;
@@ -132,12 +132,12 @@
   transition: background-color 0.2s ease;
 }
 
-.bandcamp-workflow-download-all:hover {
+.bcks-download-all:hover {
   background-color: #4c7c89;
   text-decoration: none;
 }
 
-.bandcamp-workflow-download-all[disabled] {
+.bcks-download-all[disabled] {
   opacity: 0.6;
   cursor: default;
   background-color: #888;
@@ -162,7 +162,7 @@
   }
 }
 
-.bandcamp-workflow-download-all[disabled]::after {
+.bcks-download-all[disabled]::after {
   content: '';
   display: inline-block;
   animation: loadingDots 1.5s infinite;
@@ -171,14 +171,14 @@
 }
 
 /* Center the download button when it's in a single page container */
-.download-item-container .bandcamp-workflow-download-all {
+.download-item-container .bcks-download-all {
   display: block;
   margin: 15px auto;
   text-align: center;
 }
 
 /* Keep bulk page button aligned with track titles (left-aligned) */
-.download-titles .bandcamp-workflow-download-all {
+.download-titles .bcks-download-all {
   display: inline-block;
   margin: 10px 0;
 }
@@ -190,7 +190,7 @@
  */
 
 /* Waveform container styling */
-.bandcamp-waveform-container {
+.bcks-waveform-container {
   margin: 10px 0;
   padding: 5px;
   background: rgba(0, 0, 0, 0.05);
@@ -203,12 +203,12 @@
   overflow: hidden;
 }
 
-.bandcamp-waveform-container:hover {
+.bcks-waveform-container:hover {
   background: rgba(0, 0, 0, 0.08);
 }
 
 /* Waveform canvas */
-.bandcamp-waveform {
+.bcks-waveform {
   display: block;
   margin: 0 auto;
   max-width: 100%;
@@ -219,7 +219,7 @@
 }
 
 /* Loading state */
-.bandcamp-waveform-loading {
+.bcks-waveform-loading {
   margin: 10px 0;
   padding: 15px;
   background: rgba(0, 0, 0, 0.05);
@@ -231,7 +231,7 @@
 }
 
 /* Error state */
-.bandcamp-waveform-error {
+.bcks-waveform-error {
   margin: 10px 0;
   padding: 10px;
   background: rgba(255, 0, 0, 0.1);
@@ -244,16 +244,16 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .bandcamp-waveform-container {
+  .bcks-waveform-container {
     margin: 8px 0;
     padding: 4px;
   }
 
-  .bandcamp-waveform {
+  .bcks-waveform {
     max-width: 100%;
   }
 
-  .bandcamp-waveform-title {
+  .bcks-waveform-title {
     font-size: 11px;
   }
 }
@@ -262,7 +262,7 @@
    height so starting playback never shifts the rest of the page down. The exact
    height is set inline from the column width (the canvas is a 10:1 ratio); the
    72px here is only a fallback. */
-.bandcamp-waveform-host {
+.bcks-waveform-host {
   margin: 10px 0;
   min-height: 72px;
   display: flex;
@@ -277,7 +277,7 @@
    its own margin (which would make the slot taller than the reserved height).
    min-height: inherit makes each state box (loading/waveform/error) fill the
    reserved height, so they are all the same size as the empty box. */
-.bandcamp-waveform-host > * {
+.bcks-waveform-host > * {
   margin: 0;
   width: 100%;
   min-height: inherit;
@@ -288,7 +288,7 @@
    the container) so the reserved space reads as "the waveform goes here". Once a
    loading/waveform/error child mounts, the host is no longer :empty and that
    child's own box takes over - no double border. */
-.bandcamp-waveform-host:empty {
+.bcks-waveform-host:empty {
   background: rgba(0, 0, 0, 0.05);
   border: 1px solid rgba(190, 190, 190, 0.3);
   border-radius: 4px;
@@ -299,30 +299,30 @@
  * Toast Notifications
  * ------------------------------------------------------------
  */
-#bandcamp-workflow-notifications {
+#bcks-notifications {
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
     Arial, sans-serif !important;
 }
 
-.bandcamp-workflow-notification {
+.bcks-notification {
   backdrop-filter: blur(10px) !important;
   -webkit-backdrop-filter: blur(10px) !important;
 }
 
-.bandcamp-workflow-notification:hover {
+.bcks-notification:hover {
   transform: translateX(0) scale(1.02) !important;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4) !important;
 }
 
 /* Ensure notifications appear above all Bandcamp content */
-#bandcamp-workflow-notifications * {
+#bcks-notifications * {
   z-index: 10001 !important;
 }
 
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
-  .bandcamp-workflow-notification {
+  .bcks-notification {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6) !important;
   }
 }
@@ -332,28 +332,28 @@
  * Sidebar
  * ------------------------------------------------------------
  */
-.bandcamp-workflow-sidebars-container {
+.bcks-sidebars-container {
   /* Default styles */
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   transform: translateX(0);
 }
 
-.bandcamp-workflow-sidebars-container.collapsed {
+.bcks-sidebars-container.collapsed {
   transform: translateX(100%);
 }
 
-.bandcamp-workflow-sidebars-container {
+.bcks-sidebars-container {
   /* Layout container only - no visuals */
   padding: 0;
   width: max-content;
   pointer-events: none; /* Allow clicks to pass through empty space if any */
 }
 /* Re-enable pointer events for children */
-.bandcamp-workflow-sidebars-container > * {
+.bcks-sidebars-container > * {
   pointer-events: auto;
 }
 
-.bandcamp-workflow-sidebar-scroll-container {
+.bcks-sidebar-scroll-container {
   background-color: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   border: 1px solid #d3d3d3;
@@ -367,7 +367,7 @@
   width: 220px;
 }
 
-.bandcamp-workflow-sidebar {
+.bcks-sidebar {
   position: relative;
   /* Removed z-index, background, border, radius, shadow */
   padding: 0 15px;
@@ -381,20 +381,20 @@
 }
 
 /* Add spacing between sidebar sections */
-.bandcamp-workflow-sidebar + .bandcamp-workflow-sidebar {
+.bcks-sidebar + .bcks-sidebar {
   margin-top: 15px;
   padding-top: 5px;
   border-top: 1px solid #eaeaea;
 }
 
 /* Separator removed for unified look */
-/* .bandcamp-workflow-sidebar:not(:first-child) {
+/* .bcks-sidebar:not(:first-child) {
   margin-top: 10px;
   padding-top: 10px;
   border-top: 1px solid #eaeaea;
 } */
 
-.bandcamp-workflow-sidebar-toggle {
+.bcks-sidebar-toggle {
   position: absolute;
   left: -24px;
   top: 40px; /* Adjusted position */
@@ -416,13 +416,13 @@
   pointer-events: auto;
 }
 
-.bandcamp-workflow-sidebar-toggle:hover {
+.bcks-sidebar-toggle:hover {
   background-color: #f8f9fa;
   color: #333;
 }
 
 /* When collapsed, adjust shadow to indicate it can be pulled back */
-.bandcamp-workflow-sidebars-container.collapsed .bandcamp-workflow-sidebar-toggle {
+.bcks-sidebars-container.collapsed .bcks-sidebar-toggle {
   box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
 }
 
@@ -431,13 +431,13 @@
  * Wishlist Album Highlighting
  * ------------------------------------------------------------
  */
-.collection-item-container.bandcamp-workflow-album .collection-item-art-container {
+.collection-item-container.bcks-album .collection-item-art-container {
   box-shadow: 0 0 0 3px #1DA0C3 !important; /* Bandcamp Blue border using box-shadow to avoid layout shifts */
   border-radius: 2px;
 }
 
 /* Optional: Add a label or indicator */
-.collection-item-container.bandcamp-workflow-album::after {
+.collection-item-container.bcks-album::after {
   content: 'ALBUM';
   position: absolute;
   top: 5px;

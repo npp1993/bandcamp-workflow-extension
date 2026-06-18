@@ -269,7 +269,7 @@ export class WaveformService {
     const canvas = document.createElement('canvas');
     canvas.width = this.CONFIG.canvasWidth;
     canvas.height = this.CONFIG.canvasHeight;
-    canvas.className = 'bandcamp-waveform';
+    canvas.className = 'bcks-waveform';
 
     const canvasCtx = canvas.getContext('2d')!;
     canvasCtx.clearRect(0, 0, canvas.width, canvas.height);

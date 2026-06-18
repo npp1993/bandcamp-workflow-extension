@@ -4,8 +4,8 @@ import {Logger} from '../utils/logger';
  * Service for displaying toast-style notifications to users
  */
 export class NotificationService {
-  private static readonly NOTIFICATION_CONTAINER_ID = 'bandcamp-workflow-notifications';
-  private static readonly NOTIFICATION_CLASS = 'bandcamp-workflow-notification';
+  private static readonly NOTIFICATION_CONTAINER_ID = 'bcks-notifications';
+  private static readonly NOTIFICATION_CLASS = 'bcks-notification';
   private static readonly DEFAULT_DURATION = 5000; // 5 seconds
   private static notificationCounter = 0;
 

@@ -1,5 +1,5 @@
 {
-  "name": "bandcamp-workflow-extension",
+  "name": "bandcamp-keyboard-shortcuts",
   "version": "1.7",
   "type": "module",
   "description": "A browser extension for Bandcamp that adds numerous features and keyboard shortcuts to improve your music browsing workflow",
