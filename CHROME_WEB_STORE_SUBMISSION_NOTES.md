@@ -17,7 +17,7 @@ Users should install this extension to save time by navigating and purchasing mu
 Features include:
 
 - Streamlined workflow for music collectors, musicians, and DJs
-- Keyboard shortcuts for playback, navigation, and cart actions (Vim-style: Spacebar, N/P, C, Z, arrow keys, B)
+- Keyboard shortcuts for playback, navigation, and cart actions
 - Enhanced wishlist management: bulk purchase, automatic loading, and direct wishlisting from release pages
 - Playback speed controls with vinyl/stretched modes and quick reset
 - Visual waveform display for audio analysis
