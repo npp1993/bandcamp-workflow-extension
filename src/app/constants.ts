@@ -18,6 +18,9 @@ export const WISHLIST_LOADING_CLASS = 'bcks-wishlist-loading';
 // Persistent fixed-height slot that holds the waveform (and its loading/error
 // states) on track/album pages, so starting playback never shifts the page down.
 export const WAVEFORM_HOST_CLASS = 'bcks-waveform-host';
+// Small badge showing the detected BPM of the current track, placed near the
+// speed controls / waveform on track and album pages.
+export const BPM_BADGE_CLASS = 'bcks-bpm-badge';
 export const WAVEFORM_CONTAINER_CLASS = 'bcks-waveform-container';
 export const WAVEFORM_LOADING_CLASS = 'bcks-waveform-loading';
 export const WAVEFORM_ERROR_CLASS = 'bcks-waveform-error';

@@ -29,6 +29,8 @@
     "lint:fix": "eslint src/**/*.ts --fix",
     "format": "prettier --write src/**/*.{ts,js,json,css}",
     "format:check": "prettier --check src/**/*.{ts,js,json,css}",
+    "bpm:ground-truth": "bash tools/bpm-harness/export-ground-truth.sh",
+    "bpm:validate": "tsx tools/bpm-harness/validate.ts",
     "webpack:chrome": "webpack --env chrome --config webpack.config.cjs",
     "webpack:firefox": "webpack --env firefox --config webpack.config.cjs"
   },
@@ -54,6 +56,7 @@
     "prettier": "^3.5.3",
     "rimraf": "^3.0.2",
     "ts-loader": "^9.3.1",
+    "tsx": "^4.22.4",
     "typescript": "^4.8.2",
     "wait-on": "^8.0.2",
     "web-ext": "^8.5.0",

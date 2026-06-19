@@ -1,0 +1,4 @@
+# Generated locally from the user's rekordbox DB / music library. Contains
+# personal file paths -- not for the public repo. Regenerate with the scripts.
+ground-truth.tsv
+sample.tsv

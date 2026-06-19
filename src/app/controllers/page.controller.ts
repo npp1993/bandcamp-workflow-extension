@@ -8,9 +8,10 @@ import {WishlistController} from './wishlist.controller';
 import {PlaybarController} from './playbar.controller';
 import {DownloadHelperController} from './download-helper.controller';
 import {WaveformController} from './waveform.controller';
+import {BpmController} from './bpm.controller';
 import {KeyboardSidebarController} from './keyboard-sidebar.controller';
 import {Logger} from '../utils/logger';
-import {DOWNLOAD_ALL_CLASS, SPEED_GRID_CLASS, WAVEFORM_ELEMENT_SELECTOR, WISHLIST_LOADING_CLASS} from '../constants';
+import {BPM_BADGE_CLASS, DOWNLOAD_ALL_CLASS, SPEED_GRID_CLASS, WAVEFORM_ELEMENT_SELECTOR, WISHLIST_LOADING_CLASS} from '../constants';
 
 export interface Controllers {
   speed: SpeedController | null;
@@ -82,6 +83,9 @@ export class PageController {
     // Initialize waveform controller for supported page types (track, album, wishlist, collection), but not download pages
     if ((BandcampFacade.isPageSupported || BandcampFacade.isCollectionBasedPage) && !isDownloadPage) {
       WaveformController.initialize();
+      // BPM rides the waveform's decode; init after it so the speed grid and
+      // waveform host already exist for badge placement. No-ops off track/album.
+      BpmController.initialize();
     }
 
     // Initialize keyboard controller for both supported pages and collection-based pages, but not download pages
@@ -108,6 +112,7 @@ export class PageController {
     const selectors = [
       `.${SPEED_GRID_CLASS}`, // Speed controller grids
       WAVEFORM_ELEMENT_SELECTOR, // Waveform container/loading/error elements
+      `.${BPM_BADGE_CLASS}`, // BPM badge
       `.${DOWNLOAD_ALL_CLASS}`, // Download helper buttons
       `.${WISHLIST_LOADING_CLASS}`, // Wishlist load overlay (if a load is interrupted by SPA nav)
     ];
@@ -127,7 +132,10 @@ export class PageController {
     
     // Clean up waveform controller
     WaveformController.cleanup();
-    
+
+    // Clean up BPM badge (bumps its token so a late analysis can't re-stamp it)
+    BpmController.cleanup();
+
     Logger.debug('PageController cleanup completed');
   }
 

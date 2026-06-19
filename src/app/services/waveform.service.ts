@@ -21,6 +21,25 @@ export class WaveformService {
   // Cache expiry tracking
   private static cacheTimestamps = new Map<string, number>();
 
+  // Optional consumer fed the decoded PCM of each track, so another feature
+  // (BPM detection) can ride this single decode instead of fetching/decoding the
+  // audio a second time. Single slot, overwritten on re-register (idempotent
+  // across SPA navigations).
+  private static onBufferDecoded:
+    | ((channel: Float32Array, sampleRate: number, streamId: string) => void)
+    | null = null;
+
+  /**
+   * Register a consumer of each track's decoded PCM (left channel + sample rate
+   * + stream id). Called by the BPM controller; the waveform's existing decode
+   * then feeds both the RMS waveform and BPM analysis from one pass.
+   */
+  public static setBufferConsumer(
+    fn: (channel: Float32Array, sampleRate: number, streamId: string) => void,
+  ): void {
+    this.onBufferDecoded = fn;
+  }
+
   /**
    * Generate waveform for the currently playing audio
    *
@@ -70,8 +89,9 @@ export class WaveformService {
         return null;
       }
 
-      // Process audio buffer to extract waveform data
-      const waveformData = await this.processAudioBuffer(audioBuffer);
+      // Process audio buffer to extract waveform data (also feeds BPM via the
+      // decoded-buffer consumer, so the track is decoded only once).
+      const waveformData = await this.processAudioBuffer(audioBuffer, streamId);
       if (!waveformData) {
         Logger.error('Failed to process audio buffer');
         return null;
@@ -208,20 +228,30 @@ export class WaveformService {
    * @param audioData Raw audio buffer data
    * @returns Promise resolving to normalized amplitude array
    */
-  private static async processAudioBuffer(audioData: number[]): Promise<number[] | null> {
+  private static async processAudioBuffer(audioData: number[], streamId?: string): Promise<number[] | null> {
     try {
       // Create Web Audio API context
       const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      
+
       // Convert number array back to ArrayBuffer
       const audioBuffer = new Uint8Array(audioData).buffer;
-      
+
       // Decode audio data
       const decodedAudio = await ctx.decodeAudioData(audioBuffer);
-      
+
       // Extract left channel data (mono or stereo left)
       const leftChannel = decodedAudio.getChannelData(0);
-      
+
+      // Hand the freshly decoded PCM to any registered consumer (BPM detection)
+      // before it is reduced to RMS and dropped -- one decode, two features.
+      if (this.onBufferDecoded && streamId) {
+        try {
+          this.onBufferDecoded(leftChannel, decodedAudio.sampleRate, streamId);
+        } catch (consumerError) {
+          Logger.error('Decoded-buffer consumer failed:', consumerError);
+        }
+      }
+
       // Calculate RMS values for amplitude visualization using reference logic
       const stepSize = Math.round(decodedAudio.length / this.CONFIG.datapoints);
       const rmsSize = Math.min(stepSize, 128); // Use 128 as in the reference code

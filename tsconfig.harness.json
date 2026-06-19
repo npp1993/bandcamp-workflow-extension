@@ -1,0 +1,16 @@
+{
+  "comment": "Type-checks the Node BPM harness only. Kept separate so tools/ never enters the extension's webpack/tsc gate (the base tsconfig includes only src/**/*).",
+  "compilerOptions": {
+    "module": "esnext",
+    "target": "es2020",
+    "moduleResolution": "node",
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": ["node"],
+    "lib": ["es2020", "dom"]
+  },
+  "include": ["tools/**/*", "src/app/utils/bpm/**/*"]
+}
