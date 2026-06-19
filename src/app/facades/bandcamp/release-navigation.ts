@@ -90,7 +90,7 @@ export class ReleaseNavigation {
 
     // Check if navigation is already in progress
     if (BandcampFacade._releaseNavigationInProgress) {
-      Logger.warn('Release navigation already in progress, ignoring additional request');
+      Logger.debug('Release navigation already in progress, ignoring additional request');
       Logger.timing('playNextReleaseTrack blocked - concurrent request', startTime);
       return;
     }
@@ -172,7 +172,7 @@ export class ReleaseNavigation {
 
     // Check if navigation is already in progress
     if (BandcampFacade._releaseNavigationInProgress) {
-      Logger.warn('Release navigation already in progress, ignoring additional request');
+      Logger.debug('Release navigation already in progress, ignoring additional request');
       Logger.timing('playPreviousReleaseTrack blocked - concurrent request', startTime);
       return;
     }
