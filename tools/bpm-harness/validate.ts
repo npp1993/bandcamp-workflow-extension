@@ -25,7 +25,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const GT_PATH = path.join(HERE, 'ground-truth.tsv');
 const SAMPLE_FILE = path.join(HERE, 'sample.tsv');
 const LIBRARY = path.join(os.homedir(), 'Library/Mobile Documents/com~apple~CloudDocs/music_library');
-const TARGET_SR = 44100;
+const TARGET_SR = process.env.SR ? parseInt(process.env.SR, 10) : 22050; // mirror the extension's decode rate
 const DECODE_SECONDS = 150; // cap decode cost; analyzeBpm windows the middle 60s
 const LIMIT = process.env.LIMIT !== undefined ? parseInt(process.env.LIMIT, 10) : 120;
 const CONF = process.env.CONF !== undefined ? parseFloat(process.env.CONF) : undefined;

@@ -16,6 +16,11 @@ export class WaveformService {
     canvasHeight: 75, // 8:1 with canvasWidth; taller so the BPM overlay obscures less
     color: '#333',
     cacheTTL: 1000 * 60 * 15, // 15 minutes
+    // Decode (and resample) to this rate instead of the device default (~48kHz).
+    // Halves the decoded sample count -> faster decode, less memory. Validated
+    // against rekordbox: no waveform-resolution loss (200-pt RMS is rate-agnostic)
+    // and BPM accuracy is unchanged/slightly better at 22050 vs 44100.
+    decodeSampleRate: 22050,
   };
 
   // Cache expiry tracking
@@ -251,13 +256,17 @@ export class WaveformService {
    */
   private static async processAudioBuffer(audioData: number[], streamId?: string): Promise<number[] | null> {
     try {
-      // Create Web Audio API context
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      // Decode via an OfflineAudioContext fixed to a lower sample rate. This
+      // resamples on decode (smaller buffers, faster) and -- unlike a real
+      // AudioContext -- has no hardware backing, so it avoids the ~6 live-context
+      // limit and needs no close() (the previous per-track AudioContext leaked).
+      const OfflineCtx = (window.OfflineAudioContext || (window as any).webkitOfflineAudioContext) as typeof OfflineAudioContext;
+      const ctx = new OfflineCtx(1, 1, this.CONFIG.decodeSampleRate);
 
       // Convert number array back to ArrayBuffer
       const audioBuffer = new Uint8Array(audioData).buffer;
 
-      // Decode audio data
+      // Decode audio data (resampled to decodeSampleRate)
       const decodedAudio = await ctx.decodeAudioData(audioBuffer);
 
       // Extract left channel data (mono or stereo left)
