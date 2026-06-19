@@ -297,7 +297,7 @@ export class WaveformController {
 
   /**
    * Reserve the exact height the rendered waveform will occupy. The canvas is
-   * 600x60 (a 10:1 ratio) and scales down to the column width via CSS, so the
+   * 600x75 (an 8:1 ratio) and scales down to the column width via CSS, so the
    * reserved height tracks the host's own width.
    *
    * @param host The waveform host element
@@ -307,8 +307,8 @@ export class WaveformController {
     // canvas display width = min(intrinsic 600, content width); content width is
     // the host width minus the container's 5px horizontal padding on each side.
     const canvasWidth = width > 0 ? Math.min(600, width - 10) : 600;
-    // + container padding (5*2) and border (1*2)
-    const reserved = Math.round(canvasWidth / 10) + 12;
+    // canvas display height = width / 8 (8:1), + container padding (5*2) and border (1*2)
+    const reserved = Math.round(canvasWidth / 8) + 12;
     host.style.minHeight = `${reserved}px`;
   }
 

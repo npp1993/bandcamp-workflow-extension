@@ -13,7 +13,7 @@ export class WaveformService {
   private static readonly CONFIG = {
     datapoints: 200, // Increased from 100 for higher resolution
     canvasWidth: 600,
-    canvasHeight: 60,
+    canvasHeight: 75, // 8:1 with canvasWidth; taller so the BPM overlay obscures less
     color: '#333',
     cacheTTL: 1000 * 60 * 15, // 15 minutes
   };

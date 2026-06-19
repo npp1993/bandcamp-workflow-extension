@@ -264,7 +264,7 @@
    72px here is only a fallback. */
 .bcks-waveform-host {
   margin: 10px 0;
-  min-height: 72px;
+  min-height: 87px;
   display: flex;
   flex-direction: column;
   justify-content: center;

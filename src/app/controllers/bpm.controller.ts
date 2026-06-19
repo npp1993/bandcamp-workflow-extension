@@ -16,6 +16,8 @@ import {BPM_BADGE_CLASS, WAVEFORM_HOST_CLASS} from '../constants';
 export class BpmController {
   private static badgeEl: HTMLElement | null = null;
   private static generationToken = 0;
+  private static lastStreamId: string | null = null;
+  private static watching = false;
 
   public static initialize(): void {
     if (!BandcampFacade.isTrack && !BandcampFacade.isAlbum) {
@@ -26,6 +28,49 @@ export class BpmController {
       BpmController.onDecodedBuffer(channel, sampleRate, streamId);
     });
     this.ensureBadge();
+    this.setupTrackWatcher();
+  }
+
+  /**
+   * Watch for the audio source changing (skip to another track). On a change we
+   * reset the badge immediately rather than leaving the previous track's BPM up
+   * while the new one decodes: show the cached value if we have it, otherwise
+   * clear to the pending placeholder. Listeners are attached once for the life of
+   * the content script (guarded), so SPA re-inits don't stack them.
+   */
+  private static setupTrackWatcher(): void {
+    if (this.watching) {
+      return;
+    }
+    this.watching = true;
+    const check = (): void => this.handleTrackChange();
+    setInterval(check, 1000);
+    document.addEventListener('loadstart', (e) => {
+      if (e.target instanceof HTMLAudioElement) {
+        check();
+      }
+    }, true);
+    document.addEventListener('play', (e) => {
+      if (e.target instanceof HTMLAudioElement) {
+        check();
+      }
+    }, true);
+  }
+
+  private static handleTrackChange(): void {
+    if (!BandcampFacade.isTrack && !BandcampFacade.isAlbum) {
+      return;
+    }
+    const src = AudioUtils.getAudioElement()?.src;
+    const streamId = src ? WaveformService.extractStreamId(src) : null;
+    if (!streamId || streamId === this.lastStreamId) {
+      return;
+    }
+    this.lastStreamId = streamId;
+    this.generationToken++; // cancel any in-flight analysis for the previous track
+    this.ensureBadge();
+    // Cached -> show the number instantly; not cached -> clear to the placeholder.
+    this.renderResult(BpmService.getCached(streamId) ?? {bpm: null, confidence: 0});
   }
 
   /**
@@ -34,8 +79,8 @@ export class BpmController {
    */
   public static onDecodedBuffer(channel: Float32Array, sampleRate: number, streamId: string): void {
     const token = ++this.generationToken;
+    this.lastStreamId = streamId; // keep the watcher in sync; badge already shows the placeholder
     this.ensureBadge();
-    this.setText('BPM …'); // analyzing
 
     let result: BpmResult;
     try {
@@ -58,6 +103,7 @@ export class BpmController {
 
   public static cleanup(): void {
     this.generationToken++;
+    this.lastStreamId = null; // next page's first track counts as a change
     if (this.badgeEl) {
       this.badgeEl.remove();
       this.badgeEl = null;
@@ -121,12 +167,12 @@ export class BpmController {
     }
 
     this.badgeEl = badge;
-    this.setText('BPM —'); // placeholder; on the waveform it shows in the corner
+    this.setText('--- BPM'); // placeholder; on the waveform it shows in the corner
   }
 
   private static renderResult(result: BpmResult): void {
     if (result.bpm === null) {
-      this.setText('BPM —'); // beatless / low confidence
+      this.setText('--- BPM'); // beatless / low confidence
     } else {
       this.setText(`${Math.round(result.bpm)} BPM`);
     }
