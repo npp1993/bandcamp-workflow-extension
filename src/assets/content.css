@@ -284,11 +284,13 @@
   box-sizing: border-box;
 }
 
-/* Before playback the slot is empty, so show the waveform box outline (matching
-   the container) so the reserved space reads as "the waveform goes here". Once a
-   loading/waveform/error child mounts, the host is no longer :empty and that
-   child's own box takes over - no double border. */
-.bcks-waveform-host:empty {
+/* Before playback the slot holds no waveform state, so show the box outline
+   (matching the container) so the reserved space reads as "the waveform goes
+   here". Uses :not(:has(state)) rather than :empty because the BPM badge is an
+   absolutely-positioned overlay child of the host - it must not suppress the
+   outline. Once a loading/waveform/error child mounts, that child's own box
+   takes over and the outline is dropped (no double border). */
+.bcks-waveform-host:not(:has(.bcks-waveform-container, .bcks-waveform-loading, .bcks-waveform-error)) {
   background: rgba(0, 0, 0, 0.05);
   border: 1px solid rgba(190, 190, 190, 0.3);
   border-radius: 4px;

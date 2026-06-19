@@ -4,7 +4,7 @@ import {BpmService} from '../services/bpm.service';
 import {AudioUtils} from '../utils/audio-utils';
 import {Logger} from '../utils/logger';
 import {BpmResult} from '../utils/bpm/types';
-import {BPM_BADGE_CLASS} from '../constants';
+import {BPM_BADGE_CLASS, WAVEFORM_HOST_CLASS} from '../constants';
 
 /**
  * Always-on BPM badge for track/album pages. It does no fetching/decoding of its
@@ -70,24 +70,58 @@ export class BpmController {
     }
     const badge = document.createElement('div');
     badge.className = BPM_BADGE_CLASS;
-    badge.style.cssText = [
-      'display:inline-block',
-      'margin:4px 0',
-      'padding:2px 9px',
-      'font-size:11px',
-      'font-weight:600',
-      'letter-spacing:0.04em',
-      'line-height:1.6',
-      'border-radius:10px',
-      'background:rgba(128,128,128,0.18)',
-      'color:inherit',
-      'opacity:0.85',
-    ].join(';');
-    // Sibling of the waveform host (not nested), so the waveform's own host
-    // re-renders never clear it. Lands just below the speed controls.
-    BandcampFacade.insertBelowSpeedController(badge);
+
+    const host = document.querySelector<HTMLElement>(`.${WAVEFORM_HOST_CLASS}`);
+    if (host) {
+      // Overlay in the waveform's top-right corner: no extra row, visually tied
+      // to the audio. The waveform only clears children by its own bcks-waveform-*
+      // classes, so this badge survives play/track-change state swaps.
+      // pointer-events:none keeps the waveform's click-to-seek working underneath.
+      if (window.getComputedStyle(host).position === 'static') {
+        host.style.position = 'relative';
+      }
+      badge.style.cssText = [
+        'position:absolute',
+        'top:5px',
+        'right:7px',
+        // Override the host's `> * { width:100%; min-height:inherit }` flex rule,
+        // which would otherwise stretch the badge across the whole waveform.
+        'left:auto',
+        'width:max-content',
+        'min-height:0',
+        'z-index:2',
+        'pointer-events:none',
+        'padding:1px 7px',
+        'font-size:11px',
+        'font-weight:600',
+        'letter-spacing:0.04em',
+        'line-height:1.5',
+        'border-radius:9px',
+        'background:rgba(0,0,0,0.55)',
+        'color:#fff',
+      ].join(';');
+      host.appendChild(badge);
+    } else {
+      // Fallback when the waveform host is absent: a small pill below the speed
+      // controls (its own line, but only when there's no waveform to overlay).
+      badge.style.cssText = [
+        'display:inline-block',
+        'margin:4px 0',
+        'padding:2px 9px',
+        'font-size:11px',
+        'font-weight:600',
+        'letter-spacing:0.04em',
+        'line-height:1.6',
+        'border-radius:10px',
+        'background:rgba(128,128,128,0.18)',
+        'color:inherit',
+        'opacity:0.85',
+      ].join(';');
+      BandcampFacade.insertBelowSpeedController(badge);
+    }
+
     this.badgeEl = badge;
-    this.setText('BPM —'); // placeholder reserves space, no layout shift
+    this.setText('BPM —'); // placeholder; on the waveform it shows in the corner
   }
 
   private static renderResult(result: BpmResult): void {
