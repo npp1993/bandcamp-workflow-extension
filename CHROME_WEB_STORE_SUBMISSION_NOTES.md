@@ -12,7 +12,7 @@ This extension enhances the Bandcamp music platform with keyboard shortcuts that
 
 This extension transforms Bandcamp into a keyboard-navigable music platform by adding shortcuts for playback control, track navigation, and wishlisting items.  Wishlisted tracks and albums can also easily be added to a user's cart in bulk from the wishlist page.
 
-Users should install this extension to save time by navigating and purchasing music much faster using keyboard shortcuts instead of mouse clicks. It improves workflow for music enthusiasts who browse extensive catalogs or manage large wishlists, and enhances accessibility by providing keyboard-only navigation for those who prefer or require it. Music collectors and DJs also benefit from playback speed controls and waveform visualization, making it a valuable tool for music browsing.
+Users should install this extension to save time by navigating and purchasing music much faster using keyboard shortcuts instead of mouse clicks. It improves workflow for music enthusiasts who browse extensive catalogs or manage large wishlists, and enhances accessibility by providing keyboard-only navigation for those who prefer or require it. Music collectors and DJs also benefit from playback speed controls, waveform visualization, and automatic BPM detection, making it a valuable tool for music browsing.
 
 Features include:
 
@@ -21,6 +21,7 @@ Features include:
 - Enhanced wishlist management: bulk purchase, automatic loading, and direct wishlisting from release pages
 - Playback speed controls with vinyl/stretched modes and quick reset
 - Visual waveform display for audio analysis
+- Automatic BPM detection for the playing track, shown on the waveform (beatless tracks show none)
 - Automated curl script generation for bulk downloading purchased items with ZIP extraction
 
 ## Permission Justifications
@@ -60,7 +61,7 @@ Productivity
 - All functionality operates locally within the browser
 - No analytics, tracking, or data collection
 - No data sharing with third parties
-- Temporary audio data processing for waveform generation (not stored)
+- Temporary audio data processing for waveform generation and BPM detection (not stored)
 
 ### Data Storage
 - No persistent data storage

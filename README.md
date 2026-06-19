@@ -23,6 +23,7 @@ Icons were created by [Dharu Ghazi](https://www.fiverr.com/dghzdesign).
 - Automatic loading of all wishlist items
 - Always play the first track on a release page (instead of a featured track)
 - Playback speed adjustment with vinyl and stretched modes
+- Waveform visualization with click-to-seek, plus automatic BPM detection shown on the waveform (beatless tracks show none)
 - Generate a ready-to-use `curl` script for bulk downloading your purchased items, including automatic extraction of downloaded ZIP files
 
 ## Keyboard Shortcuts
