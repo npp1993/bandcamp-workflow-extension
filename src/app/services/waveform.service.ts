@@ -21,6 +21,11 @@ export class WaveformService {
   // Cache expiry tracking
   private static cacheTimestamps = new Map<string, number>();
 
+  // In-flight generations keyed by streamId, so concurrent requests for the same
+  // track (rapid loadstart/play/poll events) share ONE fetch+decode instead of
+  // each doing their own.
+  private static inFlight = new Map<string, Promise<number[] | null>>();
+
   // Optional consumer fed the decoded PCM of each track, so another feature
   // (BPM detection) can ride this single decode instead of fetching/decoding the
   // audio a second time. Single slot, overwritten on re-register (idempotent
@@ -65,24 +70,43 @@ export class WaveformService {
    * @returns Promise resolving to the waveform canvas element or null if failed
    */
   public static async generateWaveformForAudioSrc(audioSrc: string): Promise<HTMLCanvasElement | null> {
+    if (!audioSrc) {
+      return null;
+    }
+
+    // Extract stream ID from audio source for caching
+    const streamId = this.extractStreamId(audioSrc);
+    if (!streamId) {
+      return null;
+    }
+
+    // Check cache first
+    const cachedData = this.getCachedWaveformData(streamId);
+    if (cachedData) {
+      return this.renderWaveformFromData(cachedData);
+    }
+
+    // Coalesce concurrent generations for the same stream: rapid audio events
+    // (loadstart / play / the periodic source poll) would otherwise each
+    // fetch+decode the same track. Reuse the single in-flight generation, then
+    // render a fresh canvas per caller from the shared data.
+    let work = this.inFlight.get(streamId);
+    if (!work) {
+      work = this.fetchAndProcess(audioSrc, streamId);
+      this.inFlight.set(streamId, work);
+      void work.finally(() => this.inFlight.delete(streamId));
+    }
+
+    const waveformData = await work;
+    return waveformData ? this.renderWaveformFromData(waveformData) : null;
+  }
+
+  /**
+   * Fetch + decode + RMS-process a stream into waveform data (and feed the BPM
+   * consumer from the same decode). Caches the result. Returns null on failure.
+   */
+  private static async fetchAndProcess(audioSrc: string, streamId: string): Promise<number[] | null> {
     try {
-      if (!audioSrc) {
-        return null;
-      }
-
-      // Extract stream ID from audio source for caching
-      const streamId = this.extractStreamId(audioSrc);
-      if (!streamId) {
-        return null;
-      }
-
-      // Check cache first
-      const cachedData = this.getCachedWaveformData(streamId);
-      if (cachedData) {
-        return this.renderWaveformFromData(cachedData);
-      }
-
-      // Fetch audio buffer via background script using complete URL
       const audioBuffer = await this.fetchAudioBuffer(audioSrc);
       if (!audioBuffer) {
         Logger.error('Failed to fetch audio buffer');
@@ -97,11 +121,8 @@ export class WaveformService {
         return null;
       }
 
-      // Cache the processed data
       this.cacheWaveformData(streamId, waveformData);
-
-      // Render and return the waveform canvas
-      return this.renderWaveformFromData(waveformData);
+      return waveformData;
     } catch (error) {
       Logger.error('Error generating waveform:', error);
       return null;
