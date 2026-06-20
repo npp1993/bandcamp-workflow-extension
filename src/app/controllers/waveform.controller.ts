@@ -296,17 +296,17 @@ export class WaveformController {
   }
 
   /**
-   * Reserve the exact height the rendered waveform will occupy. The canvas is
-   * 600x75 (an 8:1 ratio) and scales down to the column width via CSS, so the
-   * reserved height tracks the host's own width.
+   * Reserve the exact height the rendered waveform will occupy. The canvas keeps
+   * an 8:1 ratio and now fills the full container width (CSS width:100%), so the
+   * reserved height tracks the host's own width with no 600px cap.
    *
    * @param host The waveform host element
    */
   private static reserveHostHeight(host: HTMLElement): void {
     const width = host.clientWidth;
-    // canvas display width = min(intrinsic 600, content width); content width is
-    // the host width minus the container's 5px horizontal padding on each side.
-    const canvasWidth = width > 0 ? Math.min(600, width - 10) : 600;
+    // canvas display width = container content width = host width minus the
+    // container's 5px horizontal padding and 1px border on each side (12 total).
+    const canvasWidth = width > 0 ? width - 12 : 600;
     // canvas display height = width / 8 (8:1), + container padding (5*2) and border (1*2)
     const reserved = Math.round(canvasWidth / 8) + 12;
     host.style.minHeight = `${reserved}px`;
@@ -321,6 +321,11 @@ export class WaveformController {
   private static mountInWaveformHost(element: HTMLElement): void {
     const host = this.ensureWaveformHost();
     if (host) {
+      // Recompute the reserved height from the host's current width on every
+      // mount, so the loading box and the eventually-rendered waveform (both
+      // 8:1, filling the full width) always reserve the same height -- no shift
+      // when the real waveform swaps in, even if the column width changed.
+      this.reserveHostHeight(host);
       host.appendChild(element);
     } else {
       BandcampFacade.insertBelowSpeedController(element);

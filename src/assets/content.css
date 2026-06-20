@@ -211,7 +211,10 @@
 .bcks-waveform {
   display: block;
   margin: 0 auto;
-  max-width: 100%;
+  /* Fill the full container width (not just up to the 600px intrinsic size) so
+     the bars span border-to-border at any player width and match the loading
+     box. height:auto keeps the 8:1 aspect from the 600x75 bitmap. */
+  width: 100%;
   height: auto;
   border-radius: 2px;
   position: relative;
@@ -250,7 +253,7 @@
   }
 
   .bcks-waveform {
-    max-width: 100%;
+    width: 100%;
   }
 
   .bcks-waveform-title {
