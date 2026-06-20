@@ -1,5 +1,6 @@
 import {Logger} from '../utils/logger';
 import {AudioUtils} from '../utils/audio-utils';
+import {Colors} from '../common/colors';
 
 /**
  * Service for generating and rendering waveforms from Bandcamp audio streams
@@ -343,14 +344,34 @@ export class WaveformService {
     const progressPoint = progress * waveformData.length;
 
     // Render waveform bars with different colors for played/unplayed
+    const {played, unplayed} = this.barColors();
     for (let i = 0; i < waveformData.length; i++) {
       const amplitude = waveformData[i];
       const isPlayed = i < progressPoint;
-      const color = isPlayed ? '#666' : this.CONFIG.color; // Darker color for played portion
+      const color = isPlayed ? played : unplayed;
       this.fillBar(canvas, amplitude, i, waveformData.length, color);
     }
 
     return canvas;
+  }
+
+  /**
+   * Bar colors for the waveform, derived from the page's theme text color so
+   * the rendered waveform matches the loading state and stays high-contrast on
+   * any background (the played portion brighter than the unplayed). Falls back
+   * to the original fixed grays when the color scheme isn't available.
+   *
+   * @returns played/unplayed CSS color strings
+   */
+  private static barColors(): {played: string; unplayed: string} {
+    const rgb = Colors.getTextColorRgb();
+    if (!rgb) {
+      return {played: '#666', unplayed: this.CONFIG.color};
+    }
+    return {
+      played: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.9)`,
+      unplayed: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.55)`,
+    };
   }
 
   /**
@@ -376,10 +397,11 @@ export class WaveformService {
     (canvas as any)._lastProgressPoint = progressPoint;
 
     // Render waveform bars with different colors for played/unplayed
+    const {played, unplayed} = this.barColors();
     for (let i = 0; i < waveformData.length; i++) {
       const amplitude = waveformData[i];
       const isPlayed = i < progressPoint;
-      const color = isPlayed ? '#666' : this.CONFIG.color; // Darker color for played portion
+      const color = isPlayed ? played : unplayed;
       this.fillBar(canvas, amplitude, i, waveformData.length, color);
     }
   }

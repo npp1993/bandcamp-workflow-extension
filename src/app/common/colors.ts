@@ -1,6 +1,6 @@
 import {BandcampFacade} from '../facades/bandcamp.facade';
 
-interface Rgb {
+export interface Rgb {
   r: number;
   g: number;
   b: number;
@@ -47,6 +47,15 @@ export class Colors {
 
   public static getStrokeColor(): string {
     return BandcampFacade.colors?.link_color ?? '';
+  }
+
+  /**
+   * The page's theme text color as RGB (or null if the color scheme isn't
+   * available yet). Single accessor for text_color so the waveform bars and the
+   * loading state derive from the same source.
+   */
+  public static getTextColorRgb(): Rgb | null {
+    return this.convertHexToRgb(BandcampFacade.colors?.text_color ?? '');
   }
 
   public static getLoadingColor(): Rgb {

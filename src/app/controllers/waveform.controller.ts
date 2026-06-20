@@ -557,7 +557,7 @@ export class WaveformController {
    * @returns Comma-separated rgb components (e.g. "255, 255, 255")
    */
   private static loadingRgb(): string {
-    const rgb = Colors.convertHexToRgb(BandcampFacade.colors?.text_color ?? '');
+    const rgb = Colors.getTextColorRgb();
     return rgb ? `${rgb.r}, ${rgb.g}, ${rgb.b}` : '128, 128, 128';
   }
 
