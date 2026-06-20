@@ -344,13 +344,14 @@ export class WaveformService {
     const progressPoint = progress * waveformData.length;
 
     // Render waveform bars with different colors for played/unplayed
-    const {played, unplayed} = this.barColors();
+    const {played, unplayed, playhead} = this.barColors();
     for (let i = 0; i < waveformData.length; i++) {
       const amplitude = waveformData[i];
       const isPlayed = i < progressPoint;
       const color = isPlayed ? played : unplayed;
       this.fillBar(canvas, amplitude, i, waveformData.length, color);
     }
+    this.drawPlayhead(canvas, progress, playhead);
 
     return canvas;
   }
@@ -361,17 +362,40 @@ export class WaveformService {
    * any background (the played portion brighter than the unplayed). Falls back
    * to the original fixed grays when the color scheme isn't available.
    *
-   * @returns played/unplayed CSS color strings
+   * @returns played/unplayed bar colors and the playhead-line color
    */
-  private static barColors(): {played: string; unplayed: string} {
+  private static barColors(): {played: string; unplayed: string; playhead: string} {
     const rgb = Colors.getTextColorRgb();
     if (!rgb) {
-      return {played: '#666', unplayed: this.CONFIG.color};
+      return {played: '#666', unplayed: this.CONFIG.color, playhead: 'rgba(128, 128, 128, 0.45)'};
     }
     return {
       played: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.9)`,
       unplayed: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.55)`,
+      // Matches the loading shade's leading edge (text color at 0.45 alpha).
+      playhead: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.45)`,
     };
+  }
+
+  /**
+   * Draw the playhead as a 2px full-height vertical line at the played/unplayed
+   * boundary, mirroring the loading shade's leading edge so the marker is
+   * consistent across the loading -> loaded swap. No line at progress 0.
+   *
+   * @param canvas Target canvas
+   * @param progress Progress ratio (0-1)
+   * @param color Playhead line color
+   */
+  private static drawPlayhead(canvas: HTMLCanvasElement, progress: number, color: string): void {
+    if (progress <= 0) {
+      return;
+    }
+    const ctx = canvas.getContext('2d')!;
+    const lineWidth = 2;
+    // Clamp so the full 2px stays on-canvas at progress 1.
+    const x = Math.min(canvas.width - lineWidth, Math.max(0, progress * canvas.width - lineWidth / 2));
+    ctx.fillStyle = color;
+    ctx.fillRect(x, 0, lineWidth, canvas.height);
   }
 
   /**
@@ -397,13 +421,14 @@ export class WaveformService {
     (canvas as any)._lastProgressPoint = progressPoint;
 
     // Render waveform bars with different colors for played/unplayed
-    const {played, unplayed} = this.barColors();
+    const {played, unplayed, playhead} = this.barColors();
     for (let i = 0; i < waveformData.length; i++) {
       const amplitude = waveformData[i];
       const isPlayed = i < progressPoint;
       const color = isPlayed ? played : unplayed;
       this.fillBar(canvas, amplitude, i, waveformData.length, color);
     }
+    this.drawPlayhead(canvas, progress, playhead);
   }
 
   /**
