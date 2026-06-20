@@ -35,10 +35,18 @@ export class BpmService {
       result = {bpm: null, confidence: 0};
     }
 
+    this.cacheResult(streamId, result);
+    return result;
+  }
+
+  /**
+   * Cache a result computed elsewhere (e.g. the BPM Web Worker), so the next
+   * lookup/replay of the same stream is instant. Stores null results too.
+   */
+  public static cacheResult(streamId: string, result: BpmResult): void {
     const key = this.key(streamId);
     this.cache.set(key, result);
     this.cacheTimestamps.set(key, Date.now());
-    return result;
   }
 
   public static getCached(streamId: string): BpmResult | null {

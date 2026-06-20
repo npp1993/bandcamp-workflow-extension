@@ -6,6 +6,12 @@ import {Logger} from '../utils/logger';
 import {BpmResult} from '../utils/bpm/types';
 import {BPM_BADGE_CLASS, WAVEFORM_HOST_CLASS} from '../constants';
 
+interface BpmWorkerResponse {
+  token: number;
+  streamId: string;
+  result: BpmResult;
+}
+
 /**
  * Always-on BPM badge for track/album pages. It does no fetching/decoding of its
  * own: it registers as a consumer of the waveform pipeline's decoded PCM and
@@ -18,6 +24,9 @@ export class BpmController {
   private static generationToken = 0;
   private static lastStreamId: string | null = null;
   private static watching = false;
+  private static worker: Worker | null = null;
+  private static workerFailed = false;
+  private static workerSetupStarted = false;
 
   public static initialize(): void {
     if (!BandcampFacade.isTrack && !BandcampFacade.isAlbum) {
@@ -29,14 +38,18 @@ export class BpmController {
     });
     this.ensureBadge();
     this.setupTrackWatcher();
+    this.setupWorker();
   }
 
   /**
-   * Watch for the audio source changing (skip to another track). On a change we
-   * reset the badge immediately rather than leaving the previous track's BPM up
-   * while the new one decodes: show the cached value if we have it, otherwise
-   * clear to the pending placeholder. Listeners are attached once for the life of
-   * the content script (guarded), so SPA re-inits don't stack them.
+   * Watch for the audio source changing (skip to another track) so we can reset
+   * the badge immediately rather than leaving the previous track's BPM up while
+   * the new one decodes: show the cached value if we have it, otherwise clear to
+   * the pending placeholder. Driven by the audio element's own loadstart/play
+   * events (onDecodedBuffer is the backstop once the new track decodes); no
+   * polling timer -- WaveformController already runs one and the events suffice.
+   * Listeners are attached once for the life of the content script (guarded), so
+   * SPA re-inits don't stack them.
    */
   private static setupTrackWatcher(): void {
     if (this.watching) {
@@ -44,7 +57,6 @@ export class BpmController {
     }
     this.watching = true;
     const check = (): void => this.handleTrackChange();
-    setInterval(check, 1000);
     document.addEventListener('loadstart', (e) => {
       if (e.target instanceof HTMLAudioElement) {
         check();
@@ -74,13 +86,30 @@ export class BpmController {
   }
 
   /**
-   * Fed by the waveform decode. Analyzes synchronously, then renders only if this
-   * is still the current track (token unchanged and the live stream id matches).
+   * Fed by the waveform decode. Offloads the heavy analysis to the Web Worker
+   * (so it never janks playback); applyResult renders the worker's reply only if
+   * the track is still current. Falls back to synchronous main-thread analysis if
+   * the worker can't be created. Serves an instant result from cache when present.
    */
   public static onDecodedBuffer(channel: Float32Array, sampleRate: number, streamId: string): void {
-    const token = ++this.generationToken;
     this.ensureBadge();
+    const token = ++this.generationToken;
 
+    const cached = BpmService.getCached(streamId);
+    if (cached) {
+      this.applyResult(token, streamId, cached);
+      return;
+    }
+
+    if (this.worker) {
+      // Structured-clone the channel (don't transfer -- the waveform's RMS pass
+      // still reads this same Float32Array after we return).
+      this.worker.postMessage({token, streamId, sampleRate, channel});
+      return;
+    }
+
+    // Fallback: analyze synchronously on the main thread (worker not ready yet,
+    // or unavailable on this browser).
     let result: BpmResult;
     try {
       result = BpmService.analyzeFromChannel(channel, sampleRate, streamId);
@@ -88,19 +117,65 @@ export class BpmController {
       Logger.error('BPM controller analysis error:', error);
       result = {bpm: null, confidence: 0};
     }
+    this.applyResult(token, streamId, result);
+  }
 
+  private static onWorkerMessage(e: MessageEvent<BpmWorkerResponse>): void {
+    const {token, streamId, result} = e.data;
+    BpmService.cacheResult(streamId, result);
+    this.applyResult(token, streamId, result);
+  }
+
+  /** Render a result only if it's still for the current track. */
+  private static applyResult(token: number, streamId: string, result: BpmResult): void {
     if (token !== this.generationToken) {
-      return; // superseded by a newer track
+      return; // superseded by a newer track while analysis was in flight
     }
     const liveSrc = AudioUtils.getAudioElement()?.src;
     const liveStream = liveSrc ? WaveformService.extractStreamId(liveSrc) : null;
     if (liveStream && liveStream !== streamId) {
-      return; // user skipped; this result is for a track no longer playing -- do
-      // NOT touch lastStreamId, or the watcher would desync from the live track
+      return; // user skipped; result is for a track no longer playing -- do NOT
+      // touch lastStreamId, or the watcher would desync from the live track
     }
     // Only now mark this as the displayed track (after confirming it's current).
     this.lastStreamId = streamId;
     this.renderResult(result);
+  }
+
+  /**
+   * Create the analysis Worker once, asynchronously. A content script cannot do
+   * `new Worker('chrome-extension://...')` -- the page origin blocks it -- so we
+   * fetch the (web-accessible) worker script and run it from a same-origin blob:
+   * URL. Runs at init; until it's ready, onDecodedBuffer uses the main-thread
+   * fallback. If anything fails, BPM stays on the main thread.
+   */
+  private static setupWorker(): void {
+    if (this.workerSetupStarted) {
+      return;
+    }
+    this.workerSetupStarted = true;
+    void (async () => {
+      try {
+        const res = await fetch(chrome.runtime.getURL('scripts/bpm.worker.js'));
+        if (!res.ok) {
+          throw new Error(`worker fetch ${res.status}`);
+        }
+        const code = await res.text();
+        const blobUrl = URL.createObjectURL(new Blob([code], {type: 'text/javascript'}));
+        const worker = new Worker(blobUrl);
+        URL.revokeObjectURL(blobUrl); // worker keeps running after revoke
+        worker.onmessage = (e: MessageEvent<BpmWorkerResponse>) => BpmController.onWorkerMessage(e);
+        worker.onerror = (err) => {
+          Logger.error('BPM worker error; using main thread:', err.message);
+          BpmController.workerFailed = true;
+          BpmController.worker = null;
+        };
+        BpmController.worker = worker;
+      } catch (error) {
+        Logger.error('BPM worker setup failed; using main thread:', error);
+        BpmController.workerFailed = true;
+      }
+    })();
   }
 
   public static cleanup(): void {

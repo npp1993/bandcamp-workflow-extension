@@ -20,6 +20,7 @@ module.exports = (env) => {
     entry: {
       'scripts/content': './src/app/content.ts',
       'scripts/background': './src/app/background.ts',
+      'scripts/bpm.worker': './src/app/workers/bpm.worker.ts',
     },
     resolve: {
       extensions: ['.ts', '.js'],
