@@ -32,6 +32,10 @@ export class WaveformController {
   // result, rather than blocking the current track's waveform behind it.
   private static generationToken = 0;
 
+  // Bar count for the loading-state placeholder waveform (matches the rendered
+  // waveform's datapoints so the skeleton reads at the same density).
+  private static readonly LOADING_BARS = 200;
+
   /**
    * Initialize waveform functionality on the current page
    */
@@ -440,58 +444,151 @@ export class WaveformController {
   }
 
   /**
-   * Show loading indicator while waveform is being generated
+   * Show the loading state while the waveform is being generated. Instead of a
+   * spinner this renders a placeholder "skeleton" waveform that (a) carries a
+   * pulse sweeping left-to-right as the work-in-progress cue and (b) shades the
+   * played portion up to the live playhead, so the user can see playback
+   * progress on the same box where the real waveform will appear. The animation
+   * is driven by a single setInterval whose id is stored on the container's
+   * dataset, so the existing removeLoadingIndicator/removeCurrentWaveform paths
+   * already stop it -- no extra listeners to leak.
    */
   private static showLoadingIndicator(): void {
     try {
-      // Idempotent: if the spinner is already up (e.g. the immediate
+      // Idempotent: if the placeholder is already up (e.g. the immediate
       // track-change clear mounted it), reuse it rather than tearing it down and
       // recreating the element + its animation.
       if (this.currentWaveformContainer?.classList.contains(WAVEFORM_LOADING_CLASS)) {
         return;
       }
 
-      // Drop any rendered waveform/error before showing the spinner.
+      // Drop any rendered waveform/error before showing the placeholder.
       this.removeCurrentWaveform();
 
       const container = document.createElement('div');
       container.className = WAVEFORM_LOADING_CLASS;
-      // Fills the reserved slot (min-height inherited from the host) and centers
-      // the spinner; padding 0 so the box matches the empty/loaded waveform box.
+      // Mirror the rendered waveform container's box exactly so swapping the real
+      // waveform in causes zero shift and the skeleton lines up with where the
+      // bars will be drawn.
       container.style.cssText = `
-        padding: 0;
+        padding: 5px;
         background: rgba(0, 0, 0, 0.05);
         border-radius: 4px;
         display: flex;
         align-items: center;
         justify-content: center;
         border: 1px solid rgba(190, 190, 190, 0.3);
+        overflow: hidden;
       `;
 
-      // Rotating spinner (Web Animations API, matching the wishlist overlay).
-      // Use the page's text color so it contrasts with the background on any theme.
-      const spinnerColor = BandcampFacade.colors?.text_color
-        ? `#${BandcampFacade.colors.text_color}`
-        : '#555555';
-      const spinner = document.createElement('div');
-      spinner.style.cssText = `
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        border: 2px solid ${spinnerColor};
-        border-right-color: transparent;
-      `;
-      spinner.animate(
-        [{transform: 'rotate(0deg)'}, {transform: 'rotate(360deg)'}],
-        {duration: 700, iterations: Infinity},
-      );
-      container.appendChild(spinner);
+      // Reuse the .bcks-waveform canvas sizing (max-width:100%; height:auto) so
+      // the placeholder scales to the column width identically to the rendered
+      // waveform. 600x75 matches WaveformService's 8:1 canvas.
+      const canvas = document.createElement('canvas');
+      canvas.width = 600;
+      canvas.height = 75;
+      canvas.className = 'bcks-waveform';
+      container.appendChild(canvas);
+
+      // Animate the skeleton: advance the pulse phase and redraw (also re-reads
+      // the live playhead each tick, so the shade tracks playback during the
+      // fetch/decode). ~55ms tick keeps it smooth and cheap (200 fillRects).
+      let phase = 0;
+      const step = this.LOADING_BARS / 38; // pulse crosses the box ~every 2s
+      this.drawLoadingFrame(canvas, phase);
+      const intervalId = window.setInterval(() => {
+        phase = (phase + step) % this.LOADING_BARS;
+        this.drawLoadingFrame(canvas, phase);
+      }, 55);
+      container.dataset.intervalId = String(intervalId);
 
       this.mountInWaveformHost(container);
       this.currentWaveformContainer = container;
     } catch (error) {
       Logger.error('[WaveformController] Error showing loading indicator:', error);
     }
+  }
+
+  /**
+   * Draw one frame of the loading-state placeholder waveform: a muted skeleton
+   * outline, a Gaussian "pulse" of taller bars centered on `phase` (the moving
+   * loading cue), and a translucent shade over the portion already played
+   * (read live from the audio element). Cheap enough to run on an interval.
+   *
+   * @param canvas Placeholder canvas to draw into
+   * @param phase Pulse center, in bar units (wraps over [0, LOADING_BARS))
+   */
+  private static drawLoadingFrame(canvas: HTMLCanvasElement, phase: number): void {
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      return;
+    }
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    // Played fraction from the live audio, so the shade tracks the playhead even
+    // before the real waveform exists. Guard the pre-metadata NaN duration.
+    const audio = AudioUtils.getAudioElement();
+    let progress = 0;
+    if (audio && Number.isFinite(audio.duration) && audio.duration > 0) {
+      progress = Math.min(1, Math.max(0, audio.currentTime / audio.duration));
+    }
+
+    // Draw in the page's theme text color so the placeholder contrasts with the
+    // background on any theme (a fixed gray vanishes on a black/dark theme).
+    const rgb = this.loadingRgb();
+
+    // Translucent fill behind the played portion (shaded up to the playhead).
+    const progressX = progress * w;
+    if (progressX > 0) {
+      ctx.fillStyle = `rgba(${rgb}, 0.12)`;
+      ctx.fillRect(0, 0, progressX, h);
+    }
+
+    const n = this.LOADING_BARS;
+    const barWidth = w / n;
+    const sigma = n * 0.10; // pulse width
+    const progressPoint = progress * n;
+
+    for (let i = 0; i < n; i++) {
+      // Muted skeleton so the empty box still reads as "a waveform goes here".
+      const skeleton = 0.20 + 0.13 * Math.sin(i * 0.45) + 0.07 * Math.sin(i * 0.17 + 1.3);
+
+      // Traveling pulse: bars near `phase` rise AND brighten, giving a
+      // left-to-right wave that signals work in progress (replaces the spinner).
+      // Wrap the distance so the pulse loops seamlessly across the box edge.
+      let d = Math.abs(i - phase);
+      d = Math.min(d, n - d);
+      const pulse = Math.exp(-(d * d) / (2 * sigma * sigma));
+
+      const amp = Math.max(0.05, Math.min(0.85, skeleton + pulse * 0.45));
+
+      // Played bars more opaque (atop the shade), matching the rendered
+      // waveform's played/unplayed contrast; the pulse lifts opacity on top.
+      const played = i < progressPoint;
+      const alpha = Math.min(0.95, (played ? 0.6 : 0.32) + pulse * 0.35);
+      ctx.fillStyle = `rgba(${rgb}, ${alpha})`;
+      ctx.fillRect(i * barWidth, h, barWidth, -(h * amp));
+    }
+  }
+
+  /**
+   * The page's theme text color as an "r, g, b" string for the loading
+   * placeholder, so it contrasts with the page background on light AND dark
+   * themes. Falls back to mid-gray when the color scheme isn't available.
+   *
+   * @returns Comma-separated rgb components (e.g. "255, 255, 255")
+   */
+  private static loadingRgb(): string {
+    const hex = BandcampFacade.colors?.text_color?.replace('#', '');
+    if (hex && /^[0-9a-fA-F]{6}$/.test(hex)) {
+      const r = parseInt(hex.slice(0, 2), 16);
+      const g = parseInt(hex.slice(2, 4), 16);
+      const b = parseInt(hex.slice(4, 6), 16);
+      return `${r}, ${g}, ${b}`;
+    }
+    return '128, 128, 128';
   }
 
   /**
