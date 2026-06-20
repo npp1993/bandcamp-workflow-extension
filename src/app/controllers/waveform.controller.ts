@@ -298,20 +298,20 @@ export class WaveformController {
 
   /**
    * Reserve the exact height the rendered waveform will occupy. The canvas keeps
-   * an 8:1 ratio and now fills the full container width (CSS width:100%), so the
-   * reserved height tracks the host's own width with no 600px cap.
+   * an 8:1 ratio and fills the full container width (CSS width:100%) with no
+   * inner padding, so the reserved height tracks the host's own width.
    *
    * @param host The waveform host element
    */
   private static reserveHostHeight(host: HTMLElement): void {
     const width = host.clientWidth;
     // canvas display width = container content width = host width minus the
-    // container's 5px horizontal padding and 1px border on each side (12 total).
+    // container's 1px border on each side (2 total; no padding any more).
     // Fall back to the 600px intrinsic width if the host isn't laid out yet
     // (clientWidth 0, or implausibly small) so we never reserve a garbage height.
-    const canvasWidth = width > 12 ? width - 12 : 600;
-    // canvas display height = width / 8 (8:1), + container padding (5*2) and border (1*2)
-    const reserved = Math.round(canvasWidth / 8) + 12;
+    const canvasWidth = width > 2 ? width - 2 : 600;
+    // canvas display height = width / 8 (8:1), + the container's 1px border (1*2)
+    const reserved = Math.round(canvasWidth / 8) + 2;
     host.style.minHeight = `${reserved}px`;
   }
 
@@ -473,7 +473,7 @@ export class WaveformController {
       // waveform in causes zero shift, and clip the shade to the rounded corners.
       container.style.cssText = `
         position: relative;
-        padding: 5px;
+        padding: 0;
         background: rgba(0, 0, 0, 0.05);
         border-radius: 4px;
         display: flex;
