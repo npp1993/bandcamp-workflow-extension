@@ -351,7 +351,7 @@ export class WaveformService {
       const color = isPlayed ? played : unplayed;
       this.fillBar(canvas, amplitude, i, waveformData.length, color);
     }
-    this.drawPlayhead(canvas, progress, playhead);
+    this.drawPlayhead(canvas, waveformData, progress, playhead);
 
     return canvas;
   }
@@ -378,15 +378,22 @@ export class WaveformService {
   }
 
   /**
-   * Draw the playhead as a 2px full-height vertical line at the played/unplayed
-   * boundary, mirroring the loading shade's leading edge so the marker is
-   * consistent across the loading -> loaded swap. No line at progress 0.
+   * Draw the playhead as a 2px vertical line at the played/unplayed boundary,
+   * height-matched to the waveform bar at that position (bottom-aligned like the
+   * bars) so the marker sits inside the waveform rather than spanning the full
+   * box. No line at progress 0.
    *
    * @param canvas Target canvas
+   * @param waveformData Normalized amplitude data (for the bar height at the playhead)
    * @param progress Progress ratio (0-1)
    * @param color Playhead line color
    */
-  private static drawPlayhead(canvas: HTMLCanvasElement, progress: number, color: string): void {
+  private static drawPlayhead(
+    canvas: HTMLCanvasElement,
+    waveformData: number[],
+    progress: number,
+    color: string,
+  ): void {
     if (progress <= 0) {
       return;
     }
@@ -394,8 +401,15 @@ export class WaveformService {
     const lineWidth = 2;
     // Clamp so the full 2px stays on-canvas at progress 1.
     const x = Math.min(canvas.width - lineWidth, Math.max(0, progress * canvas.width - lineWidth / 2));
+    // Match the bar at the playhead so the edge is as tall as the local
+    // waveform, not the full box. Clamp the index to a valid bar.
+    const barIndex = Math.min(
+      waveformData.length - 1,
+      Math.max(0, Math.floor(progress * waveformData.length)),
+    );
+    const barHeight = canvas.height * waveformData[barIndex];
     ctx.fillStyle = color;
-    ctx.fillRect(x, 0, lineWidth, canvas.height);
+    ctx.fillRect(x, canvas.height, lineWidth, -barHeight);
   }
 
   /**
@@ -428,7 +442,7 @@ export class WaveformService {
       const color = isPlayed ? played : unplayed;
       this.fillBar(canvas, amplitude, i, waveformData.length, color);
     }
-    this.drawPlayhead(canvas, progress, playhead);
+    this.drawPlayhead(canvas, waveformData, progress, playhead);
   }
 
   /**
