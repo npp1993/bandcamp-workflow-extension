@@ -3,6 +3,7 @@ import {BandcampFacade} from '../facades/bandcamp.facade';
 import {AudioUtils} from '../utils/audio-utils';
 import {SeekUtils} from '../utils/seek-utils';
 import {Logger} from '../utils/logger';
+import {Colors} from '../common/colors';
 import {
   WAVEFORM_CONTAINER_CLASS,
   WAVEFORM_ELEMENT_SELECTOR,
@@ -306,7 +307,9 @@ export class WaveformController {
     const width = host.clientWidth;
     // canvas display width = container content width = host width minus the
     // container's 5px horizontal padding and 1px border on each side (12 total).
-    const canvasWidth = width > 0 ? width - 12 : 600;
+    // Fall back to the 600px intrinsic width if the host isn't laid out yet
+    // (clientWidth 0, or implausibly small) so we never reserve a garbage height.
+    const canvasWidth = width > 12 ? width - 12 : 600;
     // canvas display height = width / 8 (8:1), + container padding (5*2) and border (1*2)
     const reserved = Math.round(canvasWidth / 8) + 12;
     host.style.minHeight = `${reserved}px`;
@@ -526,6 +529,9 @@ export class WaveformController {
           progress = Math.min(1, Math.max(0, audio.currentTime / audio.duration));
         }
         shade.style.width = `${progress * 100}%`;
+        // Hide the 2px leading edge at zero progress: with box-sizing:border-box a
+        // 0%-width element still paints its border as a stray 2px line at left:0.
+        shade.style.borderRightWidth = progress > 0 ? '2px' : '0';
       };
       updateShade();
       const intervalId = window.setInterval(updateShade, 100);
@@ -546,14 +552,8 @@ export class WaveformController {
    * @returns Comma-separated rgb components (e.g. "255, 255, 255")
    */
   private static loadingRgb(): string {
-    const hex = BandcampFacade.colors?.text_color?.replace('#', '');
-    if (hex && /^[0-9a-fA-F]{6}$/.test(hex)) {
-      const r = parseInt(hex.slice(0, 2), 16);
-      const g = parseInt(hex.slice(2, 4), 16);
-      const b = parseInt(hex.slice(4, 6), 16);
-      return `${r}, ${g}, ${b}`;
-    }
-    return '128, 128, 128';
+    const rgb = Colors.convertHexToRgb(BandcampFacade.colors?.text_color ?? '');
+    return rgb ? `${rgb.r}, ${rgb.g}, ${rgb.b}` : '128, 128, 128';
   }
 
   /**
