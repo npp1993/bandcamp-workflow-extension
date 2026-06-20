@@ -306,12 +306,12 @@ export class WaveformController {
   private static reserveHostHeight(host: HTMLElement): void {
     const width = host.clientWidth;
     // canvas display width = container content width = host width minus the
-    // container's 1px border on each side (2 total; no padding any more).
+    // container's 5px horizontal padding and 1px border on each side (12 total).
     // Fall back to the 600px intrinsic width if the host isn't laid out yet
     // (clientWidth 0, or implausibly small) so we never reserve a garbage height.
-    const canvasWidth = width > 2 ? width - 2 : 600;
-    // canvas display height = width / 8 (8:1), + the container's 1px border (1*2)
-    const reserved = Math.round(canvasWidth / 8) + 2;
+    const canvasWidth = width > 12 ? width - 12 : 600;
+    // canvas display height = width / 8 (8:1), + container padding (5*2) and border (1*2)
+    const reserved = Math.round(canvasWidth / 8) + 12;
     host.style.minHeight = `${reserved}px`;
   }
 
@@ -473,7 +473,7 @@ export class WaveformController {
       // waveform in causes zero shift, and clip the shade to the rounded corners.
       container.style.cssText = `
         position: relative;
-        padding: 0;
+        padding: 5px;
         background: rgba(0, 0, 0, 0.05);
         border-radius: 4px;
         display: flex;
@@ -488,13 +488,15 @@ export class WaveformController {
       const rgb = this.loadingRgb();
 
       // Shaded background filling up to the playhead, with a brighter leading
-      // edge that reads as the playhead line. Updated each tick below.
+      // edge that reads as the playhead line. Inset by the container's 5px
+      // padding so it lines up exactly with the eventual waveform's content
+      // area (the canvas sits inside that same padding); updated each tick below.
       const shade = document.createElement('div');
       shade.style.cssText = `
         position: absolute;
-        left: 0;
-        top: 0;
-        bottom: 0;
+        left: 5px;
+        top: 5px;
+        bottom: 5px;
         width: 0%;
         background: rgba(${rgb}, 0.13);
         border-right: 2px solid rgba(${rgb}, 0.45);
@@ -528,9 +530,12 @@ export class WaveformController {
         if (audio && Number.isFinite(audio.duration) && audio.duration > 0) {
           progress = Math.min(1, Math.max(0, audio.currentTime / audio.duration));
         }
-        shade.style.width = `${progress * 100}%`;
+        // Width spans `progress` of the content area. 100% here is the padding
+        // box (host width - 2px border); subtracting the 10px horizontal padding
+        // yields the content width, matching the canvas the waveform will fill.
+        shade.style.width = `calc((100% - 10px) * ${progress})`;
         // Hide the 2px leading edge at zero progress: with box-sizing:border-box a
-        // 0%-width element still paints its border as a stray 2px line at left:0.
+        // 0-width element still paints its border as a stray 2px line at the left.
         shade.style.borderRightWidth = progress > 0 ? '2px' : '0';
       };
       updateShade();

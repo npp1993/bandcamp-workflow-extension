@@ -192,9 +192,7 @@
 /* Waveform container styling */
 .bcks-waveform-container {
   margin: 10px 0;
-  /* No inner padding: the waveform fills edge-to-edge, flush to the 1px border.
-     overflow:hidden clips the canvas to the rounded corners. */
-  padding: 0;
+  padding: 5px;
   background: rgba(0, 0, 0, 0.05);
   border-radius: 4px;
   text-align: center;
@@ -251,7 +249,7 @@
 @media (max-width: 768px) {
   .bcks-waveform-container {
     margin: 8px 0;
-    padding: 0;
+    padding: 4px;
   }
 
   .bcks-waveform-title {
