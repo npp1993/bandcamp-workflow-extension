@@ -173,14 +173,20 @@ export function analyzeBpm(
   }
 
   // 5. Parabolic interpolation around the peak for sub-frame lag precision.
+  //    Only when peakLag is a genuine local maximum: the prior-WEIGHTED argmax
+  //    need not be a local max of ac, and a non-concave (denom >= 0) or
+  //    near-linear region would send refinedLag far off -- even negative -> a
+  //    negative/garbage BPM. A real peak has denom < 0 and offset within +-0.5;
+  //    clamp defensively.
   let refinedLag = peakLag;
   if (peakLag > lagMin && peakLag < lagMax) {
     const a = ac[peakLag - 1];
     const b = ac[peakLag];
     const c = ac[peakLag + 1];
     const denom = a - 2 * b + c;
-    if (denom !== 0) {
-      refinedLag = peakLag + (0.5 * (a - c)) / denom;
+    if (denom < 0) {
+      const offset = (0.5 * (a - c)) / denom;
+      refinedLag = peakLag + Math.max(-0.5, Math.min(0.5, offset));
     }
   }
 

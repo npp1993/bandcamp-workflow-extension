@@ -285,6 +285,11 @@ export class WaveformService {
       // Calculate RMS values for amplitude visualization using reference logic
       const stepSize = Math.round(decodedAudio.length / this.CONFIG.datapoints);
       const rmsSize = Math.min(stepSize, 128); // Use 128 as in the reference code
+      if (rmsSize < 1) {
+        // Degenerate (sub-~100-sample) buffer: stepSize rounds to 0, which would
+        // make subStepSize NaN and fill the waveform with NaN. Render flat.
+        return new Array(this.CONFIG.datapoints).fill(0);
+      }
       const subStepSize = Math.round(stepSize / rmsSize);
       
       const rmsBuffer: number[] = [];

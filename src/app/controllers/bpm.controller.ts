@@ -79,7 +79,6 @@ export class BpmController {
    */
   public static onDecodedBuffer(channel: Float32Array, sampleRate: number, streamId: string): void {
     const token = ++this.generationToken;
-    this.lastStreamId = streamId; // keep the watcher in sync; badge already shows the placeholder
     this.ensureBadge();
 
     let result: BpmResult;
@@ -96,8 +95,11 @@ export class BpmController {
     const liveSrc = AudioUtils.getAudioElement()?.src;
     const liveStream = liveSrc ? WaveformService.extractStreamId(liveSrc) : null;
     if (liveStream && liveStream !== streamId) {
-      return; // user skipped; this result is for a track no longer playing
+      return; // user skipped; this result is for a track no longer playing -- do
+      // NOT touch lastStreamId, or the watcher would desync from the live track
     }
+    // Only now mark this as the displayed track (after confirming it's current).
+    this.lastStreamId = streamId;
     this.renderResult(result);
   }
 
@@ -171,8 +173,10 @@ export class BpmController {
   }
 
   private static renderResult(result: BpmResult): void {
-    if (result.bpm === null) {
-      this.setText('--- BPM'); // beatless / low confidence
+    // Treat null AND any non-finite/non-positive value as "no reading" so a bad
+    // analysis can never render a garbage badge like "-3 BPM" or "Infinity BPM".
+    if (result.bpm === null || !Number.isFinite(result.bpm) || result.bpm <= 0) {
+      this.setText('--- BPM'); // beatless / low confidence / invalid
     } else {
       this.setText(`${Math.round(result.bpm)} BPM`);
     }
