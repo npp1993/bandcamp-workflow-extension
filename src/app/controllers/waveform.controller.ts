@@ -298,8 +298,9 @@ export class WaveformController {
 
   /**
    * Reserve the exact height the rendered waveform will occupy. The canvas keeps
-   * an 8:1 ratio and fills the full container width (CSS width:100%) with no
-   * inner padding, so the reserved height tracks the host's own width.
+   * an 8:1 ratio and fills the container's content width (CSS width:100%, i.e. the
+   * host width minus the 5px padding + 1px border), so the reserved height tracks
+   * the host's own width.
    *
    * @param host The waveform host element
    */
@@ -467,13 +468,18 @@ export class WaveformController {
       // Drop any rendered waveform/error before showing the loading state.
       this.removeCurrentWaveform();
 
+      // Inner padding shared by the box, the shade inset, and the shade width
+      // calc below, so the shade always lines up with the canvas content area
+      // (kept in one place to avoid the three desyncing).
+      const pad = 5;
+
       const container = document.createElement('div');
       container.className = WAVEFORM_LOADING_CLASS;
       // Mirror the rendered waveform container's box exactly so swapping the real
       // waveform in causes zero shift, and clip the shade to the rounded corners.
       container.style.cssText = `
         position: relative;
-        padding: 5px;
+        padding: ${pad}px;
         background: rgba(0, 0, 0, 0.05);
         border-radius: 4px;
         display: flex;
@@ -494,9 +500,9 @@ export class WaveformController {
       const shade = document.createElement('div');
       shade.style.cssText = `
         position: absolute;
-        left: 5px;
-        top: 5px;
-        bottom: 5px;
+        left: ${pad}px;
+        top: ${pad}px;
+        bottom: ${pad}px;
         width: 0%;
         background: rgba(${rgb}, 0.13);
         border-right: 2px solid rgba(${rgb}, 0.45);
@@ -531,9 +537,9 @@ export class WaveformController {
           progress = Math.min(1, Math.max(0, audio.currentTime / audio.duration));
         }
         // Width spans `progress` of the content area. 100% here is the padding
-        // box (host width - 2px border); subtracting the 10px horizontal padding
+        // box (host width - 2px border); subtracting the horizontal padding
         // yields the content width, matching the canvas the waveform will fill.
-        shade.style.width = `calc((100% - 10px) * ${progress})`;
+        shade.style.width = `calc((100% - ${pad * 2}px) * ${progress})`;
         // Hide the 2px leading edge at zero progress: with box-sizing:border-box a
         // 0-width element still paints its border as a stray 2px line at the left.
         shade.style.borderRightWidth = progress > 0 ? '2px' : '0';
