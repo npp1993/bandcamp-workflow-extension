@@ -343,15 +343,16 @@ export class WaveformService {
     // Calculate progress point
     const progressPoint = progress * waveformData.length;
 
-    // Render waveform bars with different colors for played/unplayed
-    const {played, unplayed, playhead} = this.barColors();
+    // Render waveform bars with different colors for played/unplayed. The
+    // played/unplayed shading is the only playhead indicator -- no separate
+    // marker line at the boundary.
+    const {played, unplayed} = this.barColors();
     for (let i = 0; i < waveformData.length; i++) {
       const amplitude = waveformData[i];
       const isPlayed = i < progressPoint;
       const color = isPlayed ? played : unplayed;
       this.fillBar(canvas, amplitude, i, waveformData.length, color);
     }
-    this.drawPlayhead(canvas, waveformData, progress, playhead);
 
     return canvas;
   }
@@ -362,54 +363,17 @@ export class WaveformService {
    * any background (the played portion brighter than the unplayed). Falls back
    * to the original fixed grays when the color scheme isn't available.
    *
-   * @returns played/unplayed bar colors and the playhead-line color
+   * @returns played/unplayed bar colors
    */
-  private static barColors(): {played: string; unplayed: string; playhead: string} {
+  private static barColors(): {played: string; unplayed: string} {
     const rgb = Colors.getTextColorRgb();
     if (!rgb) {
-      return {played: '#666', unplayed: this.CONFIG.color, playhead: 'rgba(128, 128, 128, 0.45)'};
+      return {played: '#666', unplayed: this.CONFIG.color};
     }
     return {
       played: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.9)`,
       unplayed: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.55)`,
-      // Matches the loading shade's leading edge (text color at 0.45 alpha).
-      playhead: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.45)`,
     };
-  }
-
-  /**
-   * Draw the playhead as a 2px vertical line at the played/unplayed boundary,
-   * height-matched to the waveform bar at that position (bottom-aligned like the
-   * bars) so the marker sits inside the waveform rather than spanning the full
-   * box. No line at progress 0.
-   *
-   * @param canvas Target canvas
-   * @param waveformData Normalized amplitude data (for the bar height at the playhead)
-   * @param progress Progress ratio (0-1)
-   * @param color Playhead line color
-   */
-  private static drawPlayhead(
-    canvas: HTMLCanvasElement,
-    waveformData: number[],
-    progress: number,
-    color: string,
-  ): void {
-    if (progress <= 0) {
-      return;
-    }
-    const ctx = canvas.getContext('2d')!;
-    const lineWidth = 2;
-    // Clamp so the full 2px stays on-canvas at progress 1.
-    const x = Math.min(canvas.width - lineWidth, Math.max(0, progress * canvas.width - lineWidth / 2));
-    // Match the bar at the playhead so the edge is as tall as the local
-    // waveform, not the full box. Clamp the index to a valid bar.
-    const barIndex = Math.min(
-      waveformData.length - 1,
-      Math.max(0, Math.floor(progress * waveformData.length)),
-    );
-    const barHeight = canvas.height * waveformData[barIndex];
-    ctx.fillStyle = color;
-    ctx.fillRect(x, canvas.height, lineWidth, -barHeight);
   }
 
   /**
@@ -434,15 +398,15 @@ export class WaveformService {
     // Cache the progress point to avoid recalculation
     (canvas as any)._lastProgressPoint = progressPoint;
 
-    // Render waveform bars with different colors for played/unplayed
-    const {played, unplayed, playhead} = this.barColors();
+    // Render waveform bars with different colors for played/unplayed. The
+    // shading is the only playhead indicator -- no separate marker line.
+    const {played, unplayed} = this.barColors();
     for (let i = 0; i < waveformData.length; i++) {
       const amplitude = waveformData[i];
       const isPlayed = i < progressPoint;
       const color = isPlayed ? played : unplayed;
       this.fillBar(canvas, amplitude, i, waveformData.length, color);
     }
-    this.drawPlayhead(canvas, waveformData, progress, playhead);
   }
 
   /**
