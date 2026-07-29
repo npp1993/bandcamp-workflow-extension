@@ -2,7 +2,7 @@
   "name": "Bandcamp Keyboard Shortcuts",
   "short_name": "BC Shortcuts",
   "description": "Vim-style keyboard shortcuts: transport control, waveform seeking, wishlist/cart management, bulk purchase, and a download helper.",
-  "version": "1.10",
+  "version": "1.11",
   "homepage_url": "https://github.com/npp1993/bandcamp-keyboard-shortcuts",
   "manifest_version": 3,
   "icons": {

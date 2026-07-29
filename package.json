@@ -1,6 +1,6 @@
 {
   "name": "bandcamp-keyboard-shortcuts",
-  "version": "1.10",
+  "version": "1.11",
   "type": "module",
   "description": "A browser extension for Bandcamp that adds numerous features and keyboard shortcuts to improve your music browsing workflow",
   "license": "MIT",
