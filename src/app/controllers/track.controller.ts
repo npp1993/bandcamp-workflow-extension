@@ -59,6 +59,37 @@ export class TrackController {
     this.view.container.click();
   }
 
+  /**
+   * Remove this track from the fan's wishlist if it is individually
+   * wishlisted. Used when the full album gets wishlisted, so the wishlist
+   * doesn't keep redundant per-track entries.
+   *
+   * @returns true if the track was wishlisted and successfully removed
+   */
+  public async removeFromWishlistIfPresent(): Promise<boolean> {
+    await this.load();
+
+    if (!this.isWishlisted) {
+      return false;
+    }
+
+    this.isLoading = true;
+    this.render();
+
+    const hasToggled = await this.toggleWishlist();
+
+    if (hasToggled) {
+      this.isWishlisted = false;
+    } else {
+      this.isError = true;
+    }
+
+    this.isLoading = false;
+    this.render();
+
+    return hasToggled;
+  }
+
   private async toggleWishlist(): Promise<boolean> {
     // Handle fetch function selection like the original code
     // @ts-expect-error TS2693
