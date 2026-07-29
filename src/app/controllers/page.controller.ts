@@ -77,7 +77,14 @@ export class PageController {
       }
       
       this.controllers.copyInfo = new CopyInfoController();
-      this.controllers.album = new AlbumController();
+
+      try {
+        this.controllers.album = new AlbumController();
+      } catch (error) {
+        // A failed album controller (e.g. unexpected page markup) must not
+        // prevent the waveform, keyboard, and playbar controllers below.
+        Logger.error('Failed to initialize album controller:', error);
+      }
     }
 
     // Initialize waveform controller for supported page types (track, album, wishlist, collection), but not download pages
